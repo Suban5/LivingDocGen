@@ -5,10 +5,13 @@
     <ProjectReference Include="..\LivingDocGen.Core\LivingDocGen.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <PackageId>LivingDocGen.TestReporter</PackageId>
     <Version>1.0.0</Version>
     <Authors>Suban Dhyako</Authors>

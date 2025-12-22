@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+
 namespace LivingDocGen.TestReporter.Parsers;
 
-using System.Xml.Linq;
 using LivingDocGen.TestReporter.Core;
 using LivingDocGen.TestReporter.Models;
 
@@ -218,7 +224,7 @@ public class XUnitResultParser : ITestResultParser
                word == "And" || word == "But" || word == "*";
     }
 
-    private ExecutionStatus MapResultToStatus(string? result)
+    private ExecutionStatus MapResultToStatus(string result)
     {
         return result?.ToLower() switch
         {

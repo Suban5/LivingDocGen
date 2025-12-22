@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
 namespace LivingDocGen.Generator.Services;
 
 using LivingDocGen.Generator.Models;
@@ -51,7 +57,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         return encoded;
     }
     
-    public string GenerateHtml(LivingDocumentation documentation, HtmlGenerationOptions? options = null)
+    public string GenerateHtml(LivingDocumentation documentation, HtmlGenerationOptions options = null)
     {
         options ??= new HtmlGenerationOptions();
         
@@ -2336,9 +2342,9 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             html.AppendLine($@"                        <span class=""badge badge-outline""><i class=""fas fa-layer-group""></i> Outline</span>");
         }
 
-        if (scenario.Duration.HasValue)
+        if (scenario.Duration != default(TimeSpan))
         {
-            html.AppendLine($@"                        <span class=""step-duration"">({scenario.Duration.Value.TotalSeconds:F2}s)</span>");
+            html.AppendLine($@"                        <span class=""step-duration"">({scenario.Duration.TotalSeconds:F2}s)</span>");
         }
 
         html.AppendLine(@"                    </div>
@@ -2349,7 +2355,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         {
             html.AppendLine($@"
                     <div class=""error-message"">
-                        <strong><i class=""fas fa-exclamation-triangle""></i> Error{(scenario.FailedAtLine.HasValue ? $" at line {scenario.FailedAtLine}" : "")}</strong>
+                        <strong><i class=""fas fa-exclamation-triangle""></i> Error{(scenario.FailedAtLine > 0 ? $" at line {scenario.FailedAtLine}" : "")}</strong>
                         <pre>{System.Web.HttpUtility.HtmlEncode(scenario.ErrorMessage)}</pre>
                     </div>");
         }
@@ -2388,9 +2394,9 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         html.AppendLine($@"                            <div class=""step-text"">");
         html.AppendLine($@"                                <div>{System.Web.HttpUtility.HtmlEncode(step.Step.Text)}");
         
-        if (step.Duration.HasValue && step.Duration.Value.TotalMilliseconds > 0)
+        if (step.Duration != default(TimeSpan) && step.Duration.TotalMilliseconds > 0)
         {
-            html.AppendLine($@" <span class=""step-duration"">({step.Duration.Value.TotalMilliseconds:F0}ms)</span>");
+            html.AppendLine($@" <span class=""step-duration"">({step.Duration.TotalMilliseconds:F0}ms)</span>");
         }
         
         html.AppendLine(@"</div>");
@@ -3328,7 +3334,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 public class HtmlGenerationOptions
 {
     public string PrimaryColor { get; set; } = "#6366f1";
-    public string? Theme { get; set; } = "purple";
+    public string Theme { get; set; } = "purple";
     public bool IncludeComments { get; set; } = true;
     public bool SyntaxHighlighting { get; set; } = true;
 }

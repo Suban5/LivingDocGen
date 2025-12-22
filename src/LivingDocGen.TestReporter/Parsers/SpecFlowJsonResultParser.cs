@@ -1,6 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+
 namespace LivingDocGen.TestReporter.Parsers;
 
-using System.Text.Json;
 using LivingDocGen.TestReporter.Core;
 using LivingDocGen.TestReporter.Models;
 
@@ -167,7 +172,7 @@ public class SpecFlowJsonResultParser : ITestResultParser
         return stepResult;
     }
 
-    private ExecutionStatus MapResultToStatus(string? status)
+    private ExecutionStatus MapResultToStatus(string status)
     {
         return status?.ToLower() switch
         {
@@ -216,84 +221,84 @@ public class SpecFlowJsonResultParser : ITestResultParser
     private class CucumberJsonFeature
     {
         [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("uri")]
-        public string? Uri { get; set; }
+        public string Uri { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; }
+        public string Description { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
-        public List<CucumberJsonTag>? Tags { get; set; }
+        public List<CucumberJsonTag> Tags { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("elements")]
-        public List<CucumberJsonElement>? Elements { get; set; }
+        public List<CucumberJsonElement> Elements { get; set; }
     }
 
     private class CucumberJsonElement
     {
         [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public string? Type { get; set; }
+        public string Type { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; }
+        public string Description { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("line")]
         public int Line { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
-        public List<CucumberJsonTag>? Tags { get; set; }
+        public List<CucumberJsonTag> Tags { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("steps")]
-        public List<CucumberJsonStep>? Steps { get; set; }
+        public List<CucumberJsonStep> Steps { get; set; }
     }
 
     private class CucumberJsonStep
     {
         [System.Text.Json.Serialization.JsonPropertyName("keyword")]
-        public string? Keyword { get; set; }
+        public string Keyword { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("line")]
         public int Line { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("result")]
-        public CucumberJsonResult? Result { get; set; }
+        public CucumberJsonResult Result { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("embeddings")]
-        public List<CucumberJsonEmbedding>? Embeddings { get; set; }
+        public List<CucumberJsonEmbedding> Embeddings { get; set; }
     }
 
     private class CucumberJsonResult
     {
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public string? Status { get; set; }
+        public string Status { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("duration")]
         public long Duration { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("error_message")]
-        public string? ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; }
     }
 
     private class CucumberJsonTag
     {
         [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
     }
 
     private class CucumberJsonEmbedding
     {
         [System.Text.Json.Serialization.JsonPropertyName("mime_type")]
-        public string? MimeType { get; set; }
+        public string MimeType { get; set; }
         
         [System.Text.Json.Serialization.JsonPropertyName("data")]
-        public string? Data { get; set; }
+        public string Data { get; set; }
     }
 }

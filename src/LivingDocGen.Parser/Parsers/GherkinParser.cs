@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
 namespace LivingDocGen.Parser.Parsers;
 
 using LivingDocGen.Parser.Core;
@@ -78,7 +83,7 @@ public class GherkinParser : IFeatureParser
         return features;
     }
 
-    private UniversalFeature MapToUniversalFeature(Feature feature, string filePath, IEnumerable<Comment>? comments)
+    private UniversalFeature MapToUniversalFeature(Feature feature, string filePath, IEnumerable<Comment> comments)
     {
         var universalFeature = new UniversalFeature
         {

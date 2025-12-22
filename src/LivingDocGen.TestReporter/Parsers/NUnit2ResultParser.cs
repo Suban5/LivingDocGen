@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+
 namespace LivingDocGen.TestReporter.Parsers;
 
-using System.Xml.Linq;
 using LivingDocGen.TestReporter.Core;
 using LivingDocGen.TestReporter.Models;
 
@@ -142,7 +148,7 @@ public class NUnit2ResultParser : ITestResultParser
         return scenario;
     }
 
-    private ExecutionStatus MapResultToStatus(string? result, string? success)
+    private ExecutionStatus MapResultToStatus(string result, string success)
     {
         // NUnit2 uses both 'result' and 'success' attributes
         if (result == "Ignored" || result == "NotRunnable")

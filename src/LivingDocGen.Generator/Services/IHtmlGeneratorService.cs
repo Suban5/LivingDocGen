@@ -12,5 +12,5 @@ public interface IHtmlGeneratorService
     /// </summary>
     string GenerateHtml(
         LivingDocumentation documentation,
-        HtmlGenerationOptions? options = null);
+        HtmlGenerationOptions options = null);
 }

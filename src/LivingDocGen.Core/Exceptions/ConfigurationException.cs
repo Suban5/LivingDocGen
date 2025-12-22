@@ -1,3 +1,5 @@
+using System;
+
 namespace LivingDocGen.Core.Exceptions;
 
 /// <summary>
@@ -8,7 +10,7 @@ public class ConfigurationException : BDDException
     /// <summary>
     /// Gets or sets the configuration key that caused the error.
     /// </summary>
-    public string? ConfigurationKey { get; set; }
+    public string ConfigurationKey { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationException"/> class.

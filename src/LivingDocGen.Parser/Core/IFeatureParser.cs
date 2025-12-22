@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace LivingDocGen.Parser.Core;
 
 using LivingDocGen.Parser.Models;

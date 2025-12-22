@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+
 namespace LivingDocGen.Core.Validators;
 
 using LivingDocGen.Core.Exceptions;
@@ -10,7 +13,7 @@ public static class FileValidator
     /// <summary>
     /// Validates that a file exists and has the correct extension
     /// </summary>
-    public static void ValidateFileExists(string filePath, string? expectedExtension = null)
+    public static void ValidateFileExists(string filePath, string expectedExtension = null)
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {

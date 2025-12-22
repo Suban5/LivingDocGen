@@ -1,3 +1,6 @@
+using System;
+using System.Text;
+
 namespace LivingDocGen.Core.Exceptions;
 
 /// <summary>
@@ -8,7 +11,7 @@ public class ParseException : BDDException
     /// <summary>
     /// Gets or sets the file path where the parse error occurred.
     /// </summary>
-    public string? FilePath { get; set; }
+    public string FilePath { get; set; }
     
     /// <summary>
     /// Gets or sets the line number where the parse error occurred.

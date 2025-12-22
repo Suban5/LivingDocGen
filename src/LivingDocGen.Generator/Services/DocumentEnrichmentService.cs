@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
 namespace LivingDocGen.Generator.Services;
 
 using LivingDocGen.Parser.Models;
@@ -30,7 +35,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
     /// </summary>
     public LivingDocumentation EnrichDocumentation(
         List<UniversalFeature> features,
-        TestExecutionReport? testReport = null)
+        TestExecutionReport testReport = null)
     {
         var documentation = new LivingDocumentation
         {
@@ -129,7 +134,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
     /// <summary>
     /// Fast feature lookup using indices
     /// </summary>
-    private FeatureExecutionResult? FindMatchingFeature(UniversalFeature feature)
+    private FeatureExecutionResult FindMatchingFeature(UniversalFeature feature)
     {
         if (_featureIndex.Count == 0)
             return null;
@@ -153,7 +158,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
     /// <summary>
     /// Fast scenario lookup using indices
     /// </summary>
-    private List<ScenarioExecutionResult>? FindMatchingScenarios(UniversalScenario scenario)
+    private List<ScenarioExecutionResult> FindMatchingScenarios(UniversalScenario scenario)
     {
         if (_scenarioIndex.Count == 0)
             return null;
@@ -176,14 +181,14 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         return null;
     }
 
-    private EnrichedFeature EnrichFeature(UniversalFeature feature, FeatureExecutionResult? testResults)
+    private EnrichedFeature EnrichFeature(UniversalFeature feature, FeatureExecutionResult testResults)
     {
         var enriched = new EnrichedFeature
         {
             Feature = feature,
             TestResults = testResults,
-            LastExecuted = testResults?.Status != ExecutionStatus.NotExecuted ? DateTime.UtcNow : null,
-            TotalDuration = testResults?.Duration
+            LastExecuted = testResults?.Status != ExecutionStatus.NotExecuted ? DateTime.UtcNow : default(DateTime),
+            TotalDuration = testResults?.Duration ?? default(TimeSpan)
         };
 
         // Enrich scenarios
@@ -282,15 +287,15 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         return enriched;
     }
 
-    private EnrichedScenario EnrichScenario(UniversalScenario scenario, ScenarioExecutionResult? testResult, List<ScenarioExecutionResult>? allMatchingTests = null)
+    private EnrichedScenario EnrichScenario(UniversalScenario scenario, ScenarioExecutionResult testResult, List<ScenarioExecutionResult> allMatchingTests = null)
     {
         var enriched = new EnrichedScenario
         {
             Scenario = scenario,
             TestResult = testResult,
             Status = testResult?.Status ?? ExecutionStatus.NotExecuted,
-            Duration = testResult?.Duration,
-            ErrorMessage = testResult?.ErrorMessage
+            Duration = testResult?.Duration ?? default(TimeSpan),
+            ErrorMessage = testResult?.ErrorMessage ?? string.Empty
         };
 
         // For scenario outlines with multiple test results (one per example row)
@@ -307,7 +312,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         if (testResult != null && testResult.Status == ExecutionStatus.Failed)
         {
             var failedStep = testResult.StepResults.FirstOrDefault(s => s.Status == ExecutionStatus.Failed);
-            enriched.FailedAtLine = failedStep?.LineNumber;
+            enriched.FailedAtLine = failedStep?.LineNumber ?? 0;
         }
 
         // Enrich steps
@@ -325,8 +330,8 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
                 Step = step,
                 TestResult = stepTest,
                 Status = stepStatus,
-                Duration = stepTest?.Duration,
-                ErrorMessage = stepTest?.ErrorMessage,
+                Duration = stepTest?.Duration ?? default(TimeSpan),
+                ErrorMessage = stepTest?.ErrorMessage ?? string.Empty,
                 Screenshots = stepTest?.Screenshots ?? new List<string>()
             });
         }

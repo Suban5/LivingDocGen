@@ -1,3 +1,5 @@
+using System;
+
 namespace LivingDocGen.Core.Exceptions;
 
 /// <summary>

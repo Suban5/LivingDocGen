@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <PackageId>LivingDocGen.Reqnroll.Integration</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Reqnroll integration for automatic living documentation generation</Description>
     <PackageTags>BDD;Reqnroll;Living Documentation;Testing</PackageTags>

@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
 namespace LivingDocGen.Generator.Services;
 
 using LivingDocGen.Generator.Models;
@@ -32,8 +38,8 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
     public Task<string> GenerateAsync(
         IEnumerable<string> featureFiles,
         IEnumerable<string> testResultFiles,
-        string? title = null,
-        HtmlGenerationOptions? options = null)
+        string title = null,
+        HtmlGenerationOptions options = null)
     {
         // Step 1: Parse all feature files
         var parsedFeatures = new List<LivingDocGen.Parser.Models.UniversalFeature>();
@@ -90,8 +96,8 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         IEnumerable<string> featureFiles,
         IEnumerable<string> testResultFiles,
         string outputPath,
-        string? title = null,
-        HtmlGenerationOptions? options = null)
+        string title = null,
+        HtmlGenerationOptions options = null)
     {
         var html = await GenerateAsync(featureFiles, testResultFiles, title, options);
         
@@ -114,8 +120,8 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         string featureDirectory,
         string testResultsDirectory,
         string outputPath,
-        string? title = null,
-        HtmlGenerationOptions? options = null)
+        string title = null,
+        HtmlGenerationOptions options = null)
     {
         // Find all feature files
         var featureFiles = Directory.Exists(featureDirectory)

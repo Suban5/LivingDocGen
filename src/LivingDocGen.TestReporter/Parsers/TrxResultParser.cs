@@ -1,6 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+
 namespace LivingDocGen.TestReporter.Parsers;
 
-using System.Xml.Linq;
 using LivingDocGen.TestReporter.Core;
 using LivingDocGen.TestReporter.Models;
 
@@ -89,7 +94,7 @@ public class TrxResultParser : ITestResultParser
         return report;
     }
 
-    private FeatureExecutionResult ParseFeature(string className, List<XElement> testResults, Dictionary<string, (string ClassName, string TestName)>? testDefinitions)
+    private FeatureExecutionResult ParseFeature(string className, List<XElement> testResults, Dictionary<string, (string ClassName, string TestName)> testDefinitions)
     {
         // Extract feature name from className (e.g., "SampleReqnroll.Tests.Features.UserLoginFeature" -> "UserLogin")
         var parts = className.Split('.');
@@ -123,7 +128,7 @@ public class TrxResultParser : ITestResultParser
         return feature;
     }
 
-    private ScenarioExecutionResult ParseScenario(XElement testResult, Dictionary<string, (string ClassName, string TestName)>? testDefinitions)
+    private ScenarioExecutionResult ParseScenario(XElement testResult, Dictionary<string, (string ClassName, string TestName)> testDefinitions)
     {
         var testId = testResult.Attribute("testId")?.Value ?? "";
         var testName = testResult.Attribute("testName")?.Value ?? "Unknown Scenario";
@@ -174,7 +179,7 @@ public class TrxResultParser : ITestResultParser
     {
         // Parse Reqnroll/SpecFlow step output format:
         // "Given I am on the login page\n-> done: LoginSteps.GivenIAmOnTheLoginPage() (0.0s)"
-        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var lines = output.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
         
         foreach (var line in lines)
         {

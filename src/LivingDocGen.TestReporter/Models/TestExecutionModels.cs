@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace LivingDocGen.TestReporter.Models;
 
 /// <summary>
@@ -20,17 +23,17 @@ public enum ExecutionStatus
 public class ScenarioExecutionResult
 {
     public string ScenarioName { get; set; } = string.Empty;
-    public List<string> Tags { get; set; } = new();
+    public List<string> Tags { get; set; } = new List<string>();
     public ExecutionStatus Status { get; set; }
-    public DateTime? StartTime { get; set; }
-    public DateTime? EndTime { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
     public TimeSpan Duration { get; set; }
-    public string? ErrorMessage { get; set; }
-    public string? StackTrace { get; set; }
-    public List<StepExecutionResult> StepResults { get; set; } = new();
-    public List<string> Screenshots { get; set; } = new();
-    public List<string> Attachments { get; set; } = new();
-    public Dictionary<string, string> Metadata { get; set; } = new();
+    public string ErrorMessage { get; set; }
+    public string StackTrace { get; set; }
+    public List<StepExecutionResult> StepResults { get; set; } = new List<StepExecutionResult>();
+    public List<string> Screenshots { get; set; } = new List<string>();
+    public List<string> Attachments { get; set; } = new List<string>();
+    public Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
 }
 
 /// <summary>
@@ -40,12 +43,12 @@ public class StepExecutionResult
 {
     public string Keyword { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
-    public int? LineNumber { get; set; }
+    public int LineNumber { get; set; }
     public ExecutionStatus Status { get; set; }
     public TimeSpan Duration { get; set; }
-    public string? ErrorMessage { get; set; }
-    public string? StackTrace { get; set; }
-    public List<string> Screenshots { get; set; } = new();
+    public string ErrorMessage { get; set; }
+    public string StackTrace { get; set; }
+    public List<string> Screenshots { get; set; } = new List<string>();
 }
 
 /// <summary>
@@ -57,9 +60,9 @@ public class TestExecutionReport
     public TestFramework Framework { get; set; }
     public DateTime GeneratedAt { get; set; }
     public TimeSpan TotalDuration { get; set; }
-    public TestStatistics Statistics { get; set; } = new();
-    public List<FeatureExecutionResult> Features { get; set; } = new();
-    public Dictionary<string, string> Environment { get; set; } = new();
+    public TestStatistics Statistics { get; set; } = new TestStatistics();
+    public List<FeatureExecutionResult> Features { get; set; } = new List<FeatureExecutionResult>();
+    public Dictionary<string, string> Environment { get; set; } = new Dictionary<string, string>();
 }
 
 /// <summary>
@@ -69,8 +72,8 @@ public class FeatureExecutionResult
 {
     public string FeatureName { get; set; } = string.Empty;
     public string FeatureFilePath { get; set; } = string.Empty;
-    public List<string> Tags { get; set; } = new();
-    public List<ScenarioExecutionResult> Scenarios { get; set; } = new();
+    public List<string> Tags { get; set; } = new List<string>();
+    public List<ScenarioExecutionResult> Scenarios { get; set; } = new List<ScenarioExecutionResult>();
     public TimeSpan Duration { get; set; }
     public ExecutionStatus Status { get; set; }
 }

@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
 namespace LivingDocGen.TestReporter.Services;
 
 using LivingDocGen.TestReporter.Core;
@@ -211,14 +216,14 @@ public class TestReportService : ITestReportService
                 var existingScenario = scenarioMap[scenarioKey];
                 
                 // Compare by StartTime (most recent wins)
-                // If StartTime is null, consider Duration or keep existing
+                // If StartTime is default/empty, consider Duration or keep existing
                 bool shouldReplace = false;
                 
-                if (newScenario.StartTime.HasValue && existingScenario.StartTime.HasValue)
+                if (newScenario.StartTime != default(DateTime) && existingScenario.StartTime != default(DateTime))
                 {
-                    shouldReplace = newScenario.StartTime.Value > existingScenario.StartTime.Value;
+                    shouldReplace = newScenario.StartTime > existingScenario.StartTime;
                 }
-                else if (newScenario.StartTime.HasValue && !existingScenario.StartTime.HasValue)
+                else if (newScenario.StartTime != default(DateTime) && existingScenario.StartTime == default(DateTime))
                 {
                     shouldReplace = true; // New has timestamp, existing doesn't
                 }

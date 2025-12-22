@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace LivingDocGen.TestReporter.Services;
 
 using LivingDocGen.TestReporter.Models;

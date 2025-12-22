@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace LivingDocGen.Generator.Services;
 
 using LivingDocGen.Generator.Models;
@@ -14,5 +16,5 @@ public interface IDocumentEnrichmentService
     /// </summary>
     LivingDocumentation EnrichDocumentation(
         List<UniversalFeature> features,
-        TestExecutionReport? testReport = null);
+        TestExecutionReport testReport = null);
 }

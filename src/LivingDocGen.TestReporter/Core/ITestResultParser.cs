@@ -1,3 +1,5 @@
+using System;
+
 namespace LivingDocGen.TestReporter.Core;
 
 using LivingDocGen.TestReporter.Models;
