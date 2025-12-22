@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BDD Living Documentation Configuration",
+  "description": "Configuration for BDD Living Documentation Generator",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Enable or disable automatic documentation generation",
+      "default": true
+    },
+    "autoGenerate": {
+      "type": "string",
+      "description": "When to generate documentation",
+      "enum": ["Never", "AfterBuild", "AfterTest"],
+      "default": "AfterTest"
+    },
+    "paths": {
+      "type": "object",
+      "description": "File and directory paths",
+      "properties": {
+        "features": {
+          "type": "string",
+          "description": "Path to feature files directory (relative to project root or absolute)",
+          "default": "./Features"
+        },
+        "testResults": {
+          "type": "string",
+          "description": "Path to test results directory (relative to project root or absolute)",
+          "default": "./TestResults"
+        },
+        "output": {
+          "type": "string",
+          "description": "Output path for generated HTML documentation",
+          "default": "./living-documentation.html"
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "description": "Documentation appearance settings",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title for the documentation",
+          "default": "Living Documentation"
+        },
+        "theme": {
+          "type": "string",
+          "description": "Visual theme",
+          "enum": ["purple", "blue", "green", "dark", "light", "pickles"],
+          "default": "purple"
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "Primary color (hex code)",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#6366f1"
+        }
+      }
+    },
+    "advanced": {
+      "type": "object",
+      "description": "Advanced configuration options",
+      "properties": {
+        "verbose": {
+          "type": "boolean",
+          "description": "Enable verbose logging",
+          "default": false
+        },
+        "includeSkipped": {
+          "type": "boolean",
+          "description": "Include skipped tests in documentation",
+          "default": true
+        },
+        "includePending": {
+          "type": "boolean",
+          "description": "Include pending tests in documentation",
+          "default": true
+        }
+      }
+    }
+  }
+}

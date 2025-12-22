@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    
+    <!-- Global Tool Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>LivingDocGen</ToolCommandName>
+    <PackageId>LivingDocGen.Tool</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Suban Dhyako</Authors>
+    <Description>Universal BDD Living Documentation Generator - CLI Tool for Reqnroll, SpecFlow, Cucumber, and other BDD frameworks</Description>
+    <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Cucumber;Living Documentation;Testing;CLI</PackageTags>
+    <PackageProjectUrl>https://github.com/suban5/LivingDocGen</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LivingDocGen.Parser\LivingDocGen.Parser.csproj" />
+    <ProjectReference Include="..\LivingDocGen.TestReporter\LivingDocGen.TestReporter.csproj" />
+    <ProjectReference Include="..\LivingDocGen.Generator\LivingDocGen.Generator.csproj" />
+    <ProjectReference Include="..\LivingDocGen.Core\LivingDocGen.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

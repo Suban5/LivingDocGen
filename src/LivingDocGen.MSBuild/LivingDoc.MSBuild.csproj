@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>LivingDocGen</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Suban Dhyako</Authors>
+    <Description>Automatic living documentation generator for BDD test projects (Reqnroll, SpecFlow, xUnit, NUnit)</Description>
+    <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Living Documentation;Testing</PackageTags>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageOutputPath>../../nupkg</PackageOutputPath>
+  </PropertyGroup>
+
+  <!-- Include the MSBuild targets file in the package -->
+  <ItemGroup>
+    <None Include="build\**" Pack="true" PackagePath="build\" />
+    <None Include="buildMultiTargeting\**" Pack="true" PackagePath="buildMultiTargeting\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Custom target to copy LivingDocGen.CLI output to tools folder before packing -->
+  <Target Name="CopyBDDCliToTools" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <BDDCliOutputPath>$(MSBuildThisFileDirectory)..\LivingDocGen.CLI\bin\$(Configuration)\net8.0\</BDDCliOutputPath>
+      <ToolsDestination>$(OutputPath)tools\</ToolsDestination>
+    </PropertyGroup>
+    
+    <Message Text="📦 Copying LivingDocGen.CLI from: $(BDDCliOutputPath)" Importance="high" />
+    <Message Text="                    to: $(ToolsDestination)" Importance="high" />
+    
+    <!-- Create tools directory -->
+    <MakeDir Directories="$(ToolsDestination)" />
+    
+    <!-- Copy all LivingDocGen.CLI files and dependencies -->
+    <ItemGroup>
+      <BDDCliFiles Include="$(BDDCliOutputPath)**\*.*" />
+    </ItemGroup>
+    
+    <Copy SourceFiles="@(BDDCliFiles)" 
+          DestinationFolder="$(ToolsDestination)%(RecursiveDir)" 
+          SkipUnchangedFiles="false" />
+    
+    <!-- Dynamically add tools files to package -->
+    <ItemGroup>
+      <ToolsFiles Include="$(ToolsDestination)**\*.*" />
+      <None Include="@(ToolsFiles)" Pack="true" PackagePath="tools\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+    
+    <Message Text="✅ LivingDocGen.CLI copied: @(ToolsFiles->Count()) files" Importance="high" />
+  </Target>
+
+</Project>
