@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageId>LivingDocGen</PackageId>
-    <Version>1.0.0</Version>
+    <PackageId>LivingDocGen.MSBuild</PackageId>
+    <Version>1.0.1</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Automatic living documentation generator for BDD test projects (Reqnroll, SpecFlow, xUnit, NUnit)</Description>
     <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Living Documentation;Testing</PackageTags>
