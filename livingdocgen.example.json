@@ -1,0 +1,20 @@
+{
+  "$schema": "./schemas/bdd-livingdoc-schema.json",
+  "enabled": true,
+  "autoGenerate": "AfterTest",
+  "paths": {
+    "features": "./Features",
+    "testResults": "./TestResults",
+    "output": "./living-documentation.html"
+  },
+  "documentation": {
+    "title": "My Project - Living Documentation",
+    "theme": "purple",
+    "primaryColor": "#9333ea"
+  },
+  "advanced": {
+    "verbose": false,
+    "includeSkipped": true,
+    "includePending": true
+  }
+}

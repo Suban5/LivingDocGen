@@ -109,6 +109,7 @@ dotnet run -- generate ../../samples/features ../../samples/test-results -o ../.
 
 ## 📝 Todo List
 
+- [x] Support for configuration file (`livingdocgen.json`).
 - [ ] Add interactive mode for guided documentation generation.
 - [ ] Support for custom template engines (beyond embedded HTML).
 - [ ] Add `--watch` mode to regenerate docs on file changes.

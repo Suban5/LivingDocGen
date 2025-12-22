@@ -30,13 +30,35 @@ The documentation will be generated at `living-documentation.html` in your proje
 
 ## 🔧 Configuration
 
-Currently, the integration uses sensible defaults:
+### Option 1: Configuration File (Recommended)
+
+Create a `livingdocgen.json` file in your project root:
+
+```json
+{
+  "enabled": true,
+  "paths": {
+    "features": "./Features",
+    "testResults": "./TestResults",
+    "output": "./living-documentation.html"
+  },
+  "documentation": {
+    "title": "My Reqnroll Project",
+    "theme": "purple"
+  }
+}
+```
+
+The integration will automatically detect and use this file if it exists.
+
+### Option 2: Default Configuration
+
+If no configuration file is found, the integration uses sensible defaults:
 *   **Features Path**: `./Features`
 *   **Test Results Path**: `./TestResults`
 *   **Output**: `./living-documentation.html`
 *   **Theme**: `purple`
-
-*Note: Future versions will support reading configuration from `reqnroll.json` or `livingdocgen.json`.*
+*   **Title**: `Living Documentation`
 
 ## ⚠️ Requirements
 
@@ -45,6 +67,5 @@ Currently, the integration uses sensible defaults:
 
 ## 📝 Todo List
 
-- [ ] Add support for reading configuration from `reqnroll.json` or `livingdocgen.json`.
 - [ ] Allow customization of paths and themes via environment variables.
 - [ ] Add integration tests with sample Reqnroll projects.

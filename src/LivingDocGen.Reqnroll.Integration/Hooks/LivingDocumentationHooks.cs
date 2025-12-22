@@ -3,12 +3,14 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 namespace LivingDocGen.Reqnroll.Integration.Hooks
 {
     /// <summary>
     /// Reqnroll hooks to automatically generate living documentation after test execution.
     /// Add this to your Reqnroll test project.
+    /// Supports livingdocgen.json configuration file.
     /// </summary>
     [Binding]
     public class LivingDocumentationHooks
@@ -34,46 +36,61 @@ namespace LivingDocGen.Reqnroll.Integration.Hooks
             {
                 Console.WriteLine("\n📊 Generating Living Documentation...");
                 
-                // Configuration
-                var config = new
-                {
-                    FeaturePath = Path.Combine(_projectRoot, "Features"),
-                    TestResultsPath = _testResultsPath,
-                    OutputPath = Path.Combine(_projectRoot, "living-documentation.html"),
-                    Title = "Living Documentation",
-                    Theme = "purple",
-                    CliPath = GetBDDCliPath()
-                };
-
-                // Verify paths exist
-                if (!Directory.Exists(config.FeaturePath))
-                {
-                    Console.WriteLine($"⚠️ Features directory not found: {config.FeaturePath}");
-                    return;
-                }
+                var configPath = Path.Combine(_projectRoot, "livingdocgen.json");
+                var cliPath = GetBDDCliPath();
 
                 // Wait for test results to be written (NUnit/xUnit may delay file writes)
                 System.Threading.Thread.Sleep(2000);
 
-                // Find latest test result file
-                var latestTestResult = FindLatestTestResult(config.TestResultsPath);
-                
-                if (string.IsNullOrEmpty(latestTestResult))
-                {
-                    Console.WriteLine($"⚠️ No test results found in: {config.TestResultsPath}");
-                    Console.WriteLine("   Generating documentation without test results...");
-                }
+                string arguments;
 
-                // Build command
-                var arguments = string.IsNullOrEmpty(latestTestResult)
-                    ? $"generate \"{config.FeaturePath}\" --output \"{config.OutputPath}\" --title \"{config.Title}\" --theme {config.Theme}"
-                    : $"generate \"{config.FeaturePath}\" \"{latestTestResult}\" --output \"{config.OutputPath}\" --title \"{config.Title}\" --theme {config.Theme}";
+                // Check if config file exists
+                if (File.Exists(configPath))
+                {
+                    Console.WriteLine($"   Using config file: {configPath}");
+                    arguments = $"generate --config \"{configPath}\"";
+                }
+                else
+                {
+                    Console.WriteLine("   No config file found, using default settings");
+                    
+                    // Configuration
+                    var config = new
+                    {
+                        FeaturePath = Path.Combine(_projectRoot, "Features"),
+                        TestResultsPath = _testResultsPath,
+                        OutputPath = Path.Combine(_projectRoot, "living-documentation.html"),
+                        Title = "Living Documentation",
+                        Theme = "purple"
+                    };
+
+                    // Verify paths exist
+                    if (!Directory.Exists(config.FeaturePath))
+                    {
+                        Console.WriteLine($"⚠️ Features directory not found: {config.FeaturePath}");
+                        return;
+                    }
+
+                    // Find latest test result file
+                    var latestTestResult = FindLatestTestResult(config.TestResultsPath);
+                    
+                    if (string.IsNullOrEmpty(latestTestResult))
+                    {
+                        Console.WriteLine($"⚠️ No test results found in: {config.TestResultsPath}");
+                        Console.WriteLine("   Generating documentation without test results...");
+                    }
+
+                    // Build command
+                    arguments = string.IsNullOrEmpty(latestTestResult)
+                        ? $"generate \"{config.FeaturePath}\" --output \"{config.OutputPath}\" --title \"{config.Title}\" --theme {config.Theme}"
+                        : $"generate \"{config.FeaturePath}\" \"{latestTestResult}\" --output \"{config.OutputPath}\" --title \"{config.Title}\" --theme {config.Theme}";
+                }
 
                 // Execute BDD CLI tool
                 var processInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = $"\"{config.CliPath}\" {arguments}",
+                    Arguments = $"\"{cliPath}\" {arguments}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -91,8 +108,9 @@ namespace LivingDocGen.Reqnroll.Integration.Hooks
 
                         if (process.ExitCode == 0)
                         {
-                            Console.WriteLine($"✅ Living documentation generated: {config.OutputPath}");
-                            Console.WriteLine(output);
+                            Console.WriteLine($"✅ Living documentation generated successfully");
+                            if (!string.IsNullOrWhiteSpace(output))
+                                Console.WriteLine(output);
                         }
                         else
                         {

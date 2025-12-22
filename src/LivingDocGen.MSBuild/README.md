@@ -1,6 +1,6 @@
 # LivingDocGen.MSBuild
 
-**LivingDocGen.MSBuild** is the MSBuild integration layer for LivingDocGen. It is distributed as the NuGet package **`LivingDocGen`**.
+**LivingDocGen.MSBuild** is the MSBuild integration layer for LivingDocGen. It is distributed as the NuGet package **`LivingDocGen.MSBuild`**.
 
 ## 🎯 Purpose
 
@@ -8,7 +8,7 @@ This project provides the automatic integration with the .NET build and test pro
 
 ## 📦 NuGet Package
 
-*   **Package ID**: `LivingDocGen`
+*   **Package ID**: `LivingDocGen.MSBuild`
 *   **Description**: Automatic living documentation generator for BDD test projects.
 
 ## ⚙️ How It Works
@@ -21,10 +21,43 @@ This project provides the automatic integration with the .NET build and test pro
 
 You can configure the behavior using MSBuild properties in your `.csproj` file or by using a `livingdocgen.json` file in your project root.
 
-### MSBuild Properties
+### Option 1: Configuration File (Recommended)
+
+Create a `livingdocgen.json` file in your project root:
+
+```json
+{
+  "enabled": true,
+  "autoGenerate": "AfterTest",
+  "paths": {
+    "features": "./Features",
+    "testResults": "./TestResults",
+    "output": "./living-documentation.html"
+  },
+  "documentation": {
+    "title": "My Project - Living Documentation",
+    "theme": "purple",
+    "primaryColor": "#9333ea"
+  },
+  "advanced": {
+    "verbose": false,
+    "includeSkipped": true,
+    "includePending": true
+  }
+}
+```
+
+The MSBuild integration will automatically detect and use this file if it exists.
+
+### Option 2: MSBuild Properties
+
+If no `livingdocgen.json` file is found, you can configure using MSBuild properties in your `.csproj`:
 
 ```xml
 <PropertyGroup>
+  <!-- Path to config file (optional, defaults to livingdocgen.json) -->
+  <LivingDocConfigFile>$(ProjectDir)custom-config.json</LivingDocConfigFile>
+  
   <!-- Enable/Disable generation (default: true) -->
   <LivingDocEnabled>true</LivingDocEnabled>
   
@@ -34,10 +67,15 @@ You can configure the behavior using MSBuild properties in your `.csproj` file o
   <!-- Documentation Title -->
   <LivingDocTitle>My Project Specs</LivingDocTitle>
   
-  <!-- Theme (purple, blue, green, dark, light) -->
+  <!-- Theme (purple, blue, green, dark, light, pickles) -->
   <LivingDocTheme>blue</LivingDocTheme>
 </PropertyGroup>
 ```
+
+**Priority Order:**
+1. If `LivingDocConfigFile` exists → use config file
+2. If `livingdocgen.json` exists in project root → use it
+3. Otherwise → use MSBuild properties
 
 ## 🏗 Development
 
@@ -56,6 +94,5 @@ The `.csproj` contains a custom target `CopyBDDCliToTools` that copies the CLI b
 
 ## 📝 Todo List
 
-- [ ] Support configuration via `livingdocgen.json` in addition to MSBuild properties.
 - [ ] Add conditional execution based on test run success/failure.
 - [ ] Improve error reporting when CLI execution fails.
