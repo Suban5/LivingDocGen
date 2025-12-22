@@ -34,6 +34,36 @@ Every time you run your tests, LivingDocGen can produce up‑to‑date “living
 
 ---
 
+## 📋 Requirements
+
+### Framework Compatibility
+
+**Library Packages** (Core, Parser, TestReporter, Generator, MSBuild):
+- ✅ .NET Framework 4.6.1 or higher
+- ✅ .NET Core 2.0 or higher
+- ✅ .NET 5, 6, 7, 8 and future versions
+- ✅ Xamarin, Mono, Unity (via .NET Standard 2.0/2.1)
+
+**CLI Tool & Reqnroll Integration**:
+- ✅ .NET 6.0 runtime or higher
+
+### Supported BDD Frameworks
+- Reqnroll (.NET)
+- SpecFlow (.NET)
+- Cucumber (Java/Ruby/JS)
+- JBehave (Java)
+- Any framework that produces Gherkin `.feature` files
+
+### Supported Test Result Formats
+- NUnit 2 & 3 (XML)
+- NUnit 4 (TRX)
+- xUnit (XML)
+- JUnit (XML)
+- MSTest (TRX)
+- SpecFlow JSON execution reports
+
+---
+
 ## 🧩 Installation
 
 ### Option 1: Global CLI Tool (Recommended)
@@ -777,6 +807,17 @@ git push origin feature/your-feature-name
 
 # Open a Pull Request
 ```
+
+---
+
+## 📜 Version History
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
+
+**Latest Release: v1.0.3** (December 22, 2024)
+- 🎯 Major framework compatibility update - migrated to .NET Standard 2.0/2.1
+- ✅ Now supports .NET Framework 4.6.1+, .NET Core 2.0+, all modern .NET versions
+- 📦 Broader ecosystem compatibility for maximum reach
 
 ---
 

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/Suban5/LivingDocGen/discussions
+    about: Ask questions and discuss with the community
+  - name: 📖 Documentation
+    url: https://github.com/Suban5/LivingDocGen/blob/main/README.md
+    about: Read the comprehensive documentation
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/Suban5/LivingDocGen/security/advisories/new
+    about: Report security vulnerabilities privately
