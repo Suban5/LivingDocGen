@@ -7,7 +7,16 @@
     <Authors>Suban Dhyako</Authors>
     <Description>Reqnroll integration for automatic living documentation generation</Description>
     <PackageTags>BDD;Reqnroll;Living Documentation;Testing</PackageTags>
+    <PackageProjectUrl>https://github.com/suban5/LivingDocGen</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Reqnroll" Version="2.0.0" />

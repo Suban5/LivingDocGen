@@ -17,7 +17,14 @@
     <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Cucumber;Living Documentation;Testing;CLI</PackageTags>
     <PackageProjectUrl>https://github.com/suban5/LivingDocGen</PackageProjectUrl>
     <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LivingDocGen.Parser\LivingDocGen.Parser.csproj" />

@@ -14,6 +14,20 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>LivingDocGen.Generator</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Suban Dhyako</Authors>
+    <Description>HTML documentation generator for BDD living documentation with theming support</Description>
+    <PackageTags>BDD;Gherkin;Living Documentation;HTML;Generator;Theming</PackageTags>
+    <PackageProjectUrl>https://github.com/suban5/LivingDocGen</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>

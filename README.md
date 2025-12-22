@@ -36,9 +36,23 @@ Every time you run your tests, LivingDocGen can produce up‑to‑date “living
 
 ## 🧩 Installation
 
-### Option 1: Use the NuGet Package (Reqnroll/SpecFlow)
+### Option 1: Global CLI Tool (Recommended)
 
-Add the package to your **test project**:
+Install the universal CLI tool that works with **any** BDD framework:
+
+```bash
+dotnet tool install --global LivingDocGen.Tool
+```
+
+Then generate documentation from any test project:
+
+```bash
+LivingDocGen generate ./Features ./TestResults -o living-documentation.html
+```
+
+### Option 2: MSBuild Integration (Automatic Generation)
+
+For automatic documentation generation after every test run:
 
 ```bash
 cd YourTestProject
@@ -51,49 +65,59 @@ Then simply run your tests:
 dotnet test
 ```
 
-The file `living-documentation.html` is generated automatically (see your project output or configured path) and can be opened in any modern browser.
+The file `living-documentation.html` is generated automatically in your project output directory.
 
-### Option 2: Install the Global CLI Tool
+### Option 3: Reqnroll Integration (Automatic Hooks)
 
-Install the CLI as a .NET global tool (package name from `LivingDocGen.CLI`):
+For Reqnroll users who want automatic report generation via test hooks:
 
 ```bash
-dotnet tool install --global LivingDocGen.Tool
+dotnet add package LivingDocGen.Reqnroll.Integration
 ```
 
-You can then run the `LivingDocGen` command from any test project directory.
+The documentation is automatically generated when your Reqnroll tests complete.
 
 ---
 
 ## 🚀 Quick Start (Usage Overview)
 
-### Automatic Integration (Reqnroll/SpecFlow)
-
-1. **Install the package** in your test project (see above).
-2. **Run your tests** with `dotnet test`.
-3. **Open** the generated `living-documentation.html` in a browser:
-
-  ```bash
-  # macOS
-  open living-documentation.html
-
-  # Windows
-  start living-documentation.html
-  ```
-
-### Global CLI Tool (Any BDD Project)
-
-From the root of a test project that has `Features/` and `TestResults/` folders:
+### Method 1: CLI Tool (Universal - Works with Any Framework)
 
 ```bash
+# Install the global tool
+dotnet tool install --global LivingDocGen.Tool
+
+# Generate documentation
 LivingDocGen generate ./Features ./TestResults -o docs.html
+
+# Open in browser
+open docs.html  # macOS
+start docs.html # Windows
 ```
 
-This command:
+### Method 2: MSBuild Integration (Automatic After Tests)
 
-- Reads all `.feature` files under `./Features`
-- Reads supported test result files under `./TestResults`
-- Produces a single `docs.html` living documentation file
+```bash
+# Add to your test project
+dotnet add package LivingDocGen
+
+# Run tests - documentation generates automatically
+dotnet test
+
+# Open the generated file
+open living-documentation.html  # macOS
+start living-documentation.html # Windows
+```
+
+### Method 3: Reqnroll Integration (Built-in Hooks)
+
+```bash
+# Add to your Reqnroll test project
+dotnet add package LivingDocGen.Reqnroll.Integration
+
+# Run tests - documentation generates via [AfterTestRun] hook
+dotnet test
+```
 
 ---
 
@@ -542,13 +566,19 @@ LivingDocGen/
 
 For detailed documentation on each component, please refer to their respective README files:
 
-*   **[LivingDocGen.CLI](src/LivingDocGen.CLI/README.md)**: Command-line interface and global tool usage.
+#### 📦 Published NuGet Packages
+
+*   **[LivingDocGen.Tool](src/LivingDocGen.CLI/README.md)**: Universal CLI tool for any BDD framework (Global .NET Tool).
+*   **[LivingDocGen](src/LivingDocGen.MSBuild/README.md)**: MSBuild integration for automatic documentation generation.
+*   **[LivingDocGen.Reqnroll.Integration](src/LivingDocGen.Reqnroll.Integration/README.md)**: Reqnroll-specific integration hooks.
+
+#### 🔧 Internal Libraries (Development Only)
+
+*   **[LivingDocGen.CLI](src/LivingDocGen.CLI/README.md)**: Command-line interface implementation.
 *   **[LivingDocGen.Core](src/LivingDocGen.Core/README.md)**: Shared infrastructure, exceptions, and validators.
 *   **[LivingDocGen.Generator](src/LivingDocGen.Generator/README.md)**: HTML rendering engine and theming system.
-*   **[LivingDocGen.MSBuild](src/LivingDocGen.MSBuild/README.md)**: MSBuild integration and NuGet package details.
 *   **[LivingDocGen.Parser](src/LivingDocGen.Parser/README.md)**: Universal Gherkin parsing logic.
 *   **[LivingDocGen.TestReporter](src/LivingDocGen.TestReporter/README.md)**: Test result parsing and normalization.
-*   **[LivingDocGen.Reqnroll.Integration](src/LivingDocGen.Reqnroll.Integration/README.md)**: Reqnroll-specific integration hooks.
 
 ```
 ┌──────────────────────────────────────────────────────────┐

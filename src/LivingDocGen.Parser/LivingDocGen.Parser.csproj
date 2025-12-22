@@ -5,7 +5,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <PackageId>LivingDocGen.Parser</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Suban Dhyako</Authors>
+    <Description>Universal Gherkin parser for BDD frameworks - supports Cucumber, SpecFlow, Reqnroll, and more</Description>
+    <PackageTags>BDD;Gherkin;Parser;Cucumber;SpecFlow;Reqnroll;Living Documentation</PackageTags>
+    <PackageProjectUrl>https://github.com/suban5/LivingDocGen</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LivingDocGen.Core\LivingDocGen.Core.csproj" />
