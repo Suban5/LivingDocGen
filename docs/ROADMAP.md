@@ -1,0 +1,216 @@
+# 🗺️ Project Roadmap
+
+## Current Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | ✅ **Complete** | Universal parser, CLI tool, basic HTML generation |
+| Phase 2 | ✅ **Complete** | Reqnroll integration, multi-framework support, themes |
+| Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
+| Phase 4 | 📋 **Planned** | AI/NLP analysis, user study, performance optimization |
+
+---
+
+## 🚧 In Development
+
+### MSBuild Integration
+**Status:** In Development  
+**Target Release:** v2.1.0
+
+Automatic documentation generation after `dotnet test` without any manual steps:
+
+```bash
+dotnet add package LivingDocGen
+dotnet test
+# → Automatically creates living-documentation.html ✨
+```
+
+**Features:**
+- Zero-configuration MSBuild targets
+- Automatic triggering after test completion
+- Configurable via `.csproj` properties
+- Integration with existing build pipelines
+
+---
+
+## 📋 Planned Features
+
+### Phase 3: Advanced Features (v2.x)
+
+#### Enhanced Visualizations
+- **Traceability Graphs** - Visual dependency mapping between scenarios
+- **Trend Analysis** - Test execution trends over time
+- **Code Coverage Integration** - Show which code is covered by BDD tests
+- **Feature Dependency Diagrams** - Visualize feature relationships
+
+#### Extended Framework Support
+- **Playwright Test Results** - Support for Playwright test output
+- **Cypress Test Results** - Integration with Cypress test runs
+- **Jest/Mocha Test Results** - JavaScript testing framework support
+- **Robot Framework** - Support for Robot Framework results
+
+#### Quality Improvements
+- **Performance Optimization** - Faster parsing and generation for large projects
+- **Incremental Generation** - Only regenerate changed features
+- **Parallel Processing** - Multi-threaded parsing and generation
+- **Memory Optimization** - Reduced memory footprint for large test suites
+
+### Phase 4: AI/NLP Analysis (v3.x)
+
+#### Scenario Quality Analysis
+- **Quality Scoring** - AI-powered scenario quality assessment
+- **Duplicate Detection** - Identify similar or redundant scenarios
+- **Refactoring Suggestions** - AI-generated improvement recommendations
+- **Best Practice Compliance** - Check scenarios against Gherkin best practices
+
+#### Smart Features
+- **Auto-Tagging** - AI-suggested tags based on scenario content
+- **Scenario Grouping** - Intelligent feature organization suggestions
+- **Step Pattern Recognition** - Identify common step patterns for reuse
+- **Natural Language Improvements** - Suggestions for clearer scenario descriptions
+
+#### Integration & Insights
+- **Requirement Traceability** - Link scenarios to requirements (Jira, Azure DevOps)
+- **Risk Assessment** - Identify high-risk areas with low test coverage
+- **Test Gap Analysis** - Detect missing test scenarios
+- **Predictive Failure Analysis** - ML-based failure prediction
+
+---
+
+## 🎯 Future Integrations
+
+### IDE Extensions
+
+#### Visual Studio Extension
+- Test Explorer integration
+- One-click documentation generation
+- Live preview window
+- Inline scenario validation
+
+#### VS Code Extension
+- Testing panel integration
+- Preview documentation in editor
+- Gherkin syntax validation
+- Quick actions for common tasks
+
+### Cloud Integrations
+
+#### CI/CD Platform Integrations
+- **GitHub Actions Marketplace** - Pre-built action for documentation generation
+- **Azure DevOps Extension** - Pipeline task for living documentation
+- **GitLab CI Component** - Reusable component for GitLab pipelines
+- **Jenkins Plugin** - Native Jenkins integration
+
+#### Cloud Storage
+- **Azure Blob Storage** - Publish documentation to Azure
+- **AWS S3** - Deploy to S3 buckets
+- **Google Cloud Storage** - GCP integration
+- **Confluence** - Auto-publish to Confluence pages
+
+---
+
+## 🔬 Research & Innovation
+
+### Academic Contributions
+
+This project is part of a Master's thesis focused on:
+
+1. **Universal Parser Design** - Can we create a single parser for all BDD frameworks?
+2. **User Experience** - Can we deliver better UX than existing tools (Pickles, Allure, SpecFlow+)?
+3. **AI/NLP Integration** - Can AI improve BDD scenario quality through automated analysis?
+
+### Innovation Goals
+
+- ✅ **Framework-Agnostic Architecture** - Successfully demonstrated
+- ✅ **Smart Merging Algorithm** - Timestamp-based test result consolidation working
+- ✅ **Single-File DHTML** - Beautiful, self-contained reports achieved
+- ✅ **Step-Level Failure Detection** - Precise error location identification complete
+- 🔄 **AI Quality Analysis** - In progress (Phase 4)
+- 📋 **NLP-Based Suggestions** - Planned (Phase 4)
+
+---
+
+## 📊 Metrics & Goals
+
+### Performance Targets
+
+| Metric | Current | Target (v3.0) |
+|--------|---------|---------------|
+| **Parse Speed** | 100 features/sec | 500 features/sec |
+| **Memory Usage** | ~200MB (1000 scenarios) | ~100MB (1000 scenarios) |
+| **Generation Time** | 2-5 seconds | <1 second |
+| **File Size** | 500KB-2MB | 300KB-1MB (optimized) |
+
+### Feature Coverage
+
+| Feature | Status | Target Version |
+|---------|--------|----------------|
+| Gherkin Parsing | ✅ Complete | v1.0 |
+| Test Result Integration | ✅ Complete | v1.0 |
+| CLI Tool | ✅ Complete | v1.0 |
+| Reqnroll Integration | ✅ Complete | v2.0 |
+| MSBuild Integration | 🚧 In Progress | v2.1 |
+| AI Quality Analysis | 📋 Planned | v3.0 |
+| IDE Extensions | 📋 Planned | v3.5 |
+| Cloud Integrations | 📋 Planned | v4.0 |
+
+---
+
+## 🤝 Community Feedback
+
+We're actively seeking feedback on:
+
+1. **Feature Priorities** - Which planned features are most important to you?
+2. **Framework Support** - Which additional test frameworks should we support?
+3. **Integration Needs** - What tools/platforms do you want to integrate with?
+4. **UI/UX Improvements** - How can we make the generated documentation better?
+
+**Share your thoughts:**
+- [GitHub Discussions](https://github.com/Suban5/LivingDocGen/discussions)
+- [Feature Requests](https://github.com/Suban5/LivingDocGen/issues/new?template=feature_request.md)
+- [Community Survey](https://github.com/Suban5/LivingDocGen/discussions/categories/polls)
+
+---
+
+## 📅 Release Schedule
+
+| Version | Target Date | Focus |
+|---------|-------------|-------|
+| v2.0.0 | ✅ Jan 2026 | Reqnroll integration, Bootstrap API |
+| v2.1.0 | Feb 2026 | MSBuild integration |
+| v2.2.0 | Mar 2026 | Performance improvements |
+| v3.0.0 | Jun 2026 | AI/NLP quality analysis |
+| v3.5.0 | Sep 2026 | IDE extensions |
+| v4.0.0 | Dec 2026 | Cloud integrations |
+
+*Note: Dates are estimates and may change based on development progress and community feedback.*
+
+---
+
+## 🎓 Academic Timeline
+
+### Thesis Milestones
+
+| Milestone | Status | Date |
+|-----------|--------|------|
+| Literature Review | ✅ Complete | Oct 2025 |
+| Universal Parser Design | ✅ Complete | Nov 2025 |
+| CLI & Core Implementation | ✅ Complete | Dec 2025 |
+| Reqnroll Integration | ✅ Complete | Jan 2026 |
+| MSBuild Integration | 🚧 In Progress | Feb 2026 |
+| AI/NLP Module | 📋 Planned | Mar-May 2026 |
+| User Study | 📋 Planned | Jun 2026 |
+| Thesis Writing | 📋 Planned | Jul-Aug 2026 |
+| Defense | 📋 Planned | Sep 2026 |
+
+---
+
+## 🔄 Version History
+
+See [CHANGELOG.md](../CHANGELOG.md) for detailed release notes.
+
+---
+
+**Last Updated:** January 1, 2026
+
+**Have suggestions for the roadmap?** [Open a discussion](https://github.com/Suban5/LivingDocGen/discussions)!
