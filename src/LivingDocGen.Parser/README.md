@@ -63,3 +63,10 @@ List<UniversalFeature> allFeatures = parserService.ParseDirectory("path/to/featu
 
 - [ ] Add support for **JBehave** (requires a custom parser as it uses a different syntax flavor).
 - [ ] Add support for **Karate** feature files.
+## ⚙️ Target Framework
+
+- **.NET Standard 2.0** - Compatible with:
+  - .NET Framework 4.6.1+
+  - .NET Core 2.0+
+  - .NET 5, 6, 7, 8+
+  - Xamarin, Mono, Unity

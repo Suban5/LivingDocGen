@@ -25,8 +25,8 @@ Static helper classes for robust input validation.
 
 ## 🛠 Dependencies
 
-*   `Microsoft.Extensions.Logging.Abstractions`: For common logging interfaces.
-*   **.NET 8.0**: The target framework.
+*   **.NET Standard 2.0**: The target framework for maximum compatibility.
+*   No external dependencies (foundation layer).
 
 ## 💻 Usage
 
@@ -44,9 +44,17 @@ try
 catch (ValidationException ex)
 {
     // Handle validation error consistently
-    logger.LogError(ex.Message);
+    Console.WriteLine($"Validation error: {ex.Message}");
 }
 ```
+
+## ⚙️ Target Framework
+
+- **.NET Standard 2.0** - Compatible with:
+  - .NET Framework 4.6.1+
+  - .NET Core 2.0+
+  - .NET 5, 6, 7, 8+
+  - Xamarin, Mono, Unity
 
 ## 📝 Todo List
 

@@ -96,3 +96,9 @@ The `.csproj` contains a custom target `CopyBDDCliToTools` that copies the CLI b
 
 - [ ] Add conditional execution based on test run success/failure.
 - [ ] Improve error reporting when CLI execution fails.
+## ⚙️ Target Framework
+
+- **.NET Standard 2.0** - Works with all .NET project types:
+  - .NET Framework 4.6.1+
+  - .NET Core 2.0+
+  - .NET 5, 6, 7, 8+

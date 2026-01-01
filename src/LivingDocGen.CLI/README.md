@@ -100,6 +100,31 @@ You can use a `livingdocgen.json` file instead of passing CLI arguments. The too
 To build and run the CLI locally from source:
 
 ```bash
+# Clone the repository
+git clone https://github.com/suban5/LivingDocGen.git
+cd LivingDocGen
+
+# Build the CLI project
+dotnet build src/LivingDocGen.CLI/LivingDocGen.CLI.csproj
+
+# Run locally (without installing as global tool)
+dotnet run --project src/LivingDocGen.CLI/LivingDocGen.CLI.csproj -- generate ./samples/features ./samples/test-results
+```
+
+## ⚙️ Target Framework
+
+- **.NET 6.0** - Requires .NET 6.0 runtime or higher
+  - Works on Windows, macOS, and Linux
+  - Cross-platform CLI tool
+
+## 📚 More Information
+
+For detailed documentation, see:
+- [Main README](../../README.md)
+- [Development Guide](../../docs/DEVELOPMENT.md)
+- [API Reference](../../docs/API_REFERENCE.md)
+
+```bash
 # Navigate to the CLI project
 cd src/LivingDocGen.CLI
 
@@ -107,9 +132,37 @@ cd src/LivingDocGen.CLI
 dotnet run -- generate ../../samples/features ../../samples/test-results -o ../../docs/dev-output.html
 ```
 
+## ✅ Verification
+
+The LivingDocGen.Tool v1.0.4 has been tested and verified with:
+
+**Test Result Format Support:**
+- ✅ NUnit 2 XML format
+- ✅ NUnit 3 XML format test results
+- ✅ NUnit 4 / MSTest TRX format test results  
+- ✅ xUnit XML format test results
+- ✅ SpecFlow JSON execution reports
+
+**CLI Features:**
+- ✅ All three CLI commands (`generate`, `parse`, `test-results`)
+- ✅ Verbose mode for detailed output (`-v` flag)
+- ✅ Configuration file support (`livingdocgen.json`)
+
+**Customization:**
+- ✅ Multiple themes (purple, blue, green, dark, light, pickles)
+- ✅ Theme customization (6 built-in themes)
+- ✅ Custom color support via `--color` option
+
+**Platform Support:**
+- ✅ Cross-platform compatibility (Windows, macOS, Linux)
+- ✅ .NET 6.0+ runtime support
+
 ## 📝 Todo List
 
-- [x] Support for configuration file (`livingdocgen.json`).
-- [ ] Add interactive mode for guided documentation generation.
-- [ ] Support for custom template engines (beyond embedded HTML).
-- [ ] Add `--watch` mode to regenerate docs on file changes.
+Future enhancements planned:
+- [ ] Add interactive mode for guided documentation generation
+- [ ] Support for custom template engines (beyond embedded HTML)
+- [ ] Add `--watch` mode to regenerate docs on file changes
+- [ ] GitHub Actions integration examples
+- [ ] Docker container support
+- [ ] Plugin system for custom parsers and generators

@@ -1,0 +1,19 @@
+<RunSettings>
+   <RunConfiguration>
+      <ResultsDirectory>TestResults/xml</ResultsDirectory>
+      <CollectSourceInformation>false</CollectSourceInformation>
+   </RunConfiguration>
+   
+   <NUnit>
+      <!-- Use the ResultsDirectory defined above -->
+      <OutputXmlFolderMode>UseResultDirectory</OutputXmlFolderMode>
+      
+      <!-- Generate NUnit XML results -->
+      <TestOutputXml>nunit-results.xml</TestOutputXml>
+      
+      <!-- Generate new XML file for each run with timestamp -->
+      <NewOutputXmlFileForEachRun>true</NewOutputXmlFileForEachRun>
+      
+      <NumberOfTestWorkers>1</NumberOfTestWorkers>
+   </NUnit>
+</RunSettings>

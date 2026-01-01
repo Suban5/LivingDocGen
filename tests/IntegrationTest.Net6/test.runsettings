@@ -1,0 +1,8 @@
+<RunSettings>
+   <RunConfiguration>
+      <ResultsDirectory>./TestResults</ResultsDirectory>
+   </RunConfiguration>
+   <NUnit>
+       <TestOutputXml>nunit-IntegrationTest.Net6-results.xml</TestOutputXml>
+   </NUnit>
+</RunSettings>

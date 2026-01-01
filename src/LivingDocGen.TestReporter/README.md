@@ -58,3 +58,10 @@ var mergedReport = reportService.ParseMultipleTestResults(new[]
 
 - [ ] Add support for **Cucumber JSON** output format.
 - [ ] Improve error message extraction for complex stack traces.
+## ⚙️ Target Framework
+
+- **.NET Standard 2.0** - Compatible with:
+  - .NET Framework 4.6.1+
+  - .NET Core 2.0+
+  - .NET 5, 6, 7, 8+
+  - Xamarin, Mono, Unity

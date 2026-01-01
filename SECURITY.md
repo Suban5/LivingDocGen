@@ -6,12 +6,13 @@ We actively support the following versions of LivingDocGen with security updates
 
 | Version | Supported          | .NET Support |
 | ------- | ------------------ | ------------ |
+| 1.0.4   | :white_check_mark: | .NET Standard 2.0/2.1, .NET 6+ |
 | 1.0.3   | :white_check_mark: | .NET Standard 2.0/2.1, .NET 6+ |
 | 1.0.2   | :x:                | .NET 8.0 only |
 | 1.0.1   | :x:                | .NET 8.0 only |
 | 1.0.0   | :x:                | .NET 8.0 only |
 
-**Recommendation:** Always use the latest version (1.0.3) for the best security, compatibility, and features.
+**Recommendation:** Always use the latest version (1.0.4) for the best security, compatibility, and features.
 
 ---
 
@@ -25,8 +26,8 @@ We take security vulnerabilities seriously. If you discover a security issue in 
 
 Instead, report security issues via:
 
-1. **Email:** subandhya.kumar@example.com (replace with actual email)
-2. **GitHub Security Advisory:** [Create a private security advisory](https://github.com/Suban5/LivingDocGen/security/advisories/new)
+1. **GitHub Security Advisory:** [Create a private security advisory](https://github.com/suban5/LivingDocGen/security/advisories/new) (Recommended)
+2. **Email:** Contact the project maintainer via GitHub profile
 
 ### 📝 What to Include
 
@@ -141,7 +142,7 @@ We'd like to thank the following security researchers for responsibly disclosing
 
 For security-related questions or concerns:
 
-- **Security Email:** subandhya.kumar@example.com (replace with actual email)
+- **Security Email:** subandhyako55@gmail.com
 - **GitHub Security:** [Security Advisories](https://github.com/Suban5/LivingDocGen/security/advisories)
 - **General Support:** [GitHub Issues](https://github.com/Suban5/LivingDocGen/issues) (for non-security issues only)
 

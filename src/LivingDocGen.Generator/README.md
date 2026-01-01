@@ -79,3 +79,10 @@ File.WriteAllText("living-documentation.html", html);
 - [ ] Implement **custom theme builder** UI or configuration.
 - [ ] Add **multi-language documentation** support (i18n).
 - [ ] Support for **code snippet syntax highlighting** in step descriptions.
+
+## ⚙️ Target Framework
+
+- **.NET Standard 2.1** - Required by RazorEngine.NetCore dependency
+  - Compatible with .NET Core 3.0+, .NET 5, 6, 7, 8+
+  - Not compatible with .NET Framework (use .NET Core 3.0+ or .NET 5+)
+

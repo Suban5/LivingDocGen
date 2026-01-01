@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schemas.reqnroll.net/reqnroll-config-latest.json",
+  "bindingCulture": {
+    "name": "en-US"
+  },
+  "stepAssemblies": [
+    {
+      "assembly": "LivingDocGen.Reqnroll.Integration"
+    }
+  ]
+}

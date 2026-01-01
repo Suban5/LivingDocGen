@@ -3,14 +3,18 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>LivingDocGen.Reqnroll.Integration</PackageId>
-    <Version>1.0.3</Version>
+    <Version>2.0.0</Version>
     <Authors>Suban Dhyako</Authors>
-    <Description>Reqnroll integration for automatic living documentation generation</Description>
-    <PackageTags>BDD;Reqnroll;Living Documentation;Testing</PackageTags>
+    <Description>Reqnroll integration for automatic living documentation generation. Self-contained - no global tool installation required!</Description>
+    <PackageTags>BDD;Reqnroll;Living Documentation;Testing;SpecFlow</PackageTags>
     <PackageProjectUrl>https://github.com/suban5/LivingDocGen</PackageProjectUrl>
     <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Bundle all dependencies into single package -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,11 +23,49 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Reqnroll" Version="2.0.0" />
+    <PackageReference Include="Reqnroll" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LivingDocGen.CLI\LivingDocGen.CLI.csproj" />
+    <!-- Bundle all internal dependencies - compile with PrivateAssets but include DLLs in package -->
+    <ProjectReference Include="..\LivingDocGen.Core\LivingDocGen.Core.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\LivingDocGen.Parser\LivingDocGen.Parser.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\LivingDocGen.Generator\LivingDocGen.Generator.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\LivingDocGen.TestReporter\LivingDocGen.TestReporter.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
+  
+  <!-- Explicitly include referenced DLL dependencies in the package lib folder -->
+  <Target Name="IncludeReferencedProjectsInPack" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.Core.dll">
+        <PackagePath>lib/$(TargetFramework)</PackagePath>
+        <Pack>true</Pack>
+      </_PackageFiles>
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.Parser.dll">
+        <PackagePath>lib/$(TargetFramework)</PackagePath>
+        <Pack>true</Pack>
+      </_PackageFiles>
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.Generator.dll">
+        <PackagePath>lib/$(TargetFramework)</PackagePath>
+        <Pack>true</Pack>
+      </_PackageFiles>
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.TestReporter.dll">
+        <PackagePath>lib/$(TargetFramework)</PackagePath>
+        <Pack>true</Pack>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
 
 </Project>

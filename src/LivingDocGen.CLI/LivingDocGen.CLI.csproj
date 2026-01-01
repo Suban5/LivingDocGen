@@ -11,7 +11,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>LivingDocGen</ToolCommandName>
     <PackageId>LivingDocGen.Tool</PackageId>
-    <Version>1.0.3</Version>
+    <Version>2.0.0</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Universal BDD Living Documentation Generator - CLI Tool for Reqnroll, SpecFlow, Cucumber, and other BDD frameworks</Description>
     <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Cucumber;Living Documentation;Testing;CLI</PackageTags>
@@ -19,6 +19,9 @@
     <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Disable Git commit hash in version -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

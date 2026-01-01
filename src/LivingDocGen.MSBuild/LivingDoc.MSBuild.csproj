@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>LivingDocGen.MSBuild</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Automatic living documentation generator for BDD test projects (Reqnroll, SpecFlow, xUnit, NUnit)</Description>
     <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Living Documentation;Testing</PackageTags>
@@ -11,7 +11,6 @@
     <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
