@@ -556,10 +556,6 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         .feature-body {
             padding: 1.5rem;
             border-top: 1px solid var(--border-color);
-            display: none;
-        }
-
-        .feature-body.expanded {
             display: block;
         }
 
@@ -962,6 +958,20 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             z-index: 10;
         }
 
+        .data-table thead {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table thead:hover th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .data-table tbody.collapsed {
+            display: none;
+        }
+
         .data-table td {
             padding: 0.875rem 1rem;
             border-bottom: 1px solid var(--border-color);
@@ -1158,6 +1168,20 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             top: 0;
             z-index: 10;
             letter-spacing: 0.01em;
+        }
+
+        .examples-table thead {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .examples-table thead:hover th {
+            background: var(--primary-color);
+            opacity: 0.9;
+        }
+
+        .examples-table tbody.collapsed {
+            display: none;
         }
 
         .examples-table td {
@@ -2145,7 +2169,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var html = new StringBuilder();
         html.AppendLine($@"
     <div class=""feature{(isFirstFeature ? "" : " feature-hidden")}"" data-status=""{statusClass}"" id=""{featureId}"" data-feature-id=""{featureId}"">
-        <div class=""feature-header status-{statusClass}"" onclick=""toggleFeature(this)"">
+        <div class=""feature-header status-{statusClass}"">
             <div class=""feature-title"">
                 <span class=""status-icon {statusClass}"">{statusIcon}</span>
                 <h2>{System.Web.HttpUtility.HtmlEncode(feature.Feature.Name)}</h2>
@@ -2263,17 +2287,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 var colCount = step.DataTable.Rows.Any() ? step.DataTable.Rows[0].Count : 0;
                 
                 html.AppendLine(@"                        <div class=""data-table-container"">");
-                html.AppendLine($@"                            <div class=""data-table-header"" onclick=""toggleDataTable(this)"">
-                                <i class=""fas fa-chevron-down toggle-icon""></i>
-                                <i class=""fas fa-table""></i>
-                                <span>Data Table ({rowCount} rows × {colCount} columns)</span>
-                            </div>");
                 html.AppendLine(@"                            <div class=""data-table-wrapper"">");
                 html.AppendLine(@"                                <table class=""data-table"">");
                 
                 // First row as headers
                 var headers = step.DataTable.Rows[0];
-                html.AppendLine(@"                                    <thead><tr>");
+                html.AppendLine(@"                                    <thead onclick=""toggleDataTable(this)""><tr>");
                 foreach (var header in headers)
                 {
                     html.AppendLine($@"                                        <th>{System.Web.HttpUtility.HtmlEncode(header)}</th>");
@@ -2477,18 +2496,13 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var colCount = dataTable.Rows.Any() ? dataTable.Rows[0].Count : 0;
         
         html.AppendLine(@"                                <div class=""data-table-container"">");
-        html.AppendLine($@"                                    <div class=""data-table-header"" onclick=""toggleDataTable(this)"">
-                                        <i class=""fas fa-chevron-down toggle-icon""></i>
-                                        <i class=""fas fa-table""></i>
-                                        <span>Data Table ({rowCount} rows × {colCount} columns)</span>
-                                    </div>");
         html.AppendLine(@"                                    <div class=""data-table-wrapper"">");
         html.AppendLine(@"                                        <table class=""data-table"">");
         
         if (dataTable.Rows.Any())
         {
             // First row as headers
-            html.AppendLine(@"                                            <thead><tr>");
+            html.AppendLine(@"                                            <thead onclick=""toggleDataTable(this)""><tr>");
             foreach (var cell in dataTable.Rows[0])
             {
                 html.AppendLine($@"                                                <th>{System.Web.HttpUtility.HtmlEncode(cell)}</th>");
@@ -2551,16 +2565,11 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             var colCount = example.Headers.Count;
             
             html.AppendLine(@"                            <div class=""examples-table-container"">");
-            html.AppendLine($@"                                <div class=""examples-table-header"" onclick=""toggleExamplesTable(this)"">
-                                    <i class=""fas fa-chevron-down toggle-icon""></i>
-                                    <i class=""fas fa-layer-group""></i>
-                                    <span>Examples Table ({rowCount} rows × {colCount} columns)</span>
-                                </div>");
             html.AppendLine(@"                                <div class=""table-wrapper"">");
             html.AppendLine(@"                                    <table class=""examples-table"">");
             
             // Headers - Add Status column at the beginning
-            html.AppendLine(@"                                        <thead><tr>");
+            html.AppendLine(@"                                        <thead onclick=""toggleExamplesTable(this)""><tr>");
             html.AppendLine(@"                                            <th style=""width: 80px; text-align: center;""><i class=""fas fa-vial""></i> Status</th>");
             foreach (var header in example.Headers)
             {
@@ -2658,11 +2667,6 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
         
         // Toggle feature expansion
-        function toggleFeature(header) {
-            const body = header.nextElementSibling;
-            body.classList.toggle('expanded');
-        }
-
         // Toggle scenario expansion
         function toggleScenario(header) {
             const body = header.nextElementSibling;
@@ -2671,9 +2675,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         // Toggle data table
         function toggleDataTable(header) {
-            const wrapper = header.nextElementSibling;
-            header.classList.toggle('collapsed');
-            wrapper.classList.toggle('collapsed');
+            // header is now thead, find tbody and toggle it
+            const tbody = header.parentElement.querySelector('tbody');
+            if (tbody) {
+                tbody.classList.toggle('collapsed');
+                header.classList.toggle('collapsed');
+            }
         }
 
         // Toggle doc string
@@ -2685,9 +2692,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         // Toggle examples table
         function toggleExamplesTable(header) {
-            const wrapper = header.nextElementSibling;
-            header.classList.toggle('collapsed');
-            wrapper.classList.toggle('collapsed');
+            // header is now thead, find tbody and toggle it
+            const tbody = header.parentElement.querySelector('tbody');
+            if (tbody) {
+                tbody.classList.toggle('collapsed');
+                header.classList.toggle('collapsed');
+            }
         }
 
         // Toggle background section
@@ -2745,23 +2755,21 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         let isAllExpanded = false;
         
         function toggleExpandAll() {
-            const featureBodies = document.querySelectorAll('.feature-body');
+            // Only toggle scenarios, features are always expanded
             const scenarioBodies = document.querySelectorAll('.scenario-body');
             const btn = document.getElementById('toggle-expand-btn');
             const btnText = document.getElementById('expand-btn-text');
             const icon = btn.querySelector('i');
             
             if (isAllExpanded) {
-                // Collapse all
-                featureBodies.forEach(el => el.classList.remove('expanded'));
+                // Collapse all scenarios
                 scenarioBodies.forEach(el => el.classList.remove('expanded'));
                 icon.className = 'fas fa-expand';
                 btnText.textContent = 'Expand All';
                 btn.setAttribute('aria-expanded', 'false');
                 isAllExpanded = false;
             } else {
-                // Expand all
-                featureBodies.forEach(el => el.classList.add('expanded'));
+                // Expand all scenarios
                 scenarioBodies.forEach(el => el.classList.add('expanded'));
                 icon.className = 'fas fa-compress';
                 btnText.textContent = 'Collapse All';
