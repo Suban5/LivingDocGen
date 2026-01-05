@@ -142,7 +142,8 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 // Generate documentation
                 var options = new HtmlGenerationOptions
                 {
-                    Theme = config.Theme ?? "purple"
+                    Theme = config.Theme ?? "purple",
+                    IncludeComments = config.IncludeComments
                 };
 
                 var task = generator.GenerateToFileAsync(
@@ -280,5 +281,6 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
         public string Title { get; set; }
         public string Theme { get; set; }
         public bool IncludeTestResults { get; set; } = true;
+        public bool IncludeComments { get; set; } = true;
     }
 }

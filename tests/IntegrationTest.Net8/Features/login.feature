@@ -10,6 +10,7 @@ Feature: User Login
 
   @positive
   Scenario: Successful login with valid credentials
+    ##Test comment inside the scenario
     Given I am on the login page
     When I enter username "john.doe@example.com"
     And I enter password "SecurePass123!"

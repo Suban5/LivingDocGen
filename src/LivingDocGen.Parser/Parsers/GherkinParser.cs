@@ -85,6 +85,16 @@ public class GherkinParser : IFeatureParser
 
     private UniversalFeature MapToUniversalFeature(Feature feature, string filePath, IEnumerable<Comment> comments)
     {
+        // Group comments by their association with elements based on line numbers
+        var commentsList = comments?.ToList() ?? new List<Comment>();
+        var featureLineNumber = (int)feature.Location.Line;
+        
+        // Comments before the feature line belong to the feature
+        var featureComments = commentsList
+            .Where(c => (int)c.Location.Line < featureLineNumber)
+            .Select(c => c.Text)
+            .ToList();
+        
         var universalFeature = new UniversalFeature
         {
             Name = feature.Name ?? string.Empty,
@@ -92,7 +102,7 @@ public class GherkinParser : IFeatureParser
             Language = feature.Language ?? "en",
             FilePath = filePath,
             Tags = feature.Tags?.Select(t => t.Name).ToList() ?? new List<string>(),
-            Comments = comments?.Select(c => c.Text).ToList() ?? new List<string>(),
+            Comments = featureComments,
             Metadata = new FrameworkMetadata
             {
                 Framework = _framework,
@@ -100,6 +110,9 @@ public class GherkinParser : IFeatureParser
             }
         };
 
+        // Build a mapping of line numbers to comments for scenarios
+        var commentsByLine = commentsList.ToDictionary(c => (int)c.Location.Line, c => c.Text);
+        
         foreach (var child in feature.Children)
         {
             if (child is Background background)
@@ -108,18 +121,18 @@ public class GherkinParser : IFeatureParser
             }
             else if (child is Scenario scenario)
             {
-                universalFeature.Scenarios.Add(MapScenario(scenario));
+                universalFeature.Scenarios.Add(MapScenario(scenario, commentsList));
             }
             else if (child is Rule rule)
             {
-                universalFeature.Rules.Add(MapRule(rule));
+                universalFeature.Rules.Add(MapRule(rule, commentsList));
             }
         }
 
         return universalFeature;
     }
 
-    private UniversalRule MapRule(Rule rule)
+    private UniversalRule MapRule(Rule rule, List<Comment> comments)
     {
         var universalRule = new UniversalRule
         {
@@ -137,7 +150,7 @@ public class GherkinParser : IFeatureParser
             }
             else if (child is Scenario scenario)
             {
-                universalRule.Scenarios.Add(MapScenario(scenario));
+                universalRule.Scenarios.Add(MapScenario(scenario, comments));
             }
         }
 
@@ -154,13 +167,25 @@ public class GherkinParser : IFeatureParser
         };
     }
 
-    private UniversalScenario MapScenario(Scenario scenario)
+    private UniversalScenario MapScenario(Scenario scenario, List<Comment> allComments)
     {
+        var scenarioLine = (int)scenario.Location.Line;
+        
+        // Find comments that appear right before this scenario (within 5 lines)
+        // This captures comments that are meant to document the scenario
+        var scenarioComments = allComments
+            .Where(c => (int)c.Location.Line < scenarioLine && 
+                       (int)c.Location.Line >= scenarioLine - 10) // Look back up to 10 lines
+            .OrderBy(c => c.Location.Line)
+            .Select(c => c.Text)
+            .ToList();
+        
         var universalScenario = new UniversalScenario
         {
             Name = scenario.Name ?? string.Empty,
             Description = scenario.Description ?? string.Empty,
             Tags = scenario.Tags?.Select(t => t.Name).ToList() ?? new List<string>(),
+            Comments = scenarioComments,
             Steps = scenario.Steps?.Select(MapStep).ToList() ?? new List<UniversalStep>(),
             LineNumber = (int)scenario.Location.Line,
             Type = scenario.Examples?.Any() == true ? ScenarioType.ScenarioOutline : ScenarioType.Scenario

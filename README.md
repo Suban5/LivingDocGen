@@ -105,6 +105,7 @@ Documentation is automatically generated as `living-documentation.html`!
 - **Responsive Design** - Perfect on desktop, tablet, mobile
 - **Interactive Filtering** - Filter by tags, status, features
 - **Collapsible Sections** - Expand/collapse scenarios and features
+- **Gherkin Comments** - Display comments from feature files in documentation
 
 ### Test Execution Details
 - **Step-Level Results** - See exactly which step passed/failed
@@ -141,11 +142,15 @@ Create `livingdocgen.json` in your project root:
   "outputPath": "docs/living-doc.html",
   "title": "My App - BDD Specs",
   "theme": "blue",
-  "includeTestResults": true
+  "includeTestResults": true,
+  "includeComments": true
 }
 ```
 
 **Available themes:** `purple`, `blue`, `green`, `dark`, `light`, `pickles`
+
+**Configuration Options:**
+- `includeComments` (default: `true`) - Display Gherkin comments (lines starting with `#`) in HTML output
 
 ---
 

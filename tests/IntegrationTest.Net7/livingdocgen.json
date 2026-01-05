@@ -4,5 +4,6 @@
   "outputPath": "TestResult/living-documentation-test.html",
   "title": "IntegrationTest .NET 7 - Living Documentation",
   "theme": "blue",
-  "includeTestResults": true
+  "includeTestResults": true,
+  "includeComments": true
 }

@@ -37,6 +37,9 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     private static readonly Dictionary<string, string> _cssCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     private static readonly object _cssLock = new object();
     
+    // HTML generation options (set during GenerateHtml call)
+    private HtmlGenerationOptions _currentOptions;
+    
     /// <summary>
     /// Cached HTML encoding with LRU-like behavior
     /// </summary>
@@ -60,6 +63,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     public string GenerateHtml(LivingDocumentation documentation, HtmlGenerationOptions options = null)
     {
         options ??= new HtmlGenerationOptions();
+        _currentOptions = options; // Store for use in nested methods
         
         // Pre-calculate approximate capacity for better performance
         // Estimate: ~10KB base + ~5KB per feature
@@ -696,12 +700,33 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         .rule-description {
             margin-bottom: 1.5rem;
             color: var(--text-secondary);
-        }
             font-style: italic;
             padding: 0.75rem;
             background: white;
             border-radius: 6px;
             border-left: 3px solid #8b5cf6;
+        }
+
+        /* Comments */
+        .comments {
+            margin: 1rem 0;
+            padding: 0.75rem 1rem;
+            background: #f8f9fa;
+            border-left: 3px solid #6c757d;
+            border-radius: 4px;
+        }
+
+        .comment {
+            color: #6c757d;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9rem;
+            margin: 0.25rem 0;
+            line-height: 1.5;
+        }
+
+        .comment::before {
+            content: '# ';
+            font-weight: bold;
         }
 
         /* Scenarios */
@@ -2143,6 +2168,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             html.AppendLine($@"            <div class=""feature-description"">{HtmlEncode(feature.Feature.Description)}</div>");
         }
 
+        // Generate feature comments if present and enabled
+        if (_currentOptions?.IncludeComments == true && feature.Feature.Comments?.Any() == true)
+        {
+            html.AppendLine(GenerateComments(feature.Feature.Comments));
+        }
+
         if (feature.Feature.Tags.Any())
         {
             html.AppendLine(@"            <div class=""tags"">");
@@ -2350,6 +2381,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         html.AppendLine(@"                    </div>
                 </div>
                 <div class=""scenario-body"">");
+
+        // Generate scenario comments if present and enabled
+        if (_currentOptions?.IncludeComments == true && scenario.Scenario.Comments?.Any() == true)
+        {
+            html.AppendLine(GenerateComments(scenario.Scenario.Comments));
+        }
 
         if (!string.IsNullOrEmpty(scenario.ErrorMessage))
         {
@@ -2571,6 +2608,25 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         html.AppendLine(@"                        </div>"); // End examples-content
         html.AppendLine(@"                    </div>");
+        return html.ToString();
+    }
+
+    private string GenerateComments(List<string> comments)
+    {
+        if (comments == null || !comments.Any())
+            return string.Empty;
+
+        var html = new StringBuilder();
+        html.AppendLine(@"            <div class=""comments"">");
+        
+        foreach (var comment in comments)
+        {
+            // Remove leading # if present (it will be added by CSS)
+            var commentText = comment.TrimStart().TrimStart('#').TrimStart();
+            html.AppendLine($@"                <div class=""comment"">{HtmlEncode(commentText)}</div>");
+        }
+        
+        html.AppendLine(@"            </div>");
         return html.ToString();
     }
 

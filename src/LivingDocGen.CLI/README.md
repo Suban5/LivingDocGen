@@ -134,7 +134,7 @@ dotnet run -- generate ../../samples/features ../../samples/test-results -o ../.
 
 ## ✅ Verification
 
-The LivingDocGen.Tool v1.0.4 has been tested and verified with:
+The LivingDocGen.Tool v2.0.0 has been tested and verified with:
 
 **Test Result Format Support:**
 - ✅ NUnit 2 XML format

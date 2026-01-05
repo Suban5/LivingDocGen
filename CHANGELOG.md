@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Gherkin Comment Rendering**: Comments from `.feature` files are now displayed in HTML documentation
+  - Parser captures comments associated with features and scenarios
+  - HTML generator renders comments with custom styling
+  - CSS includes `.comments` and `.comment` classes with monospace font and `#` prefix
+  - `IncludeComments` configuration option (default: `true`)
+
+### Changed
+
+- `HtmlGenerationOptions.IncludeComments` now defaults to `true`
+- `GenerationConfig` in Reqnroll Integration includes `IncludeComments` property
+
+### Developer Notes
+
+- Test projects updated to use project references instead of NuGet packages for local development
+
+---
+
 ## [2.0.0] - 2026-01-01
 
 ### 🎉 Major Release: Reqnroll Integration Refactoring & Clean Architecture
