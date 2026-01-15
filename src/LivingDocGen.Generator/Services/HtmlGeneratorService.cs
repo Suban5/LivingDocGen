@@ -398,6 +398,11 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             border-radius: 12px;
             font-weight: 500;
             pointer-events: none;
+            display: none; 
+        }
+
+        .search-result-count.visible {
+            display: block; 
         }
 
         #controls {
@@ -457,6 +462,27 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             gap: 0.5rem;
         }
 
+        .filter-btn[data-filter=""all""] i.fa-list {
+            color: var(--info-color);
+        }
+
+        .filter-btn[data-filter=""passed""] i.fa-check-circle {
+            color: var(--success-color);
+        }
+
+        .filter-btn[data-filter=""failed""] i.fa-times-circle {
+            color: var(--danger-color);
+        }
+
+        .filter-btn[data-filter=""skipped""] i.fa-minus-circle {
+            color: var(--warning-color);
+        }
+
+        /* Keep icons white when button is active */
+        .filter-btn.active i {
+            color: white !important;
+        }
+
         .filter-btn:hover {
             background: var(--hover-bg);
         }
@@ -473,17 +499,17 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         /* Statistics Dashboard */
-        #stats {
+       #stats {
             max-width: 1400px;
-            margin: 1.25rem auto;
+            margin: 1rem auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .stat-card {
             background: var(--card-bg);
-            padding: 1rem 1.25rem;
+            padding: 0.75rem 1rem;
             border-radius: 10px;
             box-shadow: 0 2px 6px var(--shadow-color), 0 1px 2px var(--shadow-color);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -491,7 +517,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .stat-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 4px 12px var(--shadow-color), 0 2px 4px var(--shadow-color);
         }
 
@@ -499,23 +525,25 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             transform: translateY(-1px);
         }
 
+        .stat-card .label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
         .stat-card .icon {
-            font-size: 1.5rem;
-            margin-bottom: 0.25rem;
+            font-size: 1rem;
         }
 
         .stat-card .value {
             font-size: 1.75rem;
             font-weight: 700;
-            margin: 0.25rem 0;
             letter-spacing: -0.02em;
-        }
-
-        .stat-card .label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-            letter-spacing: 0.01em;
+            color: var(--text-color);
         }
 
         .stat-passed .icon { color: var(--success-color); }
@@ -1317,8 +1345,8 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         /* Footer */
         footer {
             background: transparent;
-            padding: 1rem;
-            margin-top: 2rem;
+            padding: 0.75rem;
+            margin-top: 1.5rem;
             text-align: center;
             color: var(--text-secondary);
             font-size: 0.8rem;
@@ -1524,7 +1552,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         .layout-container {
             display: flex;
             height: calc(100vh - 400px);
-            min-height: 600px;
+            min-height:500px;
             max-width: 1400px;
             margin: 0 auto 2rem;
             position: relative;
@@ -1749,6 +1777,22 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         .feature-status {
             font-size: 0.9rem;
+        }
+
+        .feature-status.status-passed {
+            color: var(--success-color);
+        }
+
+        .feature-status.status-failed {
+            color: var(--danger-color);
+        }
+
+        .feature-status.status-skipped {
+            color: var(--warning-color);
+        }
+
+        .feature-status.status-untested {
+            color: var(--text-secondary);
         }
 
         .feature-name {
@@ -2066,40 +2110,59 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     </div>";
     }
 
-    private string GenerateStatistics(LivingDocumentation documentation)
+           private string GenerateStatistics(LivingDocumentation documentation)
     {
         var stats = documentation.Statistics;
         return $@"
     <div id=""stats"">
         <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all features"" role=""button"" tabindex=""0"">
-            <div class=""icon""><i class=""fas fa-file-alt""></i></div>
+            <div class=""label"">
+                <i class=""fas fa-file-alt icon""></i>
+                <span>Features</span>
+            </div>
             <div class=""value"">{stats.TotalFeatures}</div>
-            <div class=""label"">Features</div>
         </div>
         <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all scenarios"" role=""button"" tabindex=""0"">
-            <div class=""icon""><i class=""fas fa-list-check""></i></div>
+            <div class=""label"">
+                <i class=""fas fa-list-check icon""></i>
+                <span>Scenarios</span>
+            </div>
             <div class=""value"">{stats.TotalScenarios}</div>
-            <div class=""label"">Scenarios</div>
         </div>
         <div class=""stat-card stat-passed clickable"" onclick=""filterByStatus('passed')"" title=""Click to show only passed scenarios"" role=""button"" tabindex=""0"">
-            <div class=""icon""><i class=""fas fa-check-circle""></i></div>
+            <div class=""label"">
+                <i class=""fas fa-check-circle icon""></i>
+                <span>Passed ({stats.PassRate:F1}%)</span>
+            </div>
             <div class=""value"">{stats.PassedScenarios}</div>
-            <div class=""label"">Passed ({stats.PassRate:F1}%)</div>
         </div>
         <div class=""stat-card stat-failed clickable"" onclick=""filterByStatus('failed')"" title=""Click to show only failed scenarios"" role=""button"" tabindex=""0"">
-            <div class=""icon""><i class=""fas fa-times-circle""></i></div>
+            <div class=""label"">
+                <i class=""fas fa-times-circle icon""></i>
+                <span>Failed ({stats.FailRate:F1}%)</span>
+            </div>
             <div class=""value"">{stats.FailedScenarios}</div>
-            <div class=""label"">Failed</div>
         </div>
         <div class=""stat-card stat-skipped clickable"" onclick=""filterByStatus('skipped')"" title=""Click to show only skipped scenarios"" role=""button"" tabindex=""0"">
-            <div class=""icon""><i class=""fas fa-minus-circle""></i></div>
+            <div class=""label"">
+                <i class=""fas fa-minus-circle icon""></i>
+                <span>Skipped ({stats.SkipRate:F1}%)</span>
+            </div>
             <div class=""value"">{stats.SkippedScenarios}</div>
-            <div class=""label"">Skipped</div>
+        </div>
+        <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('untested')"" title=""Click to show untested scenarios"" role=""button"" tabindex=""0"">
+            <div class=""label"">
+                <i class=""fas fa-question-circle icon""></i>
+                <span>Untested</span>
+            </div>
+            <div class=""value"">{stats.UntestedScenarios}</div>
         </div>
         <div class=""stat-card stat-info"" title=""Test coverage percentage"">
-            <div class=""icon""><i class=""fas fa-chart-line""></i></div>
+            <div class=""label"">
+                <i class=""fas fa-chart-line icon""></i>
+                <span>Coverage</span>
+            </div>
             <div class=""value"">{stats.Coverage:F1}%</div>
-            <div class=""label"">Coverage</div>
         </div>
     </div>";
     }
