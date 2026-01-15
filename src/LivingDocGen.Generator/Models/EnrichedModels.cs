@@ -80,7 +80,7 @@ public class DocumentStatistics
     public int PassedScenarios { get; set; }
     public int FailedScenarios { get; set; }
     public int SkippedScenarios { get; set; }
-    public int UntestdScenarios { get; set; }
+    public int UntestedScenarios { get; set; }
     public double PassRate => TotalScenarios > 0 ? (double)PassedScenarios / TotalScenarios * 100 : 0;
-    public double Coverage => TotalScenarios > 0 ? (double)(TotalScenarios - UntestdScenarios) / TotalScenarios * 100 : 0;
+    public double Coverage => TotalScenarios > 0 ? (double)(TotalScenarios - UntestedScenarios) / TotalScenarios * 100 : 0;
 }

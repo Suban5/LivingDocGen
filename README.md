@@ -300,6 +300,25 @@ dotnet run --project src/LivingDocGen.CLI/LivingDocGen.CLI.csproj -- \
   generate ./samples/features ./samples/test-results
 ```
 
+### Testing the CLI
+
+A comprehensive test script is available to validate CLI functionality:
+
+```bash
+# Run CLI integration tests
+cd tests
+./test-cli.sh
+```
+
+The test script validates:
+- ✅ Version and help commands
+- ✅ HTML generation with various themes
+- ✅ Custom titles and output paths
+- ✅ Config file support
+- ✅ Error handling for invalid inputs
+
+All generated test outputs are saved to `tests/cli-test-output/` for manual inspection.
+
 ---
 
 ## ❓ FAQ

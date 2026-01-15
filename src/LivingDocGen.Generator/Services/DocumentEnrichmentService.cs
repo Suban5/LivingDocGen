@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace LivingDocGen.Generator.Services;
 
@@ -26,56 +28,121 @@ using LivingDocGen.Generator.Models;
 /// </summary>
 public class DocumentEnrichmentService : IDocumentEnrichmentService
 {
-    // Performance optimization: Index test results by normalized names for O(1) lookups
-    private Dictionary<string, FeatureExecutionResult> _featureIndex = new Dictionary<string, FeatureExecutionResult>();
-    private Dictionary<string, List<ScenarioExecutionResult>> _scenarioIndex = new Dictionary<string, List<ScenarioExecutionResult>>();
+    // Constants for matching configuration
+    private const int IndexBuildingThreshold = 10; // Build indices only if more than 10 features
+    private const int MinimumPartialMatchLength = 5; // Minimum length for partial name matching
+    
+    private readonly ILogger<DocumentEnrichmentService> _logger;
+    
+    /// <summary>
+    /// Initializes a new instance with dependency injection
+    /// </summary>
+    public DocumentEnrichmentService(ILogger<DocumentEnrichmentService> logger = null)
+    {
+        _logger = logger;
+    }
     
     /// <summary>
     /// Merge features with test execution results
     /// </summary>
+    /// <param name="features">List of parsed features to enrich</param>
+    /// <param name="testReport">Test execution report containing test results</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
+    /// <returns>Enriched living documentation</returns>
+    /// <exception cref="ArgumentNullException">Thrown when features is null</exception>
+    /// <exception cref="OperationCanceledException">Thrown when operation is cancelled</exception>
     public LivingDocumentation EnrichDocumentation(
         List<UniversalFeature> features,
-        TestExecutionReport testReport = null)
+        TestExecutionReport testReport = null,
+        CancellationToken cancellationToken = default)
     {
+        // Input validation
+        if (features == null)
+            throw new ArgumentNullException(nameof(features));
+        
         var documentation = new LivingDocumentation
         {
             GeneratedAt = DateTime.UtcNow
         };
-
-        // Build indices for fast lookups (for large reports with many scenarios)
-        if (testReport != null && testReport.Features.Any())
+        
+        // If no features, return early
+        if (!features.Any())
         {
-            BuildTestResultIndices(testReport);
-            Console.WriteLine($"\n📊 Enriching {features.Count} features with {testReport.Features.Count} test results");
+            _logger?.LogWarning("No features provided for enrichment");
+            documentation.Statistics = new DocumentStatistics();
+            documentation.TagDistribution = new Dictionary<string, int>();
+            documentation.FrameworkDistribution = new Dictionary<BDDFramework, int>();
+            return documentation;
+        }
+        
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        // Create local dictionaries for thread safety
+        Dictionary<string, FeatureExecutionResult> featureIndex = null;
+        Dictionary<string, List<ScenarioExecutionResult>> scenarioIndex = null;
+
+        // Build indices for fast lookups (only for larger datasets)
+        if (testReport != null && testReport.Features.Count > IndexBuildingThreshold)
+        {
+            featureIndex = new Dictionary<string, FeatureExecutionResult>(
+                testReport.Features.Count * 2,
+                StringComparer.OrdinalIgnoreCase);
+            scenarioIndex = new Dictionary<string, List<ScenarioExecutionResult>>(
+                StringComparer.OrdinalIgnoreCase);
+            
+            BuildTestResultIndices(testReport, featureIndex, scenarioIndex);
+            _logger?.LogInformation("Enriching {FeatureCount} features with {TestResultCount} test results",
+                features.Count, testReport.Features.Count);
+        }
+        else if (testReport != null && testReport.Features.Any())
+        {
+            _logger?.LogInformation("Enriching {FeatureCount} features with {TestResultCount} test results (no indexing)",
+                features.Count, testReport.Features.Count);
         }
 
         // Create enriched features
         foreach (var feature in features)
         {
-            var testResults = FindMatchingFeature(feature) ?? 
-                             testReport?.Features.FirstOrDefault(f => MatchFeature(f, feature));
-
-            if (testResults != null)
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            try
             {
-                Console.WriteLine($"   ✓ Matched: {feature.Name} -> {testResults.Scenarios.Count} scenarios");
-            }
-            else if (testReport != null && testReport.Features.Any())
-            {
-                Console.WriteLine($"   ✗ No match for: {feature.Name} (path: {feature.FilePath})");
-            }
+                var testResults = FindMatchingFeature(feature, featureIndex) ?? 
+                                 testReport?.Features.FirstOrDefault(f => MatchFeature(f, feature));
 
-            var enriched = EnrichFeature(feature, testResults);
-            documentation.Features.Add(enriched);
+                if (testResults != null)
+                {
+                    _logger?.LogDebug("Matched feature: {FeatureName} -> {ScenarioCount} scenarios",
+                        feature.Name, testResults.Scenarios.Count);
+                }
+                else if (testReport != null && testReport.Features.Any())
+                {
+                    _logger?.LogWarning("No match found for feature: {FeatureName} (path: {FeaturePath})",
+                        feature.Name, feature.FilePath);
+                }
+
+                var enriched = EnrichFeature(feature, testResults, scenarioIndex);
+                documentation.Features.Add(enriched);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to enrich feature: {FeatureName}", feature.Name);
+                
+                // Add feature without enrichment to prevent complete failure
+                documentation.Features.Add(new EnrichedFeature
+                {
+                    Feature = feature,
+                    OverallStatus = ExecutionStatus.NotExecuted
+                });
+            }
         }
+        
+        cancellationToken.ThrowIfCancellationRequested();
 
         // Calculate statistics
         documentation.Statistics = CalculateStatistics(documentation.Features);
         documentation.TagDistribution = CalculateTagDistribution(features);
         documentation.FrameworkDistribution = CalculateFrameworkDistribution(features);
-        
-        // Clear indices to free memory
-        _featureIndex.Clear();
-        _scenarioIndex.Clear();
 
         return documentation;
     }
@@ -83,49 +150,46 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
     /// <summary>
     /// Build indices for O(1) feature and scenario lookups
     /// </summary>
-    private void BuildTestResultIndices(TestExecutionReport testReport)
+    private void BuildTestResultIndices(
+        TestExecutionReport testReport,
+        Dictionary<string, FeatureExecutionResult> featureIndex,
+        Dictionary<string, List<ScenarioExecutionResult>> scenarioIndex)
     {
-        _featureIndex.Clear();
-        _scenarioIndex.Clear();
-        
         foreach (var feature in testReport.Features)
         {
             // Index by multiple keys for better matching
             var normalizedName = NormalizeName(feature.FeatureName);
-            if (!_featureIndex.ContainsKey(normalizedName))
-            {
-                _featureIndex[normalizedName] = feature;
-            }
+            featureIndex.TryAdd(normalizedName, feature);
             
             if (!string.IsNullOrEmpty(feature.FeatureFilePath))
             {
                 var fileName = Path.GetFileName(NormalizePath(feature.FeatureFilePath));
-                if (!_featureIndex.ContainsKey(fileName))
-                {
-                    _featureIndex[fileName] = feature;
-                }
+                featureIndex.TryAdd(fileName, feature);
             }
             
             // Index scenarios by normalized name
             foreach (var scenario in feature.Scenarios)
             {
                 var scenarioKey = NormalizeName(scenario.ScenarioName);
-                if (!_scenarioIndex.ContainsKey(scenarioKey))
+                
+                if (!scenarioIndex.TryGetValue(scenarioKey, out var list))
                 {
-                    _scenarioIndex[scenarioKey] = new List<ScenarioExecutionResult>();
+                    list = new List<ScenarioExecutionResult>();
+                    scenarioIndex[scenarioKey] = list;
                 }
-                _scenarioIndex[scenarioKey].Add(scenario);
+                list.Add(scenario);
                 
                 // Also index without parameters for scenario outlines
                 var parenIndex = scenarioKey.IndexOf('(');
                 if (parenIndex > 0)
                 {
                     var baseKey = scenarioKey.Substring(0, parenIndex);
-                    if (!_scenarioIndex.ContainsKey(baseKey))
+                    if (!scenarioIndex.TryGetValue(baseKey, out list))
                     {
-                        _scenarioIndex[baseKey] = new List<ScenarioExecutionResult>();
+                        list = new List<ScenarioExecutionResult>();
+                        scenarioIndex[baseKey] = list;
                     }
-                    _scenarioIndex[baseKey].Add(scenario);
+                    list.Add(scenario);
                 }
             }
         }
@@ -134,21 +198,23 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
     /// <summary>
     /// Fast feature lookup using indices
     /// </summary>
-    private FeatureExecutionResult FindMatchingFeature(UniversalFeature feature)
+    private FeatureExecutionResult FindMatchingFeature(
+        UniversalFeature feature,
+        Dictionary<string, FeatureExecutionResult> featureIndex)
     {
-        if (_featureIndex.Count == 0)
+        if (featureIndex == null || featureIndex.Count == 0)
             return null;
             
         // Try exact match by normalized name
         var normalizedName = NormalizeName(feature.Name);
-        if (_featureIndex.TryGetValue(normalizedName, out var match))
+        if (featureIndex.TryGetValue(normalizedName, out var match))
             return match;
             
         // Try match by filename
         if (!string.IsNullOrEmpty(feature.FilePath))
         {
             var fileName = Path.GetFileName(NormalizePath(feature.FilePath));
-            if (_featureIndex.TryGetValue(fileName, out match))
+            if (featureIndex.TryGetValue(fileName, out match))
                 return match;
         }
         
@@ -158,15 +224,17 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
     /// <summary>
     /// Fast scenario lookup using indices
     /// </summary>
-    private List<ScenarioExecutionResult> FindMatchingScenarios(UniversalScenario scenario)
+    private List<ScenarioExecutionResult> FindMatchingScenarios(
+        UniversalScenario scenario,
+        Dictionary<string, List<ScenarioExecutionResult>> scenarioIndex)
     {
-        if (_scenarioIndex.Count == 0)
+        if (scenarioIndex == null || scenarioIndex.Count == 0)
             return null;
             
         var normalizedName = NormalizeName(scenario.Name);
         
         // Try exact match
-        if (_scenarioIndex.TryGetValue(normalizedName, out var matches))
+        if (scenarioIndex.TryGetValue(normalizedName, out var matches))
             return matches;
             
         // Try without parameters (for scenario outlines)
@@ -174,14 +242,17 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         if (parenIndex > 0)
         {
             var baseKey = normalizedName.Substring(0, parenIndex);
-            if (_scenarioIndex.TryGetValue(baseKey, out matches))
+            if (scenarioIndex.TryGetValue(baseKey, out matches))
                 return matches;
         }
         
         return null;
     }
 
-    private EnrichedFeature EnrichFeature(UniversalFeature feature, FeatureExecutionResult testResults)
+    private EnrichedFeature EnrichFeature(
+        UniversalFeature feature,
+        FeatureExecutionResult testResults,
+        Dictionary<string, List<ScenarioExecutionResult>> scenarioIndex)
     {
         var enriched = new EnrichedFeature
         {
@@ -195,7 +266,17 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         foreach (var scenario in feature.Scenarios)
         {
             // Use indexed lookup for better performance
-            var matchingTests = FindMatchingScenarios(scenario);
+            var matchingTests = FindMatchingScenarios(scenario, scenarioIndex);
+            
+            // Fallback: If no index (small dataset), search directly in testResults
+            if (matchingTests == null && testResults?.Scenarios?.Any() == true)
+            {
+                matchingTests = testResults.Scenarios
+                    .Where(s => MatchScenario(s, scenario))
+                    .ToList();
+                if (matchingTests.Count == 0)
+                    matchingTests = null;
+            }
 
             // Use the first match for primary data, or null if no matches
             var scenarioTest = matchingTests?.FirstOrDefault();
@@ -239,7 +320,17 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
             foreach (var scenario in rule.Scenarios)
             {
                 // Use indexed lookup for better performance
-                var matchingTests = FindMatchingScenarios(scenario);
+                var matchingTests = FindMatchingScenarios(scenario, scenarioIndex);
+                
+                // Fallback: If no index (small dataset), search directly in testResults
+                if (matchingTests == null && testResults?.Scenarios?.Any() == true)
+                {
+                    matchingTests = testResults.Scenarios
+                        .Where(s => MatchScenario(s, scenario))
+                        .ToList();
+                    if (matchingTests.Count == 0)
+                        matchingTests = null;
+                }
 
                 var scenarioTest = matchingTests?.FirstOrDefault();
                 
@@ -352,19 +443,20 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
             var testFileName = Path.GetFileName(testPath);
             var featureFileName = Path.GetFileName(featurePath);
             
-            Console.WriteLine($"      Comparing paths: '{testFileName}' vs '{featureFileName}'");
+            _logger?.LogDebug("Comparing paths: '{TestFileName}' vs '{FeatureFileName}'",
+                testFileName, featureFileName);
             
             // Match if filenames are the same
             if (testFileName == featureFileName)
             {
-                Console.WriteLine($"      ✓ Filename match!");
+                _logger?.LogDebug("Filename match found");
                 return true;
             }
                 
             // Match if one path ends with the other
             if (testPath.EndsWith(featurePath) || featurePath.EndsWith(testPath))
             {
-                Console.WriteLine($"      ✓ Path match!");
+                _logger?.LogDebug("Path match found");
                 return true;
             }
         }
@@ -373,12 +465,13 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         var normalizedTestName = NormalizeName(testFeature.FeatureName);
         var normalizedFeatureName = NormalizeName(feature.Name);
         
-        Console.WriteLine($"      Comparing names: '{normalizedTestName}' vs '{normalizedFeatureName}'");
+        _logger?.LogDebug("Comparing names: '{NormalizedTestName}' vs '{NormalizedFeatureName}'",
+            normalizedTestName, normalizedFeatureName);
         
         // Exact match
         if (normalizedTestName == normalizedFeatureName)
         {
-            Console.WriteLine($"      ✓ Name match!");
+            _logger?.LogDebug("Name match found");
             return true;
         }
         
@@ -388,14 +481,14 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         
         if (testNameWithoutSuffix == normalizedFeatureName)
         {
-            Console.WriteLine($"      ✓ Name match (after removing suffix)!");
+            _logger?.LogDebug("Name match found (after removing suffix)");
             return true;
         }
         
         // Try checking if one name contains the other
         if (normalizedTestName.Contains(normalizedFeatureName) || normalizedFeatureName.Contains(normalizedTestName))
         {
-            Console.WriteLine($"      ✓ Name match (partial)!");
+            _logger?.LogDebug("Name match found (partial)");
             return true;
         }
         
@@ -408,12 +501,13 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         var normalizedTestName = NormalizeName(testScenario.ScenarioName);
         var normalizedScenarioName = NormalizeName(scenario.Name);
         
-        Console.WriteLine($"         Scenario match: '{normalizedTestName}' vs '{normalizedScenarioName}'");
+        _logger?.LogDebug("Scenario match: '{NormalizedTestName}' vs '{NormalizedScenarioName}'",
+            normalizedTestName, normalizedScenarioName);
         
         // Exact match
         if (normalizedTestName == normalizedScenarioName)
         {
-            Console.WriteLine($"         ✓ Scenario matched!");
+            _logger?.LogDebug("Scenario matched (exact)");
             return true;
         }
         
@@ -423,7 +517,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         
         if (testNameWithoutPrefix == scenarioNameWithoutPrefix)
         {
-            Console.WriteLine($"         ✓ Scenario matched (prefix removed)!");
+            _logger?.LogDebug("Scenario matched (prefix removed)");
             return true;
         }
         
@@ -440,7 +534,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         
         if (testNameWithoutParams == normalizedScenarioName)
         {
-            Console.WriteLine($"         ✓ Scenario matched (without parameters)!");
+            _logger?.LogDebug("Scenario matched (without parameters)");
             return true;
         }
         
@@ -449,9 +543,9 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
         if (normalizedScenarioName.Contains(testNameWithoutParams) || testNameWithoutParams.Contains(normalizedScenarioName))
         {
             // Ensure it's a substantial match (not just a single character)
-            if (Math.Min(testNameWithoutParams.Length, normalizedScenarioName.Length) >= 5)
+            if (Math.Min(testNameWithoutParams.Length, normalizedScenarioName.Length) >= MinimumPartialMatchLength)
             {
-                Console.WriteLine($"         ✓ Scenario matched (partial base name)!");
+                _logger?.LogDebug("Scenario matched (partial base name)");
                 return true;
             }
         }
@@ -468,11 +562,17 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
 
     private string NormalizeName(string name)
     {
-        return name.ToLowerInvariant()
+        var normalized = name.ToLowerInvariant()
             .Replace(" ", "")
             .Replace("-", "")
             .Replace("_", "")
             .Trim();
+        
+        // Strip common suffixes added by test frameworks (e.g., "UserLoginFeature" -> "userlogin")
+        if (normalized.EndsWith("feature"))
+            normalized = normalized.Substring(0, normalized.Length - 7);
+        
+        return normalized;
     }
 
     private string NormalizePath(string path)
@@ -499,7 +599,7 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
                 stats.TotalSteps += scenario.Steps.Count;
                 if (scenario.Status == ExecutionStatus.NotExecuted)
                 {
-                    stats.UntestdScenarios++;
+                    stats.UntestedScenarios++;
                 }
             }
         }
@@ -509,36 +609,37 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
 
     private Dictionary<string, int> CalculateTagDistribution(List<UniversalFeature> features)
     {
-        var tags = new Dictionary<string, int>();
+        var tags = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var feature in features)
         {
-            foreach (var tag in feature.Tags)
-            {
-                tags[tag] = tags.GetValueOrDefault(tag, 0) + 1;
-            }
+            IncrementTags(tags, feature.Tags);
 
             foreach (var scenario in feature.Scenarios)
             {
-                foreach (var tag in scenario.Tags)
-                {
-                    tags[tag] = tags.GetValueOrDefault(tag, 0) + 1;
-                }
+                IncrementTags(tags, scenario.Tags);
             }
 
             foreach (var rule in feature.Rules)
             {
                 foreach (var scenario in rule.Scenarios)
                 {
-                    foreach (var tag in scenario.Tags)
-                    {
-                        tags[tag] = tags.GetValueOrDefault(tag, 0) + 1;
-                    }
+                    IncrementTags(tags, scenario.Tags);
                 }
             }
         }
 
-        return tags.OrderByDescending(kvp => kvp.Value).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        return tags.OrderByDescending(kvp => kvp.Value)
+                   .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    }
+    
+    private static void IncrementTags(Dictionary<string, int> tags, IEnumerable<string> tagList)
+    {
+        foreach (var tag in tagList)
+        {
+            tags.TryGetValue(tag, out var count);
+            tags[tag] = count + 1;
+        }
     }
 
     private Dictionary<BDDFramework, int> CalculateFrameworkDistribution(List<UniversalFeature> features)

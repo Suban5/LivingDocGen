@@ -29,45 +29,75 @@ using System.Text;
 /// </summary>
 public class HtmlGeneratorService : IHtmlGeneratorService
 {
+    // Capacity estimation constants
+    private const int BaseHtmlCapacity = 10 * 1024; // 10 KB base HTML
+    private const int PerFeatureCapacity = 5 * 1024; // 5 KB per feature
+    private const int HeadSectionCapacity = 4 * 1024; // 4 KB for CSS/meta
+    
     // HTML encoding cache to avoid redundant encoding operations
     private readonly Dictionary<string, string> _encodingCache = new Dictionary<string, string>(StringComparer.Ordinal);
-    private const int MaxCacheSize = 5000; // Prevent unbounded growth
+    private readonly object _encodingCacheLock = new object();
+    private const int MaxEncodingCacheSize = 5000; // Prevent unbounded growth
     
     // CSS theme cache to avoid regenerating CSS for each theme
+    private const int MaxCssThemes = 20; // Reasonable limit for cached themes
     private static readonly Dictionary<string, string> _cssCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    private static readonly Queue<string> _cssCacheOrder = new Queue<string>();
     private static readonly object _cssLock = new object();
     
     // HTML generation options (set during GenerateHtml call)
     private HtmlGenerationOptions _currentOptions;
     
     /// <summary>
-    /// Cached HTML encoding with LRU-like behavior
+    /// Cached HTML encoding with thread safety
     /// </summary>
     private string HtmlEncode(string text)
     {
         if (string.IsNullOrEmpty(text))
             return text;
-            
-        if (_encodingCache.TryGetValue(text, out var encoded))
+        
+        lock (_encodingCacheLock)
+        {
+            if (_encodingCache.TryGetValue(text, out var encoded))
+                return encoded;
+                
+            // Clear cache if it gets too large
+            if (_encodingCache.Count >= MaxEncodingCacheSize)
+                _encodingCache.Clear();
+                
+            encoded = System.Web.HttpUtility.HtmlEncode(text);
+            _encodingCache[text] = encoded;
             return encoded;
-            
-        // Clear cache if it gets too large
-        if (_encodingCache.Count >= MaxCacheSize)
-            _encodingCache.Clear();
-            
-        encoded = System.Web.HttpUtility.HtmlEncode(text);
-        _encodingCache[text] = encoded;
-        return encoded;
+        }
     }
     
     public string GenerateHtml(LivingDocumentation documentation, HtmlGenerationOptions options = null)
     {
+        // Input validation
+        if (documentation == null)
+            throw new ArgumentNullException(nameof(documentation));
+        
+        if (documentation.Features == null)
+            throw new ArgumentException("Features collection cannot be null", nameof(documentation));
+        
         options ??= new HtmlGenerationOptions();
-        _currentOptions = options; // Store for use in nested methods
+        _currentOptions = options;
+        
+        // Validate theme exists
+        if (!string.IsNullOrEmpty(options.Theme) && ThemeConfig.GetTheme(options.Theme) == null)
+        {
+            throw new ArgumentException($"Theme '{options.Theme}' not found. Use one of: purple, blue, green, red, dark, light", nameof(options));
+        }
+        
+        // Reset state for each report generation
+        _scenarioCounter = 0;
+        lock (_encodingCacheLock)
+        {
+            _encodingCache.Clear();
+        }
         
         // Pre-calculate approximate capacity for better performance
-        // Estimate: ~10KB base + ~5KB per feature
-        var estimatedCapacity = 10240 + (documentation.Features.Count * 5120);
+        var estimatedCapacity = BaseHtmlCapacity + (documentation.Features.Count * PerFeatureCapacity);
         var html = new StringBuilder(estimatedCapacity);
         
         // HTML Header
@@ -135,7 +165,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
     private string GenerateHead(LivingDocumentation documentation, HtmlGenerationOptions options)
     {
-        var head = new StringBuilder(4096); // CSS is large, allocate enough space
+        var head = new StringBuilder(HeadSectionCapacity); // CSS is large, allocate enough space
         head.Append("<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>")
             .Append(documentation.Title)
             .Append("</title>\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\">\n    <style>\n")
@@ -161,12 +191,20 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var theme = ThemeConfig.GetTheme(themeName);
         var css = GenerateCssContent(theme);
         
-        // Cache the result
+        // Cache the result with bounded eviction
         lock (_cssLock)
         {
             if (!_cssCache.ContainsKey(themeName))
             {
+                // Evict oldest theme if at capacity (FIFO)
+                if (_cssCache.Count >= MaxCssThemes)
+                {
+                    var oldestTheme = _cssCacheOrder.Dequeue();
+                    _cssCache.Remove(oldestTheme);
+                }
+                
                 _cssCache[themeName] = css;
+                _cssCacheOrder.Enqueue(themeName);
             }
         }
         
@@ -196,6 +234,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             --border-color: " + theme.BorderColor + @";
             --hover-bg: " + theme.HoverBg + @";
             --primary-gradient: " + theme.PrimaryGradient + @";
+            --accent-color: " + theme.AccentColor + @";
+            --focus-ring: " + theme.FocusRing + @";
+            --shadow-color: " + theme.ShadowColor + @";
+            --code-bg: " + theme.CodeBg + @";
         }
 
         body {
@@ -267,6 +309,15 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             align-items: center;
         }
 
+        /* Search Highlighting */
+        .search-highlight {
+            background-color: var(--warning-color);
+            color: var(--text-color);
+            padding: 0.1rem 0.2rem;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
         #search-box {
             padding: 0.75rem 3rem 0.75rem 3rem;
             border: 2px solid var(--border-color);
@@ -282,11 +333,11 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         #search-box:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: var(--focus-ring);
         }
 
         #search-box:focus-visible {
-            outline: 3px solid var(--primary-color);
+            outline: 3px solid var(--focus-ring);
             outline-offset: 2px;
         }
 
@@ -326,7 +377,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .search-clear-btn:focus-visible {
-            outline: 2px solid var(--primary-color);
+            outline: 2px solid var(--focus-ring);
             outline-offset: 2px;
         }
 
@@ -382,12 +433,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         .theme-selector:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: var(--focus-ring);
+            box-shadow: 0 0 0 3px var(--shadow-color);
         }
 
         .theme-selector:focus-visible {
-            outline: 3px solid var(--primary-color);
+            outline: 3px solid var(--focus-ring);
             outline-offset: 2px;
         }
 
@@ -411,7 +462,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .filter-btn:focus-visible {
-            outline: 3px solid var(--primary-color);
+            outline: 3px solid var(--focus-ring);
             outline-offset: 2px;
         }
 
@@ -434,13 +485,18 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             background: var(--card-bg);
             padding: 1rem 1.25rem;
             border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 6px var(--shadow-color), 0 1px 2px var(--shadow-color);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
         }
 
         .stat-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 12px var(--shadow-color), 0 2px 4px var(--shadow-color);
+        }
+
+        .stat-card.clickable:active {
+            transform: translateY(-1px);
         }
 
         .stat-card .icon {
@@ -478,7 +534,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             background: var(--card-bg);
             margin-bottom: 1.5rem;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px var(--shadow-color), 0 1px 3px var(--shadow-color);
             overflow: hidden;
             transition: box-shadow 0.3s ease, transform 0.2s ease;
             animation: fadeIn 0.3s ease-out;
@@ -496,7 +552,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .feature:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 16px var(--shadow-color), 0 2px 6px var(--shadow-color);
             transform: translateY(-2px);
         }
 
@@ -698,22 +754,22 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             color: var(--text-secondary);
             font-style: italic;
             padding: 0.75rem;
-            background: white;
+            background: var(--card-bg);
             border-radius: 6px;
-            border-left: 3px solid #8b5cf6;
+            border-left: 3px solid var(--accent-color);
         }
 
         /* Comments */
         .comments {
             margin: 1rem 0;
             padding: 0.75rem 1rem;
-            background: #f8f9fa;
-            border-left: 3px solid #6c757d;
+            background: var(--code-bg);
+            border-left: 3px solid var(--text-secondary);
             border-radius: 4px;
         }
 
         .comment {
-            color: #6c757d;
+            color: var(--text-secondary);
             font-family: 'Courier New', Consolas, monospace;
             font-size: 0.9rem;
             margin: 0.25rem 0;
@@ -732,12 +788,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             border-radius: 8px;
             border-left: 3px solid var(--border-color);
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 4px var(--shadow-color);
             transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
 
         .scenario:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px var(--shadow-color);
             transform: translateX(2px);
         }
 
@@ -813,12 +869,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             margin-bottom: 0.625rem;
             background: var(--card-bg);
             border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            box-shadow: 0 1px 3px var(--shadow-color);
             transition: box-shadow 0.2s ease;
         }
 
         .step:hover {
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 6px var(--shadow-color);
         }
 
         .step-keyword {
@@ -1152,7 +1208,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             min-width: 600px;
             border-collapse: collapse;
             background: var(--card-bg);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px var(--shadow-color), 0 1px 3px var(--shadow-color);
         }
 
         .examples-table th {
@@ -1235,7 +1291,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             overflow-x: auto;
             margin: 1rem 0;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px var(--shadow-color);
         }
 
         .table-wrapper::-webkit-scrollbar, .examples-container::-webkit-scrollbar {
@@ -1289,14 +1345,14 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             align-items: center;
             justify-content: center;
             font-size: 1.25rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px var(--shadow-color);
             transition: all 0.3s ease;
             z-index: 999;
         }
 
         #scroll-to-top:hover {
             transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 20px var(--shadow-color);
         }
 
         #scroll-to-top.visible {
@@ -1474,7 +1530,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             position: relative;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px var(--shadow-color);
         }
 
         .sidebar {
@@ -1550,7 +1606,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         .sidebar-search input:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: var(--focus-ring);
         }
 
         .sidebar-nav {
@@ -1605,12 +1661,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .folder-header:focus-visible {
-            outline: 2px solid var(--primary-color);
+            outline: 2px solid var(--focus-ring);
             outline-offset: -2px;
         }
 
         .folder-icon {
-            color: var(--primary-color);
+            color: var(--accent-color);
             font-size: 0.875rem;
         }
 
@@ -1666,7 +1722,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         .feature-item:hover {
             background: var(--hover-bg);
             transform: translateX(2px);
-            border-left-color: var(--primary-color);
+            border-left-color: var(--accent-color);
         }
 
         .feature-item:focus {
@@ -1675,7 +1731,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .feature-item:focus-visible {
-            outline: 2px solid var(--primary-color);
+            outline: 2px solid var(--focus-ring);
             outline-offset: -2px;
         }
 
@@ -1684,7 +1740,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             color: white;
             font-weight: 600;
             border-left-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow-color);
         }
 
         .feature-item.active .feature-status {
@@ -1790,7 +1846,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             display: none;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px var(--shadow-color);
             z-index: 1000;
             transition: all 0.3s ease;
             font-size: 1.1rem;
@@ -1807,7 +1863,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         #floating-sidebar-toggle:hover {
             filter: brightness(1.1);
             transform: translateY(-50%) scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px var(--shadow-color);
         }
 
         #floating-sidebar-toggle:active {
@@ -1967,20 +2023,27 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             <span id=""search-result-count"" class=""search-result-count"" aria-live=""polite""></span>
         </div>
         <div class=""filter-group"" role=""group"" aria-label=""Status filters"">
-            <button class=""filter-btn"" data-filter=""all"" aria-label=""Show all scenarios"">
+            <button class=""filter-btn active"" data-filter=""all"" aria-label=""Show all scenarios"" aria-pressed=""true"">
                 <i class=""fas fa-list"" aria-hidden=""true""></i> All
             </button>
-            <button class=""filter-btn"" data-filter=""passed"" aria-label=""Show only passed scenarios"">
+            <button class=""filter-btn"" data-filter=""passed"" aria-label=""Show only passed scenarios"" aria-pressed=""false"">
                 <i class=""fas fa-check-circle"" aria-hidden=""true""></i> Passed
             </button>
-            <button class=""filter-btn"" data-filter=""failed"" aria-label=""Show only failed scenarios"">
+            <button class=""filter-btn"" data-filter=""failed"" aria-label=""Show only failed scenarios"" aria-pressed=""false"">
                 <i class=""fas fa-times-circle"" aria-hidden=""true""></i> Failed
             </button>
-            <button class=""filter-btn"" data-filter=""skipped"" aria-label=""Show only skipped scenarios"">
+            <button class=""filter-btn"" data-filter=""skipped"" aria-label=""Show only skipped scenarios"" aria-pressed=""false"">
                 <i class=""fas fa-minus-circle"" aria-hidden=""true""></i> Skipped
             </button>
         </div>
-        <div class=""theme-group"" role=""group"" aria-label=""Theme selection"">
+        <div class=""theme-group"" role=""group"" aria-label=""Tag and theme filters"">
+            <select id=""tag-filter"" 
+                    class=""theme-selector"" 
+                    onchange=""filterByTag(this.value)""
+                    aria-label=""Filter by tag""
+                    style=""margin-right: 0.5rem;"">
+                <option value=""all"">🏷️ All Tags</option>
+            </select>
             <select id=""theme-selector"" 
                     class=""theme-selector"" 
                     onchange=""changeTheme(this.value)""
@@ -2008,32 +2071,32 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var stats = documentation.Statistics;
         return $@"
     <div id=""stats"">
-        <div class=""stat-card stat-info"">
+        <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all features"" role=""button"" tabindex=""0"">
             <div class=""icon""><i class=""fas fa-file-alt""></i></div>
             <div class=""value"">{stats.TotalFeatures}</div>
             <div class=""label"">Features</div>
         </div>
-        <div class=""stat-card stat-info"">
+        <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all scenarios"" role=""button"" tabindex=""0"">
             <div class=""icon""><i class=""fas fa-list-check""></i></div>
             <div class=""value"">{stats.TotalScenarios}</div>
             <div class=""label"">Scenarios</div>
         </div>
-        <div class=""stat-card stat-passed"">
+        <div class=""stat-card stat-passed clickable"" onclick=""filterByStatus('passed')"" title=""Click to show only passed scenarios"" role=""button"" tabindex=""0"">
             <div class=""icon""><i class=""fas fa-check-circle""></i></div>
             <div class=""value"">{stats.PassedScenarios}</div>
             <div class=""label"">Passed ({stats.PassRate:F1}%)</div>
         </div>
-        <div class=""stat-card stat-failed"">
+        <div class=""stat-card stat-failed clickable"" onclick=""filterByStatus('failed')"" title=""Click to show only failed scenarios"" role=""button"" tabindex=""0"">
             <div class=""icon""><i class=""fas fa-times-circle""></i></div>
             <div class=""value"">{stats.FailedScenarios}</div>
             <div class=""label"">Failed</div>
         </div>
-        <div class=""stat-card stat-skipped"">
+        <div class=""stat-card stat-skipped clickable"" onclick=""filterByStatus('skipped')"" title=""Click to show only skipped scenarios"" role=""button"" tabindex=""0"">
             <div class=""icon""><i class=""fas fa-minus-circle""></i></div>
             <div class=""value"">{stats.SkippedScenarios}</div>
             <div class=""label"">Skipped</div>
         </div>
-        <div class=""stat-card stat-info"">
+        <div class=""stat-card stat-info"" title=""Test coverage percentage"">
             <div class=""icon""><i class=""fas fa-chart-line""></i></div>
             <div class=""value"">{stats.Coverage:F1}%</div>
             <div class=""label"">Coverage</div>
@@ -2785,23 +2848,75 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             }
         }
 
-        // Debounced search functionality with result count and clear button
+        // Debounced search functionality with highlighting and result count
         let searchTimeout;
         const searchBox = document.getElementById('search-box');
         const searchResultCount = document.getElementById('search-result-count');
         const searchClearBtn = document.getElementById('search-clear-btn');
+        
+        function removeHighlights() {
+            document.querySelectorAll('.search-highlight').forEach(highlight => {
+                const parent = highlight.parentNode;
+                parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+                parent.normalize();
+            });
+        }
+        
+        function highlightText(element, searchTerm) {
+            if (!searchTerm || element.children.length > 0) return;
+            
+            const text = element.textContent;
+            const index = text.toLowerCase().indexOf(searchTerm);
+            
+            if (index >= 0) {
+                const beforeMatch = text.substring(0, index);
+                const match = text.substring(index, index + searchTerm.length);
+                const afterMatch = text.substring(index + searchTerm.length);
+                
+                element.innerHTML = '';
+                element.appendChild(document.createTextNode(beforeMatch));
+                
+                const mark = document.createElement('mark');
+                mark.className = 'search-highlight';
+                mark.textContent = match;
+                element.appendChild(mark);
+                
+                element.appendChild(document.createTextNode(afterMatch));
+            }
+        }
         
         function performSearch() {
             const searchTerm = searchBox.value.toLowerCase().trim();
             const features = document.querySelectorAll('.feature');
             let visibleCount = 0;
             let totalCount = features.length;
+            
+            // Remove previous highlights
+            removeHighlights();
 
             features.forEach(feature => {
                 const text = feature.textContent.toLowerCase();
                 const isVisible = !searchTerm || text.includes(searchTerm);
                 feature.style.display = isVisible ? 'block' : 'none';
                 if (isVisible) visibleCount++;
+                
+                // Highlight matches
+                if (searchTerm && isVisible) {
+                    // Highlight in feature title
+                    const title = feature.querySelector('.feature-title h2');
+                    if (title) highlightText(title, searchTerm);
+                    
+                    // Highlight in scenario names
+                    feature.querySelectorAll('.scenario-title strong').forEach(el => {
+                        highlightText(el, searchTerm);
+                    });
+                    
+                    // Highlight in step text
+                    feature.querySelectorAll('.step-text').forEach(el => {
+                        const textDiv = el.querySelector('div');
+                        if (textDiv) highlightText(textDiv, searchTerm);
+                    });
+                }
             });
             
             // Update result count and clear button visibility
@@ -2838,46 +2953,83 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             }
         });
 
-        // Filter by status with result count
-        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const filter = this.dataset.filter;
-                
-                // Update active state
-                document.querySelectorAll('.filter-btn[data-filter]').forEach(b => {
+        // Filter by status (unified function for buttons and stat cards)
+        function filterByStatus(filter) {
+            // Update active state on filter buttons
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(b => {
+                if (b.dataset.filter === filter) {
+                    b.classList.add('active');
+                    b.setAttribute('aria-pressed', 'true');
+                } else {
                     b.classList.remove('active');
                     b.setAttribute('aria-pressed', 'false');
-                });
-                this.classList.add('active');
-                this.setAttribute('aria-pressed', 'true');
+                }
+            });
 
-                // Filter scenarios
-                const scenarios = document.querySelectorAll('.scenario');
-                let visibleScenarios = 0;
-                
-                scenarios.forEach(scenario => {
-                    if (filter === 'all') {
-                        scenario.style.display = 'block';
-                        visibleScenarios++;
-                    } else {
-                        const isVisible = scenario.dataset.status === filter;
-                        scenario.style.display = isVisible ? 'block' : 'none';
-                        if (isVisible) visibleScenarios++;
-                    }
-                });
+            // Filter scenarios
+            const scenarios = document.querySelectorAll('.scenario');
+            let visibleScenarios = 0;
+            
+            scenarios.forEach(scenario => {
+                if (filter === 'all') {
+                    scenario.style.display = 'block';
+                    visibleScenarios++;
+                } else {
+                    const isVisible = scenario.dataset.status === filter;
+                    scenario.style.display = isVisible ? 'block' : 'none';
+                    if (isVisible) visibleScenarios++;
+                }
+            });
 
-                // Hide features with no visible scenarios
-                let visibleFeatures = 0;
-                document.querySelectorAll('.feature').forEach(feature => {
-                    const visibleInFeature = Array.from(feature.querySelectorAll('.scenario'))
-                        .filter(s => s.style.display !== 'none');
-                    feature.style.display = visibleInFeature.length > 0 ? 'block' : 'none';
-                    if (visibleInFeature.length > 0) visibleFeatures++;
-                });
-                
-                // Announce filter results to screen readers
-                const announcement = `Showing ${visibleScenarios} scenario${visibleScenarios !== 1 ? 's' : ''} in ${visibleFeatures} feature${visibleFeatures !== 1 ? 's' : ''}`;
-                announceToScreenReader(announcement);
+            // Hide features with no visible scenarios
+            let visibleFeatures = 0;
+            document.querySelectorAll('.feature').forEach(feature => {
+                const visibleInFeature = Array.from(feature.querySelectorAll('.scenario'))
+                    .filter(s => s.style.display !== 'none');
+                feature.style.display = visibleInFeature.length > 0 ? 'block' : 'none';
+                if (visibleInFeature.length > 0) visibleFeatures++;
+            });
+            
+            // Announce filter results to screen readers
+            const announcement = `Showing ${visibleScenarios} scenario${visibleScenarios !== 1 ? 's' : ''} in ${visibleFeatures} feature${visibleFeatures !== 1 ? 's' : ''}`;
+            announceToScreenReader(announcement);
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Filter by tag
+        function filterByTag(tag) {
+            const features = document.querySelectorAll('.feature');
+            let visibleCount = 0;
+            
+            features.forEach(feature => {
+                if (tag === 'all') {
+                    feature.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    const featureTags = Array.from(feature.querySelectorAll('.tag'))
+                        .map(t => t.textContent.trim().toLowerCase());
+                    const hasTag = featureTags.some(t => t.includes(tag.toLowerCase()));
+                    feature.style.display = hasTag ? 'block' : 'none';
+                    if (hasTag) visibleCount++;
+                }
+            });
+            
+            // Announce results
+            const announcement = tag === 'all' 
+                ? `Showing all ${visibleCount} features`
+                : `Showing ${visibleCount} feature${visibleCount !== 1 ? 's' : ''} with tag: ${tag}`;
+            announceToScreenReader(announcement);
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Attach to filter buttons
+        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterByStatus(this.dataset.filter);
             });
         });
 
@@ -2927,93 +3079,8 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             }
         });
 
-        // Theme Configuration
-        const themes = {
-            purple: {
-                primaryColor: '#6366f1',
-                primaryGradient: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
-                successColor: '#10b981',
-                dangerColor: '#ef4444',
-                warningColor: '#f59e0b',
-                infoColor: '#3b82f6',
-                bgColor: '#f9fafb',
-                cardBg: '#ffffff',
-                textColor: '#1f2937',
-                textSecondary: '#6b7280',
-                borderColor: '#e5e7eb',
-                hoverBg: '#f3f4f6'
-            },
-            blue: {
-                primaryColor: '#0284c7',
-                primaryGradient: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                successColor: '#10b981',
-                dangerColor: '#ef4444',
-                warningColor: '#f59e0b',
-                infoColor: '#06b6d4',
-                bgColor: '#f0f9ff',
-                cardBg: '#ffffff',
-                textColor: '#0c4a6e',
-                textSecondary: '#475569',
-                borderColor: '#bae6fd',
-                hoverBg: '#e0f2fe'
-            },
-            green: {
-                primaryColor: '#059669',
-                primaryGradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                successColor: '#22c55e',
-                dangerColor: '#ef4444',
-                warningColor: '#f59e0b',
-                infoColor: '#14b8a6',
-                bgColor: '#f0fdf4',
-                cardBg: '#ffffff',
-                textColor: '#064e3b',
-                textSecondary: '#475569',
-                borderColor: '#bbf7d0',
-                hoverBg: '#dcfce7'
-            },
-            dark: {
-                primaryColor: '#8b5cf6',
-                primaryGradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                successColor: '#22c55e',
-                dangerColor: '#f87171',
-                warningColor: '#fbbf24',
-                infoColor: '#60a5fa',
-                bgColor: '#0f172a',
-                cardBg: '#1e293b',
-                textColor: '#f1f5f9',
-                textSecondary: '#94a3b8',
-                borderColor: '#334155',
-                hoverBg: '#334155'
-            },
-            light: {
-                primaryColor: '#4f46e5',
-                primaryGradient: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
-                successColor: '#16a34a',
-                dangerColor: '#dc2626',
-                warningColor: '#ea580c',
-                infoColor: '#2563eb',
-                bgColor: '#ffffff',
-                cardBg: '#f8fafc',
-                textColor: '#0f172a',
-                textSecondary: '#64748b',
-                borderColor: '#cbd5e1',
-                hoverBg: '#f1f5f9'
-            },
-            pickles: {
-                primaryColor: '#f59e0b',
-                primaryGradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                successColor: '#10b981',
-                dangerColor: '#ef4444',
-                warningColor: '#f59e0b',
-                infoColor: '#f59e0b',
-                bgColor: '#fffbeb',
-                cardBg: '#ffffff',
-                textColor: '#78350f',
-                textSecondary: '#92400e',
-                borderColor: '#fde68a',
-                hoverBg: '#fef3c7'
-            }
-        };
+        // Theme Configuration - Generated from ThemeConfig.cs
+        const themes = " + GenerateJavaScriptThemes() + @";
 
         // Change theme function
         function changeTheme(themeName) {
@@ -3033,6 +3100,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             root.style.setProperty('--text-secondary', theme.textSecondary);
             root.style.setProperty('--border-color', theme.borderColor);
             root.style.setProperty('--hover-bg', theme.hoverBg);
+            root.style.setProperty('--accent-color', theme.accentColor);
+            root.style.setProperty('--focus-ring', theme.focusRing);
+            root.style.setProperty('--shadow-color', theme.shadowColor);
+            root.style.setProperty('--code-bg', theme.codeBg);
 
             // Save theme preference
             localStorage.setItem('bdd-theme', themeName);
@@ -3044,6 +3115,23 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             const themeSelector = document.getElementById('theme-selector');
             themeSelector.value = savedTheme;
             changeTheme(savedTheme);
+            
+            // Populate tag filter dropdown
+            const tagFilter = document.getElementById('tag-filter');
+            const allTags = new Set();
+            
+            document.querySelectorAll('.tag').forEach(tag => {
+                const tagText = tag.textContent.trim();
+                if (tagText) allTags.add(tagText);
+            });
+            
+            const sortedTags = Array.from(allTags).sort();
+            sortedTags.forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag;
+                option.textContent = tag;
+                tagFilter.appendChild(option);
+            });
             
             // Scroll to top button
             const scrollToTopBtn = document.getElementById('scroll-to-top');
@@ -3390,6 +3478,51 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             _ => "<i class=\"fas fa-circle\"></i>"
         };
     }
+
+    /// <summary>
+    /// Generates JavaScript object literal from ThemeConfig.cs themes
+    /// </summary>
+    private static string GenerateJavaScriptThemes()
+    {
+        var js = new StringBuilder();
+        js.AppendLine("{");
+        
+        var themes = ThemeConfig.Themes;
+        var themeNames = themes.Keys.ToList();
+        
+        for (int i = 0; i < themeNames.Count; i++)
+        {
+            var themeName = themeNames[i];
+            var theme = themes[themeName];
+            
+            js.AppendLine($"            {themeName}: {{");
+            js.AppendLine($"                primaryColor: '{theme.PrimaryColor}',");
+            js.AppendLine($"                primaryGradient: '{theme.PrimaryGradient}',");
+            js.AppendLine($"                successColor: '{theme.SuccessColor}',");
+            js.AppendLine($"                dangerColor: '{theme.DangerColor}',");
+            js.AppendLine($"                warningColor: '{theme.WarningColor}',");
+            js.AppendLine($"                infoColor: '{theme.InfoColor}',");
+            js.AppendLine($"                bgColor: '{theme.BgColor}',");
+            js.AppendLine($"                cardBg: '{theme.CardBg}',");
+            js.AppendLine($"                textColor: '{theme.TextColor}',");
+            js.AppendLine($"                textSecondary: '{theme.TextSecondary}',");
+            js.AppendLine($"                borderColor: '{theme.BorderColor}',");
+            js.AppendLine($"                hoverBg: '{theme.HoverBg}',");
+            js.AppendLine($"                accentColor: '{theme.AccentColor}',");
+            js.AppendLine($"                focusRing: '{theme.FocusRing}',");
+            js.AppendLine($"                shadowColor: '{theme.ShadowColor}',");
+            js.AppendLine($"                codeBg: '{theme.CodeBg}'");
+            js.Append($"            }}");
+            
+            if (i < themeNames.Count - 1)
+                js.AppendLine(",");
+            else
+                js.AppendLine();
+        }
+        
+        js.Append("        }");
+        return js.ToString();
+    }
 }
 
 /// <summary>
@@ -3397,7 +3530,6 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 /// </summary>
 public class HtmlGenerationOptions
 {
-    public string PrimaryColor { get; set; } = "#6366f1";
     public string Theme { get; set; } = "purple";
     public bool IncludeComments { get; set; } = true;
     public bool SyntaxHighlighting { get; set; } = true;

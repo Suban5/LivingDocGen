@@ -469,7 +469,6 @@ class Program
             // Generate HTML
             var options = new HtmlGenerationOptions
             {
-                PrimaryColor = resolvedColor,
                 Theme = resolvedTheme
             };
 
