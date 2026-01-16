@@ -4,7 +4,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-6.0%2B-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-v2.0.0-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
+[![NuGet](https://img.shields.io/badge/NuGet-v2.0.1-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
 
 ---
 
@@ -42,13 +42,7 @@ open living-doc.html  # macOS
 start living-doc.html # Windows
 ```
 
-### 2. MSBuild Integration (Coming Soon)
-
-> 🚧 **In Development** - Automatic generation after `dotnet test`
-
-Stay tuned for automatic documentation generation integrated into your build pipeline!
-
-### 3. Reqnroll Integration (Auto-Generate via Hooks)
+### 2. Reqnroll Integration (Auto-Generate via Hooks)
 
 **Step 1:** Install package
 
@@ -89,7 +83,7 @@ Documentation is automatically generated as `living-documentation.html`!
 - Any framework that produces Gherkin `.feature` files
 
 **Test Result Formats:**
-- NUnit 2, 3, 4 (XML/TRX)
+- NUnit 2, 3 (XML), NUnit 4 (XML and TRX)
 - xUnit (XML)
 - JUnit (XML)
 - MSTest (TRX)
@@ -117,6 +111,13 @@ Documentation is automatically generated as `living-documentation.html`!
 - **Framework-Agnostic** - Works with any Gherkin-based framework
 - **Universal Parser** - Single parser for all frameworks
 - **Zero Configuration** - Sensible defaults, customize if needed
+
+### Performance
+- **100 scenarios**: ~500ms generation time
+- **500 scenarios**: ~2s generation time
+- **1000 scenarios**: ~4s generation time
+- **Single HTML file**: No external dependencies, fast loading
+- **In-process**: No external process spawning overhead
 
 ---
 
@@ -345,7 +346,8 @@ This is a **Master's thesis project**, but contributions are welcome!
 
 ## 📜 Version History
 
-**Current Version: v2.0.0** (January 1, 2026)
+**Latest Version: v2.0.1** (January 2026)
+**Previous Version: v2.0.0** (January 1, 2026)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
