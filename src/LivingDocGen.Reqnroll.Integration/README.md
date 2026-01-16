@@ -282,10 +282,7 @@ See [LICENSE](../../LICENSE) for full details.
 
 ---
 
-<div align="center">
-
 **Made with ❤️ for the BDD community**
 
 [⬆ Back to Top](#livingdocgenreqnrollintegration)
 
-</div>
