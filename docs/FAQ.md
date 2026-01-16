@@ -49,11 +49,11 @@
 
 ### Q: What test result formats are supported?
 **A:** 
-- ✅ NUnit 2/3 (XML)
-- ✅ NUnit 4 (TRX)
-- ✅ xUnit (XML)
-- ✅ JUnit (XML)
-- ✅ MSTest (TRX)
+- ✅ NUnit 2/3 (XML format)
+- ✅ NUnit 4 (XML and TRX formats)
+- ✅ xUnit (XML format)
+- ✅ JUnit (XML format)
+- ✅ MSTest (TRX format)
 - ✅ SpecFlow/Cucumber (JSON execution reports)
 
 ## Reqnroll Integration
@@ -99,6 +99,36 @@
 - **Library packages**: .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+
 - **CLI Tool**: .NET 6.0+ runtime
 - **Reqnroll Integration**: .NET 6.0+ runtime
+
+## Statistics & Reporting
+
+### Q: Why do my pass/fail percentages not add up to 100%?
+**A:** As of v2.0.1, percentages are calculated based on **executed scenarios only** (passed + failed + skipped), excluding untested scenarios. This provides more accurate metrics:
+- **Pass Rate**: Passed / Executed × 100
+- **Fail Rate**: Failed / Executed × 100  
+- **Skip Rate**: Skipped / Executed × 100
+- **Coverage**: Executed / Total × 100
+
+For example, with 10 passed, 2 failed, 3 skipped, and 13 untested scenarios (28 total):
+- Pass Rate: 10/15 = 66.7%
+- Fail Rate: 2/15 = 13.3%
+- Skip Rate: 3/15 = 20.0%
+- Coverage: 15/28 = 53.6%
+
+### Q: Can I see comments from my feature files in the documentation?
+**A:** Yes! As of v2.0.1, Gherkin comments (lines starting with `#`) are displayed in the HTML documentation by default. Comments appear with special styling to distinguish them from regular content.
+
+To disable comment rendering:
+- **CLI**: Use `--include-comments false`
+- **Config file**: Set `"includeComments": false` in `livingdocgen.json`
+- **Reqnroll Integration**: Set `"includeComments": false` in your config
+
+### Q: How are table headers displayed in the documentation?
+**A:** As of v2.0.1, table headers are simplified and interactive:
+- Data tables and example tables no longer show dimension labels like "Data Table (3×5)"
+- Click on any table header row to toggle the table body visibility
+- Features are always expanded (non-collapsible) for better accessibility
+- Only scenarios can be collapsed/expanded using the toggle buttons
 
 ## Troubleshooting
 

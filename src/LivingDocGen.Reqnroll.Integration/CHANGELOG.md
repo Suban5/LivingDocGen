@@ -119,15 +119,41 @@ For more details, see: https://github.com/suban5/LivingDocGen
 
 ---
 
-## [2.0.1] - TBD
+## [2.0.1] - 2026-01-16
 
 ### Added
 
+- **Gherkin Comment Support**: Display comments from `.feature` files in generated documentation
+  - Enabled by default via `includeComments` configuration option
+  - Comments rendered with custom styling in HTML output
+
+- **Performance Enhancements**: Thread-safe and parallel processing
+  - Implemented thread-safe caching mechanism
+  - Added dependency injection (DI) support
+  - Parallel processing for faster documentation generation
+
+- **Enhanced HTML Report**: Improved visual layout
+  - Better content visibility with optimized layout height
+  - Streamlined stats and footer design
+
 ### Changed
+
+- **UI/UX Improvements**: Better user experience
+  - Features now always expanded (non-collapsible)
+  - Simplified table headers (removed dimension labels)
+  - Clickable table headers to toggle table body
+  - Toggle button now only affects scenarios
+
+- **Statistics Accuracy**: Improved calculation logic
+  - Pass/fail/skip rates now based on executed scenarios only
+  - Excludes untested scenarios from percentage calculations
+  - Added `FailRate` and `SkipRate` to statistics output
 
 ### Fixed
 
-### Removed
+- Statistics calculation accuracy for pass/fail/skip percentages
+- Layout spacing and container height issues
+- Table header interactions and toggles
 
 ---
 

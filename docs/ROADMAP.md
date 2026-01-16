@@ -7,7 +7,14 @@
 | Phase 1 | ✅ **Complete** | Universal parser, CLI tool, basic HTML generation |
 | Phase 2 | ✅ **Complete** | Reqnroll integration, multi-framework support, themes |
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
-| Phase 4 | 📋 **Planned** | AI/NLP analysis, user study, performance optimization |
+| Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
+
+### Recent Completions (v2.0.1)
+- ✅ **Gherkin Comment Rendering** - Comments from `.feature` files now displayed
+- ✅ **Parallel Processing** - Multi-threaded parsing and generation
+- ✅ **Thread-Safe Caching** - Improved performance and reliability
+- ✅ **Enhanced Statistics** - Accurate pass/fail/skip rate calculations
+- ✅ **UI/UX Improvements** - Better layout, clickable table headers, streamlined interface
 
 ---
 
@@ -52,7 +59,7 @@ dotnet test
 #### Quality Improvements
 - **Performance Optimization** - Faster parsing and generation for large projects
 - **Incremental Generation** - Only regenerate changed features
-- **Parallel Processing** - Multi-threaded parsing and generation
+- ~~**Parallel Processing**~~ - ✅ **Complete in v2.0.1** - Multi-threaded parsing and generation
 - **Memory Optimization** - Reduced memory footprint for large test suites
 
 ### Phase 4: AI/NLP Analysis (v3.x)
