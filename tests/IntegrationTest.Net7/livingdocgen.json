@@ -1,6 +1,6 @@
 {
   "featurePath": "Features",
-  "testResultsPath": "TestResults",
+  "testResultsPath": "TestResults/xml",
   "outputPath": "TestResult/living-documentation-test.html",
   "title": "IntegrationTest .NET 7 - Living Documentation",
   "theme": "blue",

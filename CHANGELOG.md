@@ -11,20 +11,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.1] - 2026-01-16
+
+### Added
+
 - **Gherkin Comment Rendering**: Comments from `.feature` files are now displayed in HTML documentation
   - Parser captures comments associated with features and scenarios
   - HTML generator renders comments with custom styling
   - CSS includes `.comments` and `.comment` classes with monospace font and `#` prefix
   - `IncludeComments` configuration option (default: `true`)
 
+- **HTML Report Enhancements**: Improved visual layout and user experience
+  - Increased layout container height for better content visibility
+  - Enhanced responsive design for optimal viewing
+  - Added CLI test automation script for validation
+
+- **Generator Performance**: Thread-safe caching and parallel processing
+  - Implemented thread-safe caching mechanism
+  - Added dependency injection (DI) support
+  - Parallel processing for improved generation speed
+
 ### Changed
 
-- `HtmlGenerationOptions.IncludeComments` now defaults to `true`
-- `GenerationConfig` in Reqnroll Integration includes `IncludeComments` property
+- **UI/UX Improvements**: Streamlined interface elements
+  - Decreased stats and footer height for more content space
+  - Features now always expanded (non-collapsible) for better accessibility
+  - Simplified table headers (removed "Data Table (X×Y)" and "Examples Table (X×Y)" labels)
+  - Table headers now clickable to toggle table body visibility
+  - Toggle button now only affects scenarios
+
+- **Statistics**: Enhanced calculation logic
+  - Pass/fail/skip percentages now calculated based on executed scenarios (excluding untested)
+  - Added `FailRate` and `SkipRate` properties to `DocumentStatistics`
+  - `HtmlGenerationOptions.IncludeComments` now defaults to `true`
+  - `GenerationConfig` in Reqnroll Integration includes `IncludeComments` property
+
+### Fixed
+
+- Layout spacing and container height issues
+- Statistics calculation accuracy for pass/fail/skip rates
+- Table header interactions
 
 ### Developer Notes
 
 - Test projects updated to use project references instead of NuGet packages for local development
+- Added comprehensive test script for CLI validation
 
 ---
 

@@ -205,3 +205,6 @@ __pycache__/
 
 
 samples/*
+
+*.feature.cs
+tests/cli-test-output/*

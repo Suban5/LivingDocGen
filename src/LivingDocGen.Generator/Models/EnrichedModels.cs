@@ -80,7 +80,16 @@ public class DocumentStatistics
     public int PassedScenarios { get; set; }
     public int FailedScenarios { get; set; }
     public int SkippedScenarios { get; set; }
-    public int UntestdScenarios { get; set; }
-    public double PassRate => TotalScenarios > 0 ? (double)PassedScenarios / TotalScenarios * 100 : 0;
-    public double Coverage => TotalScenarios > 0 ? (double)(TotalScenarios - UntestdScenarios) / TotalScenarios * 100 : 0;
+    public int UntestedScenarios { get; set; }
+
+    // Total executed scenarios (excluding untested)
+    public int ExecutedScenarios => PassedScenarios + FailedScenarios + SkippedScenarios;
+    
+    // Rates based on executed scenarios only
+    public double PassRate => ExecutedScenarios > 0 ? (double)PassedScenarios / ExecutedScenarios * 100 : 0;
+    public double FailRate => ExecutedScenarios > 0 ? (double)FailedScenarios / ExecutedScenarios * 100 : 0;
+    public double SkipRate => ExecutedScenarios > 0 ? (double)SkippedScenarios / ExecutedScenarios * 100 : 0;
+    
+    // Coverage: percentage of scenarios that have been tested (executed vs total)
+    public double Coverage => TotalScenarios > 0 ? (double)ExecutedScenarios / TotalScenarios * 100 : 0;
 }
