@@ -113,7 +113,13 @@ For more details, see: https://github.com/suban5/LivingDocGen
 
 ### Changed
 
-- Improved HTML report performance for large feature sets (inherited from Generator)
+- **Performance optimizations for large test suites (1000+ scenarios)**
+  - Replaced `Console.WriteLine` with `Trace.WriteLine` for proper test runner output visibility
+  - Reduced test result file wait time from 3 seconds to 1 second
+  - Updated XML documentation to recommend `[BeforeTestRun]`/`[AfterTestRun]` hooks instead of `[BeforeScenario]`
+  - Optimized for minimal overhead with large scenario counts
+
+- Improved HTML report performance (inherited from Generator)
   - 3-4x faster rendering for 500-1000 scenarios
   - 5-10x faster for 1000-1800 scenarios
   - Smooth animations with no UI freezing

@@ -13,7 +13,7 @@ Your Test Project                    NuGet Package
 ┌────────────────────┐              ┌──────────────────────┐
 │ LivingDocGenBridge │──────────────│ LivingDocBootstrap   │
 │  [Binding]         │   calls      │  (public API)        │
-│  [BeforeScenario]  │──────────────│  BeforeTestRun()     │
+│  [BeforeTestRun]   │──────────────│  BeforeTestRun()     │
 │  [AfterTestRun]    │──────────────│  AfterTestRun()      │
 └────────────────────┘              └──────────────────────┘
          ↑                                      ↓
@@ -25,6 +25,42 @@ Your Test Project                    NuGet Package
 
 Create `Hooks/LivingDocGenBridge.cs` in your test project:
 
+### ✅ Recommended: Using [BeforeTestRun] / [AfterTestRun] (Best Performance)
+
+```csharp
+using Reqnroll;
+using LivingDocGen.Reqnroll.Integration.Bootstrap;
+
+namespace YourTestProject.Hooks
+{
+    [Binding]
+    public class LivingDocGenBridge
+    {
+        [BeforeTestRun(Order = int.MinValue)]
+        public static void BeforeAllTests()
+        {
+            LivingDocBootstrap.BeforeTestRun();
+        }
+        
+        [AfterTestRun(Order = int.MaxValue)]
+        public static void AfterAllTests()
+        {
+            LivingDocBootstrap.AfterTestRun();
+        }
+    }
+}
+```
+
+**Benefits:**
+- ✅ Called once before/after all tests
+- ✅ No locks needed
+- ✅ Optimal for large test suites (1000+ scenarios)
+- ✅ Minimal overhead
+
+### Alternative: Using [BeforeScenario] with Double-Checked Locking
+
+If `[BeforeTestRun]` doesn't work with your test runner, use this pattern:
+
 ```csharp
 using System;
 using Reqnroll;
@@ -35,13 +71,16 @@ namespace YourTestProject.Hooks
     [Binding]
     public class LivingDocGenBridge
     {
-        private static bool _testRunStarted = false;
-        private static bool _testRunEnded = false;
+        private static volatile bool _testRunStarted = false;
+        private static volatile bool _testRunEnded = false;
         private static readonly object _lock = new object();
 
         [BeforeScenario(Order = int.MinValue)]
         public static void BeforeFirstScenario()
         {
+            // Fast path: check without lock first
+            if (_testRunStarted) return;
+            
             lock (_lock)
             {
                 if (!_testRunStarted)
@@ -55,6 +94,8 @@ namespace YourTestProject.Hooks
         [AfterTestRun(Order = int.MaxValue)]
         public static void AfterAllTests()
         {
+            if (_testRunEnded) return;
+            
             lock (_lock)
             {
                 if (!_testRunEnded)
@@ -67,6 +108,12 @@ namespace YourTestProject.Hooks
     }
 }
 ```
+
+**Benefits:**
+- ✅ Optimized double-checked locking pattern
+- ✅ First scenario acquires lock, rest skip entirely
+- ✅ Works with all test runners
+- ✅ Minimal overhead for large test suites
 
 ## Configuration (Optional)
 

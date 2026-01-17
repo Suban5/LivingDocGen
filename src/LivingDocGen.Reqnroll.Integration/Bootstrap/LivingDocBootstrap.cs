@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -24,8 +25,8 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
     /// [Binding]
     /// public class LivingDocHooks
     /// {
-    ///     [BeforeScenario(Order = int.MinValue)]
-    ///     public static void BeforeFirstScenario()
+    ///     [BeforeTestRun(Order = int.MinValue)]
+    ///     public static void BeforeAllTests()
     ///     {
     ///         LivingDocBootstrap.BeforeTestRun();
     ///     }
@@ -37,6 +38,11 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
     ///     }
     /// }
     /// </code>
+    /// 
+    /// Performance Notes:
+    /// - BeforeTestRun is called ONCE before all tests (not per scenario)
+    /// - Optimized for large test suites (1000+ scenarios)
+    /// - Uses Trace.WriteLine for proper test output visibility
     /// </summary>
     public static class LivingDocBootstrap
     {
@@ -45,7 +51,8 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
 
         /// <summary>
         /// Initialize living documentation generation.
-        /// Call this from [BeforeScenario] or [BeforeTestRun] in your test project.
+        /// Call this from [BeforeTestRun] in your test project for optimal performance.
+        /// Note: Using [BeforeScenario] will work but causes unnecessary overhead with large test suites.
         /// </summary>
         public static void BeforeTestRun()
         {
@@ -53,9 +60,9 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
             _projectRoot = FindProjectRoot();
             _testResultsPath = Path.Combine(_projectRoot, "TestResults");
             
-            Console.WriteLine("🚀 LivingDocGen - Test run starting");
-            Console.WriteLine($"   Project Root: {_projectRoot}");
-            Console.WriteLine($"   Test Runner: {GetTestRunnerName()}");
+            Trace.WriteLine("🚀 LivingDocGen - Test run starting");
+            Trace.WriteLine($"   Project Root: {_projectRoot}");
+            Trace.WriteLine($"   Test Runner: {GetTestRunnerName()}");
         }
 
         /// <summary>
@@ -66,7 +73,8 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
         {
             // Wait for test results to be fully written to disk
             // This is important for all test runners as they write results asynchronously
-            Thread.Sleep(3000);
+            // Reduced from 3000ms to 1000ms for better performance with large test suites
+            Thread.Sleep(1000);
             
             GenerateDocumentation();
         }
@@ -75,7 +83,7 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
         {
             try
             {
-                Console.WriteLine("\n📊 Generating Living Documentation...");
+                Trace.WriteLine("\n📊 Generating Living Documentation...");
                 
                 var configPath = Path.Combine(_projectRoot, "livingdocgen.json");
                 
@@ -83,20 +91,20 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 GenerationConfig config;
                 if (File.Exists(configPath))
                 {
-                    Console.WriteLine($"   ✓ Using config file: {configPath}");
+                    Trace.WriteLine($"   ✓ Using config file: {configPath}");
                     config = LoadConfiguration(configPath);
                 }
                 else
                 {
-                    Console.WriteLine("   ℹ Using default configuration");
+                    Trace.WriteLine("   ℹ Using default configuration");
                     config = GetDefaultConfiguration();
                 }
 
                 // Validate feature path
                 if (!Directory.Exists(config.FeaturePath))
                 {
-                    Console.WriteLine($"   ⚠️ Features directory not found: {config.FeaturePath}");
-                    Console.WriteLine("   Create a 'Features' folder or use livingdocgen.json to specify custom path");
+                    Trace.WriteLine($"   ⚠️ Features directory not found: {config.FeaturePath}");
+                    Trace.WriteLine("   Create a 'Features' folder or use livingdocgen.json to specify custom path");
                     return;
                 }
 
@@ -105,11 +113,11 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 
                 if (featureFiles.Length == 0)
                 {
-                    Console.WriteLine($"   ⚠️ No .feature files found in: {config.FeaturePath}");
+                    Trace.WriteLine($"   ⚠️ No .feature files found in: {config.FeaturePath}");
                     return;
                 }
 
-                Console.WriteLine($"   ✓ Found {featureFiles.Length} feature file(s)");
+                Trace.WriteLine($"   ✓ Found {featureFiles.Length} feature file(s)");
 
                 // Find test results if available
                 var testResultFiles = new string[0];
@@ -117,13 +125,13 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 
                 if (!string.IsNullOrEmpty(latestTestResult) && config.IncludeTestResults)
                 {
-                    Console.WriteLine($"   ✓ Using test results: {Path.GetFileName(latestTestResult)}");
+                    Trace.WriteLine($"   ✓ Using test results: {Path.GetFileName(latestTestResult)}");
                     testResultFiles = new[] { latestTestResult };
                 }
                 else if (config.IncludeTestResults)
                 {
-                    Console.WriteLine($"   ⚠️ No test results found in: {config.TestResultsPath ?? _testResultsPath}");
-                    Console.WriteLine("   Generating documentation without test execution data...");
+                    Trace.WriteLine($"   ⚠️ No test results found in: {config.TestResultsPath ?? _testResultsPath}");
+                    Trace.WriteLine("   Generating documentation without test execution data...");
                 }
 
                 // Generate HTML documentation
@@ -156,13 +164,13 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 
                 task.Wait(); // Synchronously wait for completion
 
-                Console.WriteLine("   ✅ Living documentation generated successfully!");
-                Console.WriteLine($"   📄 file://{outputPath}");
+                Trace.WriteLine("   ✅ Living documentation generated successfully!");
+                Trace.WriteLine($"   📄 file://{outputPath}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error generating living documentation: {ex.Message}");
-                Console.WriteLine($"   Stack trace: {ex.StackTrace}");
+                Trace.WriteLine($"❌ Error generating living documentation: {ex.Message}");
+                Trace.WriteLine($"   Stack trace: {ex.StackTrace}");
             }
         }
 
@@ -190,8 +198,8 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"   ⚠️ Error loading config file: {ex.Message}");
-                Console.WriteLine("   Using default configuration");
+                Trace.WriteLine($"   ⚠️ Error loading config file: {ex.Message}");
+                Trace.WriteLine("   Using default configuration");
                 return GetDefaultConfiguration();
             }
         }

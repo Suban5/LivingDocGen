@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Optimized transitions using max-height instead of display:none
   - Performance improvements: 3-4x faster for 500-1000 scenarios, 5-10x faster for 1000-1800 scenarios
 
+- **Reqnroll.Integration**: Performance optimizations for large test suites
+  - Replaced Console.WriteLine with Trace.WriteLine for proper test output visibility
+  - Reduced test result wait time from 3s to 1s
+  - Updated documentation example to use [BeforeTestRun]/[AfterTestRun] hooks
+  - Recommended bridge pattern now uses double-checked locking for minimal overhead
+
 ### Fixed
 
 ### Removed

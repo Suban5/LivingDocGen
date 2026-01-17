@@ -395,3 +395,111 @@ Before release, verify:
 ---
 
 **Last Updated:** January 17, 2026
+
+---
+
+## Reqnroll Integration Performance Optimizations
+
+### Bootstrap Performance Improvements
+
+**Date:** January 17, 2026
+
+**Problem:** Test hooks were being called 1800+ times per test run, causing unnecessary overhead and making test output logs invisible.
+
+**Solution:** Optimized LivingDocBootstrap and bridge pattern for large test suites.
+
+#### 1. Output Logging Visibility
+- **Changed:** Replaced `Console.WriteLine` with `Trace.WriteLine`
+- **Benefit:** Logs now visible in Visual Studio Test Output and test runners
+- **View logs:**
+  - Visual Studio: View → Output → "Tests"
+  - VS Code: Test panel output
+  - Terminal: `dotnet test --logger "console;verbosity=detailed"`
+
+#### 2. Reduced Wait Time
+- **Before:** 3-second sleep waiting for test results
+- **After:** 1-second sleep (sufficient for file system write)
+- **Benefit:** 2 seconds faster documentation generation
+
+#### 3. Optimized Hook Pattern
+- **Recommended:** Use `[BeforeTestRun]`/`[AfterTestRun]` hooks
+- **Alternative:** Double-checked locking with `volatile` flags
+- **Benefit:** Eliminates 1799 unnecessary lock acquisitions
+
+#### 4. Updated Documentation
+- XML comments updated to show recommended pattern
+- BRIDGE_SETUP.md updated with both patterns
+- Performance notes added to public API docs
+
+### Performance Impact
+
+| Scenario Count | Hook Calls Before | Hook Calls After | Improvement |
+|---------------|-------------------|------------------|-------------|
+| 100 scenarios | 100 BeforeScenario checks | 1 BeforeTestRun call | 100x fewer |
+| 1000 scenarios | 1000 lock checks | 1 call (no locks) | 1000x fewer |
+| 1800 scenarios | 1800 lock checks | 1 call (no locks) | 1800x fewer |
+
+### Bridge Pattern Code
+
+**Recommended (BeforeTestRun):**
+```csharp
+[Binding]
+public class LivingDocGenBridge
+{
+    [BeforeTestRun(Order = int.MinValue)]
+    public static void BeforeAllTests()
+    {
+        LivingDocBootstrap.BeforeTestRun();
+    }
+    
+    [AfterTestRun(Order = int.MaxValue)]
+    public static void AfterAllTests()
+    {
+        LivingDocBootstrap.AfterTestRun();
+    }
+}
+```
+
+**Alternative (Double-Checked Locking):**
+```csharp
+[Binding]
+public class LivingDocGenBridge
+{
+    private static volatile bool _testRunStarted = false;
+    
+    [BeforeScenario(Order = int.MinValue)]
+    public static void BeforeFirstScenario()
+    {
+        if (_testRunStarted) return; // Fast path
+        
+        lock (_lock)
+        {
+            if (!_testRunStarted)
+            {
+                _testRunStarted = true;
+                LivingDocBootstrap.BeforeTestRun();
+            }
+        }
+    }
+}
+```
+
+### Files Changed
+
+- `src/LivingDocGen.Reqnroll.Integration/Bootstrap/LivingDocBootstrap.cs`
+  - Replaced Console.WriteLine → Trace.WriteLine
+  - Reduced Thread.Sleep(3000) → Thread.Sleep(1000)
+  - Updated XML documentation with performance notes
+
+- `docs/BRIDGE_SETUP.md`
+  - Added recommended [BeforeTestRun] pattern
+  - Added alternative double-checked locking pattern
+  - Performance comparison notes
+
+---
+
+**Summary:** Reqnroll integration now optimized for test suites of any size, with proper test output visibility and minimal overhead.
+
+---
+
+**Last Updated:** January 17, 2026

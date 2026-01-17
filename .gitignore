@@ -208,3 +208,5 @@ samples/*
 
 *.feature.cs
 tests/cli-test-output/*
+
+copilot-instructions.md
