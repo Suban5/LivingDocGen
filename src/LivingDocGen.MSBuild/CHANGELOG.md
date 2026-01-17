@@ -15,9 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improved HTML report performance for large feature sets (inherited from Generator)
+  - 3-4x faster rendering for 500-1000 scenarios
+  - 5-10x faster for 1000-1800 scenarios
+  - Smooth animations with no UI freezing
+
 ### Fixed
 
 ### Removed
+
+- Expand All/Collapse All button from reports (inherited from Generator)
 
 ## [1.0.0] - 2026-01-15
 

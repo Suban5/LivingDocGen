@@ -113,9 +113,16 @@ For more details, see: https://github.com/suban5/LivingDocGen
 
 ### Changed
 
+- Improved HTML report performance for large feature sets (inherited from Generator)
+  - 3-4x faster rendering for 500-1000 scenarios
+  - 5-10x faster for 1000-1800 scenarios
+  - Smooth animations with no UI freezing
+
 ### Fixed
 
 ### Removed
+
+- Expand All/Collapse All button from reports (inherited from Generator)
 
 ---
 

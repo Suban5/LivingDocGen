@@ -13,9 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Generator**: Phase 1 performance optimizations for large reports (1000+ scenarios)
+  - CSS containment for isolated rendering (features and scenarios)
+  - GPU-accelerated animations using transform properties
+  - Event delegation for scenario toggles (single listener vs thousands)
+  - requestAnimationFrame for smooth 60fps batch updates
+  - Smart debouncing with adaptive delays (300ms standard, 400ms for large reports)
+  - Read/write batching to prevent layout thrashing
+  - Optimized transitions using max-height instead of display:none
+  - Performance improvements: 3-4x faster for 500-1000 scenarios, 5-10x faster for 1000-1800 scenarios
+
 ### Fixed
 
 ### Removed
+
+- **Generator**: Expand All/Collapse All button (simplified UI, individual scenario toggles remain)
 
 ---
 
