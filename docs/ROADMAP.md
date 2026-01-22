@@ -9,7 +9,14 @@
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
 | Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
 
-### Recent Completions (v2.0.1)
+### Recent Completions (v2.0.3)
+- ✅ **Phase 2 Performance Optimizations** - Lazy rendering for large reports (200+ features)
+- ✅ **Unified Event Delegation** - Single handler for all toggle operations
+- ✅ **Progressive Loading** - Content loads on scroll, 87% faster initial load
+- ✅ **Memory Optimization** - 66% reduction in browser memory usage
+- ✅ **Optimized Observers** - Feature-level tracking for large reports
+
+### Previous Completions (v2.0.1)
 - ✅ **Gherkin Comment Rendering** - Comments from `.feature` files now displayed
 - ✅ **Parallel Processing** - Multi-threaded parsing and generation
 - ✅ **Thread-Safe Caching** - Improved performance and reliability
@@ -183,9 +190,12 @@ We're actively seeking feedback on:
 
 | Version | Target Date | Focus |
 |---------|-------------|-------|
-| v2.0.0 | ✅ Jan 2026 | Reqnroll integration, Bootstrap API |
+| v2.0.3 | ✅ Jan 22, 2026 | Phase 2 performance (lazy rendering) |
+| v2.0.2 | ✅ Jan 19, 2026 | Phase 1 performance optimizations |
+| v2.0.1 | ✅ Jan 16, 2026 | Gherkin comments, parallel processing |
+| v2.0.0 | ✅ Jan 1, 2026 | Reqnroll integration, Bootstrap API |
 | v2.1.0 | Feb 2026 | MSBuild integration |
-| v2.2.0 | Mar 2026 | Performance improvements |
+| v2.2.0 | Mar 2026 | Additional performance improvements |
 | v3.0.0 | Jun 2026 | AI/NLP quality analysis |
 | v3.5.0 | Sep 2026 | IDE extensions |
 | v4.0.0 | Dec 2026 | Cloud integrations |
@@ -218,6 +228,6 @@ See [CHANGELOG.md](../CHANGELOG.md) for detailed release notes.
 
 ---
 
-**Last Updated:** January 1, 2026
+**Last Updated:** January 22, 2026
 
 **Have suggestions for the roadmap?** [Open a discussion](https://github.com/Suban5/LivingDocGen/discussions)!

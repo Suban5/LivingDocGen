@@ -36,6 +36,12 @@ using System.Text;
 /// - Acceptable: 200-500 features
 /// - Large report mode: 500-1800+ features (Phase 1 optimizations active)
 /// - Very large reports: > 2000 features (consider Phase 2: pagination or virtual scrolling)
+/// 
+/// PHASE 2 PERFORMANCE IMPROVEMENTS (v2.1+):
+/// 13. Lazy Content Rendering: Feature bodies render only when scrolled into view (50+ features)
+/// 14. Progressive Loading: Initial page shows structure, content loads as needed
+/// 15. Optimized Event Delegation: Single delegated click handler for all toggles
+/// 16. Reduced Observer Overhead: IntersectionObserver only monitors visible features
 /// </summary>
 public class HtmlGeneratorService : IHtmlGeneratorService
 {
@@ -43,6 +49,9 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     private const int BaseHtmlCapacity = 10 * 1024; // 10 KB base HTML
     private const int PerFeatureCapacity = 5 * 1024; // 5 KB per feature
     private const int HeadSectionCapacity = 4 * 1024; // 4 KB for CSS/meta
+    
+    // Lazy rendering threshold
+    private const int LazyRenderingThreshold = 50; // Enable lazy rendering for 50+ features
     
     // HTML encoding cache to avoid redundant encoding operations
     private readonly Dictionary<string, string> _encodingCache = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -147,9 +156,29 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         // Main Content Area
         html.AppendLine("<main id=\"main-content\" class=\"main-content\" role=\"main\" aria-label=\"Feature documentation\">");
         
-        for (int i = 0; i < documentation.Features.Count; i++)
+        // Lazy rendering for large reports
+        bool useLazyRendering = documentation.Features.Count >= LazyRenderingThreshold;
+        
+        if (useLazyRendering)
         {
-            html.AppendLine(GenerateFeature(documentation.Features[i], i));
+            // For large reports: render feature containers with data attributes
+            // JavaScript will populate content on demand
+            for (int i = 0; i < documentation.Features.Count; i++)
+            {
+                var feature = documentation.Features[i];
+                var featureId = $"feature-{i}";
+                html.AppendLine($"<div class=\"feature lazy-feature\" id=\"{featureId}\" data-feature-id=\"{featureId}\" data-feature-index=\"{i}\" data-lazy=\"true\">");
+                html.AppendLine("    <div class=\"lazy-placeholder\"><i class=\"fas fa-spinner fa-spin\"></i> Loading...</div>");
+                html.AppendLine("</div>");
+            }
+        }
+        else
+        {
+            // For smaller reports: render all content immediately
+            for (int i = 0; i < documentation.Features.Count; i++)
+            {
+                html.AppendLine(GenerateFeature(documentation.Features[i], i));
+            }
         }
         
         html.AppendLine("</main>");
@@ -161,11 +190,19 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         <i class=""fas fa-arrow-up""></i>
     </button>");
         
+        // Embed feature data for lazy loading (if needed)
+        if (useLazyRendering)
+        {
+            html.AppendLine("<script id=\"feature-data\" type=\"application/json\">");
+            html.AppendLine(GenerateFeatureDataJson(documentation));
+            html.AppendLine("</script>");
+        }
+        
         // Footer
         html.AppendLine(GenerateFooter(documentation));
         
         // Embedded JavaScript
-        html.AppendLine(GenerateJavaScript(documentation));
+        html.AppendLine(GenerateJavaScript(documentation, useLazyRendering));
         
         html.AppendLine("</body>");
         html.AppendLine("</html>");
@@ -576,6 +613,28 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             overflow: hidden;
             transition: box-shadow 0.3s ease, transform 0.2s ease;
             animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Lazy loading styles */
+        .lazy-feature {
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .lazy-placeholder {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        
+        .lazy-placeholder i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
         }
 
         @keyframes fadeIn {
@@ -2786,7 +2845,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     </footer>";
     }
 
-    private string GenerateJavaScript(LivingDocumentation documentation)
+    private string GenerateJavaScript(LivingDocumentation documentation, bool useLazyRendering = false)
     {
         var featureCount = documentation.Features.Count;
         var hasLargeReport = featureCount > 100;
@@ -2796,32 +2855,134 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         // Performance optimizations for large reports (" + featureCount + @" features)
         const PERF_LARGE_REPORT = " + hasLargeReport.ToString().ToLower() + @";
         const FEATURE_COUNT = " + featureCount + @";
+        const USE_LAZY_RENDERING = " + useLazyRendering.ToString().ToLower() + @";
         
         // Feature Navigation State
         let currentFeatureId = 'feature-0';
         
         // Performance: Use event delegation for toggle operations in large reports
         if (PERF_LARGE_REPORT) {
-            console.log('⚡ Performance mode enabled for large report');
+            console.log('⚡ Performance mode enabled for ' + FEATURE_COUNT + ' features');
         }
         
-        // Toggle feature expansion
+        if (USE_LAZY_RENDERING) {
+            console.log('⚡ Lazy rendering enabled - content loads on scroll');
+        }
+        
         // ============================================
-        // PERFORMANCE: EVENT DELEGATION FOR TOGGLES
+        // PERFORMANCE: UNIFIED EVENT DELEGATION
         // ============================================
-        // Use single event listener instead of individual onclick handlers
-        // This dramatically improves performance with 100+ scenarios
+        // Single event listener handles ALL toggle operations
+        // Critical for 200+ features with 500+ scenarios
         
         document.addEventListener('click', function(e) {
-            // Scenario toggle
-            const scenarioToggle = e.target.closest('[data-toggle-scenario]');
-            if (scenarioToggle) {
+            // Scenario toggle - most common operation
+            const scenarioHeader = e.target.closest('.scenario-header');
+            if (scenarioHeader && scenarioHeader.hasAttribute('data-toggle-scenario')) {
                 e.preventDefault();
-                const body = scenarioToggle.nextElementSibling;
-                // Use requestAnimationFrame for smooth animation
-                requestAnimationFrame(() => {
-                    body.classList.toggle('expanded');
-                });
+                const scenarioBody = scenarioHeader.nextElementSibling;
+                if (scenarioBody && scenarioBody.classList.contains('scenario-body')) {
+                    requestAnimationFrame(() => {
+                        scenarioBody.classList.toggle('expanded');
+                    });
+                }
+                return;
+            }
+            
+            // Background toggle
+            const backgroundHeader = e.target.closest('.background-header');
+            if (backgroundHeader) {
+                e.preventDefault();
+                const body = backgroundHeader.nextElementSibling;
+                const toggleIcon = backgroundHeader.querySelector('.toggle-icon');
+                if (body) {
+                    requestAnimationFrame(() => {
+                        body.classList.toggle('expanded');
+                        if (toggleIcon) {
+                            if (body.classList.contains('expanded')) {
+                                toggleIcon.classList.remove('fa-chevron-down');
+                                toggleIcon.classList.add('fa-chevron-up');
+                            } else {
+                                toggleIcon.classList.remove('fa-chevron-up');
+                                toggleIcon.classList.add('fa-chevron-down');
+                            }
+                        }
+                    });
+                }
+                return;
+            }
+            
+            // Rule toggle
+            const ruleHeader = e.target.closest('.rule-header');
+            if (ruleHeader) {
+                e.preventDefault();
+                const body = ruleHeader.nextElementSibling;
+                const toggleIcon = ruleHeader.querySelector('.toggle-icon');
+                if (body) {
+                    requestAnimationFrame(() => {
+                        body.classList.toggle('expanded');
+                        if (toggleIcon) {
+                            if (body.classList.contains('expanded')) {
+                                toggleIcon.classList.remove('fa-chevron-down');
+                                toggleIcon.classList.add('fa-chevron-up');
+                            } else {
+                                toggleIcon.classList.remove('fa-chevron-up');
+                                toggleIcon.classList.add('fa-chevron-down');
+                            }
+                        }
+                    });
+                }
+                return;
+            }
+            
+            // Data table toggle (thead click)
+            const tableHeader = e.target.closest('thead.data-table-header, thead.examples-table-header');
+            if (tableHeader) {
+                e.preventDefault();
+                const tbody = tableHeader.parentElement.querySelector('tbody');
+                if (tbody) {
+                    requestAnimationFrame(() => {
+                        tbody.classList.toggle('collapsed');
+                        tableHeader.classList.toggle('collapsed');
+                    });
+                }
+                return;
+            }
+            
+            // DocString toggle
+            const docStringHeader = e.target.closest('.doc-string-header');
+            if (docStringHeader) {
+                e.preventDefault();
+                const content = docStringHeader.nextElementSibling;
+                if (content) {
+                    requestAnimationFrame(() => {
+                        docStringHeader.classList.toggle('collapsed');
+                        content.classList.toggle('collapsed');
+                    });
+                }
+                return;
+            }
+            
+            // Examples section toggle
+            const examplesHeader = e.target.closest('.examples-header');
+            if (examplesHeader) {
+                e.preventDefault();
+                const content = examplesHeader.nextElementSibling;
+                const toggleIcon = examplesHeader.querySelector('.toggle-icon');
+                if (content) {
+                    requestAnimationFrame(() => {
+                        content.classList.toggle('collapsed');
+                        if (toggleIcon) {
+                            if (content.classList.contains('collapsed')) {
+                                toggleIcon.classList.remove('fa-chevron-up');
+                                toggleIcon.classList.add('fa-chevron-down');
+                            } else {
+                                toggleIcon.classList.remove('fa-chevron-down');
+                                toggleIcon.classList.add('fa-chevron-up');
+                            }
+                        }
+                    });
+                }
                 return;
             }
         });
@@ -3187,8 +3348,87 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             localStorage.setItem('bdd-theme', themeName);
         }
 
+        // ============================================
+        // LAZY RENDERING SYSTEM
+        // ============================================
+        let featureDataCache = null;
+        let renderedFeatures = new Set();
+        
+        function loadFeatureData() {
+            if (!USE_LAZY_RENDERING) return null;
+            if (featureDataCache) return featureDataCache;
+            
+            const dataElement = document.getElementById('feature-data');
+            if (dataElement) {
+                try {
+                    featureDataCache = JSON.parse(dataElement.textContent);
+                    console.log('✓ Loaded data for ' + featureDataCache.features.length + ' features');
+                } catch (e) {
+                    console.error('Failed to parse feature data:', e);
+                    featureDataCache = { features: [] };
+                }
+            }
+            return featureDataCache;
+        }
+        
+        function renderFeatureContent(featureElement) {
+            const featureIndex = parseInt(featureElement.getAttribute('data-feature-index'));
+            if (renderedFeatures.has(featureIndex)) return;
+            
+            const data = loadFeatureData();
+            if (!data || !data.features[featureIndex]) return;
+            
+            const featureHtml = data.features[featureIndex].html;
+            featureElement.innerHTML = featureHtml;
+            featureElement.classList.remove('lazy-feature');
+            featureElement.removeAttribute('data-lazy');
+            renderedFeatures.add(featureIndex);
+        }
+        
+        function initLazyRendering() {
+            if (!USE_LAZY_RENDERING) return;
+            
+            const lazyFeatures = document.querySelectorAll('.lazy-feature[data-lazy]');
+            if (lazyFeatures.length === 0) return;
+            
+            console.log('⚡ Initializing lazy rendering for ' + lazyFeatures.length + ' features');
+            
+            // Render first 10 features immediately for instant visibility
+            const initialRenderCount = Math.min(10, lazyFeatures.length);
+            for (let i = 0; i < initialRenderCount; i++) {
+                renderFeatureContent(lazyFeatures[i]);
+            }
+            
+            // Use IntersectionObserver for remaining features
+            const observerOptions = {
+                root: null,
+                rootMargin: '500px 0px', // Load 500px before entering viewport
+                threshold: 0
+            };
+            
+            const lazyObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const feature = entry.target;
+                        if (feature.hasAttribute('data-lazy')) {
+                            renderFeatureContent(feature);
+                            lazyObserver.unobserve(feature); // Stop observing after rendering
+                        }
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe features that weren't initially rendered
+            for (let i = initialRenderCount; i < lazyFeatures.length; i++) {
+                lazyObserver.observe(lazyFeatures[i]);
+            }
+        }
+        
         // Load saved theme on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize lazy rendering first (if enabled)
+            initLazyRendering();
+            
             const savedTheme = localStorage.getItem('bdd-theme') || 'purple';
             const themeSelector = document.getElementById('theme-selector');
             themeSelector.value = savedTheme;
@@ -3229,15 +3469,48 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 });
             });
             
-            // Setup IntersectionObserver to update sidebar active state
-            setupScenarioObserver();
+            // Setup IntersectionObserver to update sidebar active state (optimized)
+            if (!USE_LAZY_RENDERING) {
+                // Only use scenario observer for non-lazy reports
+                setupScenarioObserver();
+            } else {
+                // For lazy reports, use simpler feature-level tracking
+                setupFeatureLevelObserver();
+            }
         });
 
         // ============================================
         // SIDEBAR NAVIGATION & MASTER-DETAIL
         // ============================================
         
-        // Observe scenarios to update sidebar active state
+        // Optimized observer for lazy-rendered reports (feature-level only)
+        function setupFeatureLevelObserver() {
+            const options = {
+                root: null,
+                rootMargin: '-20% 0px -60% 0px',
+                threshold: 0
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const feature = entry.target;
+                        const featureId = feature.getAttribute('data-feature-id');
+                        
+                        if (featureId) {
+                            updateSidebarActive(featureId);
+                        }
+                    }
+                });
+            }, options);
+            
+            // Only observe feature containers (much lighter than all scenarios)
+            document.querySelectorAll('.feature[data-feature-id]').forEach(feature => {
+                observer.observe(feature);
+            });
+        }
+        
+        // Original scenario-level observer for smaller reports
         function setupScenarioObserver() {
             const options = {
                 root: null,
@@ -3252,29 +3525,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                         const featureId = scenario.getAttribute('data-feature-id');
                         
                         if (featureId) {
-                            // Update sidebar active state without hiding other features
-                            document.querySelectorAll('.feature-item').forEach(item => {
-                                item.classList.remove('active');
-                            });
-                            
-                            const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
-                            if (activeItem) {
-                                activeItem.classList.add('active');
-                                
-                                // Scroll sidebar to show active item if needed
-                                const sidebar = document.getElementById('sidebar');
-                                const sidebarNav = sidebar?.querySelector('nav');
-                                if (sidebarNav && activeItem) {
-                                    const itemTop = activeItem.offsetTop;
-                                    const itemBottom = itemTop + activeItem.offsetHeight;
-                                    const sidebarTop = sidebarNav.scrollTop;
-                                    const sidebarBottom = sidebarTop + sidebarNav.clientHeight;
-                                    
-                                    if (itemTop < sidebarTop || itemBottom > sidebarBottom) {
-                                        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    }
-                                }
-                            }
+                            updateSidebarActive(featureId);
                         }
                     }
                 });
@@ -3284,6 +3535,33 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             document.querySelectorAll('.scenario[data-feature-id]').forEach(scenario => {
                 observer.observe(scenario);
             });
+        }
+        
+        // Shared function to update sidebar active state
+        function updateSidebarActive(featureId) {
+            // Update sidebar active state without hiding other features
+            document.querySelectorAll('.feature-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
+            if (activeItem) {
+                activeItem.classList.add('active');
+                
+                // Scroll sidebar to show active item if needed
+                const sidebar = document.getElementById('sidebar');
+                const sidebarNav = sidebar?.querySelector('nav');
+                if (sidebarNav && activeItem) {
+                    const itemTop = activeItem.offsetTop;
+                    const itemBottom = itemTop + activeItem.offsetHeight;
+                    const sidebarTop = sidebarNav.scrollTop;
+                    const sidebarBottom = sidebarTop + sidebarNav.clientHeight;
+                    
+                    if (itemTop < sidebarTop || itemBottom > sidebarBottom) {
+                        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
         }
         
         // Select Feature
@@ -3600,6 +3878,38 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         js.Append("        }");
         return js.ToString();
+    }
+    
+    /// <summary>
+    /// Generates JSON data for lazy-loaded features
+    /// </summary>
+    private string GenerateFeatureDataJson(LivingDocumentation documentation)
+    {
+        var json = new StringBuilder();
+        json.AppendLine("{");
+        json.AppendLine("  \"features\": [");
+        
+        for (int i = 0; i < documentation.Features.Count; i++)
+        {
+            var featureHtml = GenerateFeature(documentation.Features[i], i);
+            // Escape for JSON
+            var escapedHtml = featureHtml
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n")
+                .Replace("\r", "")
+                .Replace("\t", "  ");
+            
+            json.Append($"    {{\"index\": {i}, \"html\": \"{escapedHtml}\"}}");
+            if (i < documentation.Features.Count - 1)
+                json.AppendLine(",");
+            else
+                json.AppendLine();
+        }
+        
+        json.AppendLine("  ]");
+        json.AppendLine("}");
+        return json.ToString();
     }
 }
 

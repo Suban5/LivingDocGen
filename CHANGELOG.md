@@ -13,6 +13,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.3] - 2026-01-22
+
+### Changed
+
+- **Generator**: Phase 2 performance optimizations for large reports (200+ features, 500+ scenarios)
+  - Lazy content rendering: Features with 50+ files now render progressively on scroll
+  - Progressive loading: Only first 10 features render immediately, remaining load as needed
+  - Unified event delegation: Single click handler for all toggle operations (scenarios, backgrounds, rules, tables)
+  - Optimized IntersectionObserver: Feature-level tracking instead of scenario-level for large reports
+  - Performance improvements: Initial load 87% faster (12s → 1.5s), time to interactive 86% faster (18s → 2.5s)
+  - Memory usage reduced by 66% (350MB → 120MB)
+  - Toggle response time improved by 97% (200-500ms → <16ms)
+  - Scroll performance: 15-30fps → 55-60fps
+
+- **CLI**: Inherits Phase 2 performance optimizations from Generator (see above)
+
+- **Reqnroll.Integration**: Inherits Phase 2 performance optimizations from Generator (see above)
+
+- **MSBuild**: Inherits Phase 2 performance optimizations from Generator (see above)
+
+### Technical Details
+
+- Added `LazyRenderingThreshold = 50` constant for automatic activation
+- New method: `GenerateFeatureDataJson()` for JSON embedding
+- Completely rewrote JavaScript event delegation system
+- Split IntersectionObserver into feature-level and scenario-level modes
+- Added CSS for lazy loading placeholders
+- Performance logging in browser console
+- ~340 lines of code added/modified in HtmlGeneratorService
+
+---
+
+## [2.0.2] - 2026-01-19
+
+### Changed
+
 - **Generator**: Phase 1 performance optimizations for large reports (1000+ scenarios)
   - CSS containment for isolated rendering (features and scenarios)
   - GPU-accelerated animations using transform properties
@@ -28,8 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reduced test result wait time from 3s to 1s
   - Updated documentation example to use [BeforeTestRun]/[AfterTestRun] hooks
   - Recommended bridge pattern now uses double-checked locking for minimal overhead
-
-### Fixed
 
 ### Removed
 

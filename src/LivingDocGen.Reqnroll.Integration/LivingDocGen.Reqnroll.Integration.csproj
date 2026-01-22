@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>LivingDocGen.Reqnroll.Integration</PackageId>
-    <Version>2.0.1</Version>
+    <Version>2.0.3</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Reqnroll integration for automatic living documentation generation. Self-contained - no global tool installation required!</Description>
     <PackageTags>BDD;Reqnroll;Living Documentation;Testing;SpecFlow</PackageTags>

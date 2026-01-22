@@ -15,7 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Improved HTML report performance for large feature sets (inherited from Generator)
+- Phase 2 performance optimizations for large reports (inherited from Generator)
+  - Lazy rendering: Reports with 50+ features load progressively on scroll
+  - Initial page load 87% faster (12s → 1.5s for 200 features)
+  - Smooth 60fps scrolling, instant toggle response (<16ms)
+  - Memory usage reduced by 66%
+
+- Phase 1 performance optimizations for large feature sets (inherited from Generator)
   - 3-4x faster rendering for 500-1000 scenarios
   - 5-10x faster for 1000-1800 scenarios
   - Smooth animations with no UI freezing

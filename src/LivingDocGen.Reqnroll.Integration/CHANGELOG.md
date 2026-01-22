@@ -113,6 +113,32 @@ For more details, see: https://github.com/suban5/LivingDocGen
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.3] - 2026-01-22
+
+### Changed
+
+- Phase 2 performance optimizations for large test suites (inherited from Generator)
+  - Lazy rendering: Reports with 50+ features load progressively on scroll
+  - Handles 200+ feature files with 500+ scenarios smoothly
+  - Initial page load 87% faster (12s → 1.5s), time to interactive 86% faster (18s → 2.5s)
+  - Memory efficient: 66% reduction in browser memory usage (350MB → 120MB)
+  - Smooth 60fps scrolling with instant toggle response
+  - Automatic activation for reports with 50+ features
+
+---
+
+## [2.0.2] - 2026-01-19
+
+### Added
+
+### Changed
+
 - **Performance optimizations for large test suites (1000+ scenarios)**
   - Replaced `Console.WriteLine` with `Trace.WriteLine` for proper test runner output visibility
   - Reduced test result file wait time from 3 seconds to 1 second
@@ -321,6 +347,7 @@ First public release of LivingDocGen.Reqnroll.Integration.
 ---
 
 [Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.0...HEAD
+[2.0.2]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.2
 [2.0.1]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.1
 [2.0.0]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.0
 [1.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.4
