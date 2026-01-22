@@ -11,7 +11,7 @@ public class GherkinParserTests
     {
         // Arrange
         var parser = new GherkinParser(BDDFramework.Cucumber);
-        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "cucumber", "login.feature");
+        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "features", "login.feature");
         var fullPath = Path.GetFullPath(samplePath);
 
         // Act
@@ -29,7 +29,7 @@ public class GherkinParserTests
     {
         // Arrange
         var parser = new GherkinParser(BDDFramework.Cucumber);
-        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "cucumber", "login.feature");
+        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "features", "login.feature");
         var fullPath = Path.GetFullPath(samplePath);
 
         // Act
@@ -46,7 +46,7 @@ public class GherkinParserTests
     {
         // Arrange
         var parser = new GherkinParser(BDDFramework.Cucumber);
-        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "cucumber", "login.feature");
+        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "features", "login.feature");
         var fullPath = Path.GetFullPath(samplePath);
 
         // Act
@@ -65,12 +65,12 @@ public class GherkinParserTests
     {
         // Arrange
         var parser = new GherkinParser(BDDFramework.Cucumber);
-        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "cucumber", "shopping_cart.feature");
+        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "features", "shopping_cart.feature");
         var fullPath = Path.GetFullPath(samplePath);
 
         // Act
         var feature = parser.Parse(fullPath);
-        var scenario = feature.Scenarios.FirstOrDefault(s => s.Name.Contains("Remove product"));
+        var scenario = feature.Scenarios.FirstOrDefault(s => s.Name.Contains("Remove product from cart"));
 
         // Assert
         Assert.NotNull(scenario);
@@ -85,7 +85,7 @@ public class GherkinParserTests
     {
         // Arrange
         var parser = new GherkinParser();
-        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "cucumber", "login.feature");
+        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "features", "login.feature");
         var fullPath = Path.GetFullPath(samplePath);
 
         // Act
