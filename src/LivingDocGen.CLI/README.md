@@ -33,6 +33,26 @@ dotnet new tool-manifest # if you haven't created one yet
 dotnet tool install LivingDocGen.Tool
 ```
 
+### Updating to Latest Version
+
+To update an already installed global tool to the latest version:
+
+```bash
+dotnet tool update --global LivingDocGen.Tool
+```
+
+To update to a specific version:
+
+```bash
+dotnet tool update --global LivingDocGen.Tool --version 2.0.4
+```
+
+To check your current version:
+
+```bash
+LivingDocGen --version
+```
+
 ## 🚀 Usage
 
 The main command is `generate`, which produces the HTML documentation.
