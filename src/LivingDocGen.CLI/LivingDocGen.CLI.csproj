@@ -11,7 +11,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>LivingDocGen</ToolCommandName>
     <PackageId>LivingDocGen.Tool</PackageId>
-    <Version>2.0.1</Version>
+    <Version>2.0.3</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Universal BDD Living Documentation Generator - CLI Tool for Reqnroll, SpecFlow, Cucumber, and other BDD frameworks</Description>
     <PackageTags>BDD;Gherkin;Reqnroll;SpecFlow;Cucumber;Living Documentation;Testing;CLI</PackageTags>

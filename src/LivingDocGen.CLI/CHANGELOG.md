@@ -102,6 +102,40 @@ For more information, visit: https://github.com/suban5/LivingDocGen
 
 ---
 
+## [2.0.3] - 2026-01-22
+
+### Changed
+
+- Phase 2 performance optimizations for large reports (inherited from Generator)
+  - Lazy rendering: Reports with 50+ features load progressively on scroll
+  - Initial page load 87% faster for 200-feature reports (12s → 1.5s)
+  - Time to interactive 86% faster (18s → 2.5s)
+  - Smooth 60fps scrolling and instant toggle response (<16ms)
+  - Memory usage reduced by 66% (350MB → 120MB)
+  - Unified event delegation for all toggle operations
+  - Optimized IntersectionObserver reduces overhead by 80-90%
+
+---
+
+## [2.0.2] - 2026-01-19
+
+### Added
+
+### Changed
+
+- Improved HTML report performance for large feature sets (inherited from Generator)
+  - 3-4x faster rendering for 500-1000 scenarios
+  - 5-10x faster for 1000-1800 scenarios
+  - Smooth animations with no UI freezing
+
+### Fixed
+
+### Removed
+
+- Expand All/Collapse All button from reports (inherited from Generator)
+
+---
+
 ## [2.0.1] - 2026-01-16
 
 ### Added
@@ -269,7 +303,9 @@ First public release of LivingDocGen CLI - Universal BDD Living Documentation Ge
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
+[2.0.2]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.2
 [2.0.1]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.1
 [2.0.0]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.0
 [1.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.4
