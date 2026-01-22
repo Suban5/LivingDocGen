@@ -209,6 +209,9 @@ samples/*
 *.feature.cs
 tests/cli-test-output/*
 
-copilot-instructions.md
+
 COMMIT_MESSAGE.txt
 RELEASE_v*_CHECKLIST.md
+
+.github/tasks
+copilot-instructions.md

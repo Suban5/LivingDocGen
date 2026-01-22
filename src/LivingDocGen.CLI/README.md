@@ -5,16 +5,24 @@
 
 The **LivingDocGen CLI** is a cross-platform .NET Global Tool that generates beautiful, interactive living documentation from your Gherkin feature files and test results.
 
-## ✨ What's New in v2.0.3
+## ✨ What's New in v2.0.4 🎉
 
-**Phase 2 Performance Optimizations** - Handles large reports (200+ features) effortlessly:
-- ⚡ **87% faster initial load** - 12s → 1.5s for 200-feature reports
-- 🚀 **Lazy rendering** - Progressive content loading on scroll
-- 💾 **66% less memory** - 350MB → 120MB browser usage
-- 🎯 **Instant toggles** - <16ms response time (was 200-500ms)
-- 📜 **Smooth scrolling** - Buttery 60fps performance
+**Release Date:** January 22, 2026
 
-Automatically activates for reports with 50+ features. No configuration needed!
+**Critical Bug Fixes** - All lazy rendering features now fully functional:
+- ✅ **Sidebar Navigation** - Fixed with 50+ feature reports
+- ✅ **Search Functionality** - Restored with dynamically loaded content
+- ✅ **Search Navigation** - Added prev/next buttons with keyboard shortcuts
+- ✅ **Tag Filtering** - Now displays features properly
+- ✅ **Toggle Sections** - Background, Rules, Examples work correctly
+- ✅ **Compact Display** - Steps show inline (40% space savings)
+- ✅ **Collapse Behavior** - No content overflow when collapsed
+- ✅ **Event Delegation** - Proper event handling for all toggles
+- ✅ **Element References** - Fixed stale reference issues
+
+**Impact:** Reports with 50+ features are now fully functional with all navigation, search, and filtering working correctly.
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
 
 ## 📦 Installation
 

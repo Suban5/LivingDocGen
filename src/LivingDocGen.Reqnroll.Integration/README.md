@@ -17,16 +17,21 @@ Seamlessly integrate living documentation generation into your Reqnroll test exe
 - 🔍 **Interactive Features** - Search, filter by status, collapsible sections
 - ⚡ **Fast** - In-process generation (~500ms for 100 scenarios)
 
-## ✨ What's New in v2.0.3
+## ✨ What's New in v2.0.4 🎉
 
-**Phase 2 Performance Enhancements** for large test suites:
-- ⚡ **87% faster page load** - Handles 200+ features with 500+ scenarios smoothly
-- 🚀 **Lazy rendering** - Content loads progressively as you scroll
-- 💾 **66% memory reduction** - From 350MB to 120MB browser usage
-- 🎯 **Instant interactions** - Toggle response <16ms (97% faster)
-- 📜 **60fps scrolling** - Buttery smooth navigation
+**Release Date:** January 22, 2026
 
-Automatically activates for large test suites (50+ features). Zero configuration required!
+**Critical Bug Fixes** - Lazy rendering now fully functional:
+- ✅ **Navigation Fixed** - Sidebar works perfectly with 50+ features
+- ✅ **Search Restored** - Full search functionality with navigation buttons
+- ✅ **Tag Filtering** - Properly displays filtered features
+- ✅ **Toggles Working** - All collapsible sections function correctly
+- ✅ **Compact Steps** - 40% more readable with inline display
+- ✅ **Clean Collapse** - No overflow in collapsed sections
+
+**Impact:** Large test suites (50+ features) generate fully functional reports with all interactive features working as expected.
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
 
 ---
 

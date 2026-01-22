@@ -9,19 +9,27 @@
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
 | Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
 
-### Recent Completions (v2.0.3)
+### Recent Completions (v2.0.4)
+- ✅ **Critical Bug Fixes for Lazy Rendering** - 12 issues resolved
+  - Fixed sidebar navigation with lazy rendering (50+ features)
+  - Restored search functionality with dynamically loaded content
+  - Fixed tag filtering to display features properly
+  - Fixed Background/Rule/Examples toggle functionality
+  - Fixed content overflow in collapsed sections
+  - Added search result navigation (prev/next buttons)
+  - Implemented compact step display (40% space reduction)
+  - Resolved element reference issues
+  - Implemented event delegation for all toggles
+  - Fixed double-nesting bug
+  - Optimized search scope
+  - Corrected CSS collapse behavior
+
+### Previous Completions (v2.0.3)
 - ✅ **Phase 2 Performance Optimizations** - Lazy rendering for large reports (200+ features)
 - ✅ **Unified Event Delegation** - Single handler for all toggle operations
 - ✅ **Progressive Loading** - Content loads on scroll, 87% faster initial load
 - ✅ **Memory Optimization** - 66% reduction in browser memory usage
 - ✅ **Optimized Observers** - Feature-level tracking for large reports
-
-### Previous Completions (v2.0.1)
-- ✅ **Gherkin Comment Rendering** - Comments from `.feature` files now displayed
-- ✅ **Parallel Processing** - Multi-threaded parsing and generation
-- ✅ **Thread-Safe Caching** - Improved performance and reliability
-- ✅ **Enhanced Statistics** - Accurate pass/fail/skip rate calculations
-- ✅ **UI/UX Improvements** - Better layout, clickable table headers, streamlined interface
 
 ---
 
@@ -190,6 +198,7 @@ We're actively seeking feedback on:
 
 | Version | Target Date | Focus |
 |---------|-------------|-------|
+| v2.0.4 | ✅ Jan 22, 2026 | Critical lazy rendering bug fixes |
 | v2.0.3 | ✅ Jan 22, 2026 | Phase 2 performance (lazy rendering) |
 | v2.0.2 | ✅ Jan 19, 2026 | Phase 1 performance optimizations |
 | v2.0.1 | ✅ Jan 16, 2026 | Gherkin comments, parallel processing |
