@@ -20,14 +20,25 @@ public static class FileValidator
             throw new ValidationException("File path cannot be null or empty");
         }
 
-        if (!File.Exists(filePath))
+        // Prevent path traversal attacks by normalizing and validating the path
+        string normalizedPath;
+        try
+        {
+            normalizedPath = Path.GetFullPath(filePath);
+        }
+        catch (Exception ex)
+        {
+            throw new ValidationException($"Invalid file path: {filePath}", ex);
+        }
+
+        if (!File.Exists(normalizedPath))
         {
             throw new ValidationException($"File not found: {filePath}");
         }
 
         if (!string.IsNullOrEmpty(expectedExtension))
         {
-            var actualExtension = Path.GetExtension(filePath);
+            var actualExtension = Path.GetExtension(normalizedPath);
             if (!actualExtension.Equals(expectedExtension, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ValidationException(
@@ -46,7 +57,18 @@ public static class FileValidator
             throw new ValidationException("Directory path cannot be null or empty");
         }
 
-        if (!Directory.Exists(directoryPath))
+        // Prevent path traversal attacks by normalizing the path
+        string normalizedPath;
+        try
+        {
+            normalizedPath = Path.GetFullPath(directoryPath);
+        }
+        catch (Exception ex)
+        {
+            throw new ValidationException($"Invalid directory path: {directoryPath}", ex);
+        }
+
+        if (!Directory.Exists(normalizedPath))
         {
             throw new ValidationException($"Directory not found: {directoryPath}");
         }

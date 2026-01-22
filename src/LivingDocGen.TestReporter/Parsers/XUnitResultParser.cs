@@ -15,6 +15,18 @@ using LivingDocGen.TestReporter.Models;
 /// </summary>
 public class XUnitResultParser : ITestResultParser
 {
+    /// <summary>
+    /// Creates secure XML reader settings to prevent XXE attacks
+    /// </summary>
+    private static System.Xml.XmlReaderSettings CreateSecureXmlReaderSettings()
+    {
+        return new System.Xml.XmlReaderSettings
+        {
+            DtdProcessing = System.Xml.DtdProcessing.Prohibit,
+            XmlResolver = null,
+            MaxCharactersFromEntities = 1024 * 1024, // 1 MB limit
+        };
+    }
     public TestFramework SupportedFramework => TestFramework.XUnit;
 
     public bool CanParse(string filePath)
@@ -24,7 +36,10 @@ public class XUnitResultParser : ITestResultParser
 
         try
         {
-            var doc = XDocument.Load(filePath);
+            // Use secure XML settings to prevent XXE attacks
+            using var stream = File.OpenRead(filePath);
+            using var reader = System.Xml.XmlReader.Create(stream, CreateSecureXmlReaderSettings());
+            var doc = XDocument.Load(reader);
             return doc.Root?.Name.LocalName == "assemblies" || doc.Root?.Name.LocalName == "assembly";
         }
         catch
@@ -35,7 +50,10 @@ public class XUnitResultParser : ITestResultParser
 
     public TestExecutionReport Parse(string filePath)
     {
-        var doc = XDocument.Load(filePath);
+        // Use secure XML settings to prevent XXE attacks
+        using var stream = File.OpenRead(filePath);
+        using var reader = System.Xml.XmlReader.Create(stream, CreateSecureXmlReaderSettings());
+        var doc = XDocument.Load(reader);
         var root = doc.Root ?? throw new InvalidOperationException("Invalid xUnit XML format");
 
         var report = new TestExecutionReport

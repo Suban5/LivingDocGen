@@ -142,6 +142,53 @@ public class ConfigurationService
     }
 
     /// <summary>
+    /// Validates configuration paths exist and are accessible
+    /// </summary>
+    public static void ValidateConfiguration(string featuresPath, string? testResultsPath, string outputPath)
+    {
+        // Validate features path
+        if (string.IsNullOrWhiteSpace(featuresPath))
+        {
+            throw new Core.Exceptions.ConfigurationException("Features path cannot be empty");
+        }
+
+        if (!File.Exists(featuresPath) && !Directory.Exists(featuresPath))
+        {
+            throw new Core.Exceptions.ConfigurationException($"Features path not found: {featuresPath}");
+        }
+
+        // Validate test results path if provided
+        if (!string.IsNullOrWhiteSpace(testResultsPath))
+        {
+            if (!File.Exists(testResultsPath) && !Directory.Exists(testResultsPath))
+            {
+                throw new Core.Exceptions.ConfigurationException($"Test results path not found: {testResultsPath}");
+            }
+        }
+
+        // Validate output path
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new Core.Exceptions.ConfigurationException("Output path cannot be empty");
+        }
+
+        // Ensure output directory exists or can be created
+        var outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                throw new Core.Exceptions.ConfigurationException(
+                    $"Cannot create output directory: {outputDir}", ex);
+            }
+        }
+    }
+
+    /// <summary>
     /// Merges configuration with command-line arguments
     /// Priority: CLI args > Config file > Defaults
     /// </summary>

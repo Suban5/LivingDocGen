@@ -15,6 +15,18 @@ using LivingDocGen.TestReporter.Models;
 /// </summary>
 public class NUnit2ResultParser : ITestResultParser
 {
+    /// <summary>
+    /// Creates secure XML reader settings to prevent XXE attacks
+    /// </summary>
+    private static System.Xml.XmlReaderSettings CreateSecureXmlReaderSettings()
+    {
+        return new System.Xml.XmlReaderSettings
+        {
+            DtdProcessing = System.Xml.DtdProcessing.Prohibit,
+            XmlResolver = null,
+            MaxCharactersFromEntities = 1024 * 1024, // 1 MB limit
+        };
+    }
     public TestFramework SupportedFramework => TestFramework.NUnit;
 
     public bool CanParse(string filePath)
@@ -24,7 +36,10 @@ public class NUnit2ResultParser : ITestResultParser
 
         try
         {
-            var doc = XDocument.Load(filePath);
+            // Use secure XML settings to prevent XXE attacks
+            using var stream = File.OpenRead(filePath);
+            using var reader = System.Xml.XmlReader.Create(stream, CreateSecureXmlReaderSettings());
+            var doc = XDocument.Load(reader);
             // NUnit2 uses <test-results> root element
             return doc.Root?.Name.LocalName == "test-results";
         }
@@ -36,7 +51,10 @@ public class NUnit2ResultParser : ITestResultParser
 
     public TestExecutionReport Parse(string filePath)
     {
-        var doc = XDocument.Load(filePath);
+        // Use secure XML settings to prevent XXE attacks
+        using var stream = File.OpenRead(filePath);
+        using var reader = System.Xml.XmlReader.Create(stream, CreateSecureXmlReaderSettings());
+        var doc = XDocument.Load(reader);
         var testResults = doc.Root ?? throw new InvalidOperationException("Invalid NUnit2 XML format");
 
         var report = new TestExecutionReport

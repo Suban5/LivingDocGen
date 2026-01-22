@@ -194,6 +194,13 @@ class Program
     {
         try
         {
+            // Validate input path
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                Console.WriteLine("❌ Error: Path cannot be empty");
+                return 1;
+            }
+
             Console.WriteLine($"🔍 Parsing: {path}");
             
             BDDFramework? framework = frameworkStr?.ToLower() switch
@@ -255,14 +262,39 @@ class Program
             
             return 0; // Success
         }
+        catch (Core.Exceptions.ValidationException ex)
+        {
+            Console.WriteLine($"❌ Validation Error: {ex.Message}");
+            return 1;
+        }
+        catch (Core.Exceptions.ParseException ex)
+        {
+            Console.WriteLine($"❌ Parse Error: {ex.Message}");
+            if (verbose && ex.InnerException != null)
+            {
+                Console.WriteLine($"   Details: {ex.InnerException.Message}");
+            }
+            return 1;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.WriteLine($"❌ Access Denied: {ex.Message}");
+            Console.WriteLine("   Check file permissions and try again.");
+            return 1;
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"❌ I/O Error: {ex.Message}");
+            return 1;
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Error: {ex.Message}");
+            Console.WriteLine($"❌ Unexpected Error: {ex.Message}");
             if (verbose)
             {
                 Console.WriteLine(ex.StackTrace);
             }
-            return 1; // Failure
+            return 1;
         }
     }
 
@@ -270,6 +302,13 @@ class Program
     {
         try
         {
+            // Validate input path
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                Console.WriteLine("❌ Error: Path cannot be empty");
+                return 1;
+            }
+
             Console.WriteLine($"🔍 Parsing test results: {path}");
             
             LivingDocGen.TestReporter.Models.TestExecutionReport report;
@@ -345,14 +384,39 @@ class Program
             
             return 0; // Success
         }
+        catch (Core.Exceptions.ValidationException ex)
+        {
+            Console.WriteLine($"❌ Validation Error: {ex.Message}");
+            return 1;
+        }
+        catch (Core.Exceptions.ParseException ex)
+        {
+            Console.WriteLine($"❌ Parse Error: {ex.Message}");
+            if (verbose && ex.InnerException != null)
+            {
+                Console.WriteLine($"   Details: {ex.InnerException.Message}");
+            }
+            return 1;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.WriteLine($"❌ Access Denied: {ex.Message}");
+            Console.WriteLine("   Check file permissions and try again.");
+            return 1;
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"❌ I/O Error: {ex.Message}");
+            return 1;
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Error: {ex.Message}");
+            Console.WriteLine($"❌ Unexpected Error: {ex.Message}");
             if (verbose)
             {
                 Console.WriteLine(ex.StackTrace);
             }
-            return 1; // Failure
+            return 1;
         }
     }
 
@@ -410,6 +474,9 @@ class Program
                     color,
                     theme,
                     verbose);
+            
+            // Validate configuration
+            ConfigurationService.ValidateConfiguration(resolvedFeatures, resolvedTestResults, resolvedOutput);
             
             if (resolvedVerbose)
             {
@@ -493,14 +560,44 @@ class Program
             Console.WriteLine($"   file://{Path.GetFullPath(resolvedOutput)}");
             return 0; // Success
         }
+        catch (Core.Exceptions.ConfigurationException ex)
+        {
+            Console.WriteLine($"❌ Configuration Error: {ex.Message}");
+            return 1;
+        }
+        catch (Core.Exceptions.ValidationException ex)
+        {
+            Console.WriteLine($"❌ Validation Error: {ex.Message}");
+            return 1;
+        }
+        catch (Core.Exceptions.ParseException ex)
+        {
+            Console.WriteLine($"❌ Parse Error: {ex.Message}");
+            if (verbose && ex.InnerException != null)
+            {
+                Console.WriteLine($"   Details: {ex.InnerException.Message}");
+            }
+            return 1;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.WriteLine($"❌ Access Denied: {ex.Message}");
+            Console.WriteLine("   Check file permissions and try again.");
+            return 1;
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"❌ I/O Error: {ex.Message}");
+            return 1;
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Error: {ex.Message}");
+            Console.WriteLine($"❌ Unexpected Error: {ex.Message}");
             if (verbose)
             {
                 Console.WriteLine(ex.StackTrace);
             }
-            return 1; // Failure
+            return 1;
         }
     }
 }
