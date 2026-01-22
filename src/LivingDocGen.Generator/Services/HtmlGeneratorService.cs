@@ -167,7 +167,8 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             {
                 var feature = documentation.Features[i];
                 var featureId = $"feature-{i}";
-                html.AppendLine($"<div class=\"feature lazy-feature\" id=\"{featureId}\" data-feature-id=\"{featureId}\" data-feature-index=\"{i}\" data-lazy=\"true\">");
+                var hiddenClass = i == 0 ? "" : " feature-hidden";
+                html.AppendLine($"<div class=\"feature lazy-feature{hiddenClass}\" id=\"{featureId}\" data-feature-id=\"{featureId}\" data-feature-index=\"{i}\" data-lazy=\"true\">");
                 html.AppendLine("    <div class=\"lazy-placeholder\"><i class=\"fas fa-spinner fa-spin\"></i> Loading...</div>");
                 html.AppendLine("</div>");
             }
@@ -432,10 +433,58 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             transform: translateY(-50%) scale(0.9);
         }
 
+        /* Search navigation buttons */
+        .search-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            width: 32px;
+            height: 32px;
+            z-index: 1;
+        }
+
+        .search-nav-btn.visible {
+            display: flex;
+        }
+
+        .search-nav-btn:hover:not(:disabled) {
+            background: var(--hover-bg);
+            color: var(--text-color);
+        }
+
+        .search-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .search-nav-btn:focus-visible {
+            outline: 2px solid var(--focus-ring);
+            outline-offset: 2px;
+        }
+
+        #search-prev-btn {
+            right: 6.5rem;
+        }
+
+        #search-next-btn {
+            right: 3.5rem;
+        }
+
         /* Search result count */
         .search-result-count {
             position: absolute;
-            right: 3rem;
+            right: 9.5rem;
             top: 50%;
             transform: translateY(-50%);
             font-size: 0.85rem;
@@ -769,16 +818,17 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .background-body {
-            padding: 1rem;
+            padding: 0;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
             background: transparent;
         }
 
         .background-body.expanded {
+            padding: 1rem;
             max-height: 5000px;
-            transition: max-height 0.5s ease-in;
+            transition: max-height 0.5s ease-in, padding 0.5s ease-in;
         }
 
         .background-description {
@@ -834,16 +884,17 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .rule-body {
-            padding: 1.5rem;
+            padding: 0;
             background: var(--hover-bg);
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
         }
 
         .rule-body.expanded {
+            padding: 1.5rem;
             max-height: 10000px;
-            transition: max-height 0.5s ease-in;
+            transition: max-height 0.5s ease-in, padding 0.5s ease-in;
         }
 
         .rule-description {
@@ -2137,6 +2188,20 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                    aria-label=""Search documentation""
                    aria-describedby=""search-result-count"">
             <button type=""button"" 
+                    id=""search-prev-btn"" 
+                    class=""search-nav-btn"" 
+                    aria-label=""Previous search result""
+                    title=""Previous result (Shift+Enter)"">
+                <i class=""fas fa-caret-up"" aria-hidden=""true""></i>
+            </button>
+            <button type=""button"" 
+                    id=""search-next-btn"" 
+                    class=""search-nav-btn"" 
+                    aria-label=""Next search result""
+                    title=""Next result (Enter)"">
+                <i class=""fas fa-caret-down"" aria-hidden=""true""></i>
+            </button>
+            <button type=""button"" 
                     id=""search-clear-btn"" 
                     class=""search-clear-btn"" 
                     aria-label=""Clear search""
@@ -2441,7 +2506,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         html.AppendLine($@"
             <div class=""background"">
-                <div class=""background-header"" onclick=""toggleBackground(this)"">
+                <div class=""background-header"">
                     <div style=""display: flex; align-items: center; gap: 0.75rem; flex: 1;"">
                         <i class=""fas fa-layer-group""></i>
                         <strong>Background: {HtmlEncode(background.Name)}</strong>
@@ -2460,8 +2525,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         {
             html.AppendLine($@"                    <div class=""step"">
                         <div class=""step-line"">
-                            <span class=""step-keyword"">{System.Web.HttpUtility.HtmlEncode(step.Keyword)}</span>
-                            <span class=""step-text"">{System.Web.HttpUtility.HtmlEncode(step.Text)}</span>
+                            <span class=""step-keyword"">{System.Web.HttpUtility.HtmlEncode(step.Keyword)}</span> <span class=""step-text"">{System.Web.HttpUtility.HtmlEncode(step.Text)}</span>
                         </div>");
 
             // Add DocString if present
@@ -2529,7 +2593,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         html.AppendLine($@"
             <div class=""rule"">
-                <div class=""rule-header"" onclick=""toggleRule(this)"">
+                <div class=""rule-header"">
                     <div class=""rule-title"">
                         <i class=""fas fa-gavel""></i>
                         <h3>{System.Web.HttpUtility.HtmlEncode(rule.Name)}</h3>
@@ -2644,21 +2708,19 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var html = new StringBuilder();
         
         html.AppendLine($@"                        <li class=""step status-{statusClass}"">");
-        html.AppendLine($@"                            <span class=""step-keyword"">{System.Web.HttpUtility.HtmlEncode(step.Step.Keyword)}</span>");
-        html.AppendLine($@"                            <div class=""step-text"">");
-        html.AppendLine($@"                                <div>{System.Web.HttpUtility.HtmlEncode(step.Step.Text)}");
+        html.AppendLine($@"                            <span class=""step-keyword"">{System.Web.HttpUtility.HtmlEncode(step.Step.Keyword)}</span> <span class=""step-text"">{System.Web.HttpUtility.HtmlEncode(step.Step.Text)}");
         
         if (step.Duration != default(TimeSpan) && step.Duration.TotalMilliseconds > 0)
         {
             html.AppendLine($@" <span class=""step-duration"">({step.Duration.TotalMilliseconds:F0}ms)</span>");
         }
         
-        html.AppendLine(@"</div>");
+        html.AppendLine(@"</span>");
 
         // Add error message if failed
         if (!string.IsNullOrEmpty(step.ErrorMessage))
         {
-            html.AppendLine($@"                                <div style=""color: var(--danger-color); margin-top: 0.5rem;""><small>{System.Web.HttpUtility.HtmlEncode(step.ErrorMessage)}</small></div>");
+            html.AppendLine($@"                            <div style=""color: var(--danger-color); margin-top: 0.5rem; margin-left: 65px;""><small>{System.Web.HttpUtility.HtmlEncode(step.ErrorMessage)}</small></div>");
         }
 
         // Add data table if present
@@ -2681,8 +2743,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                                 </div>");
         }
 
-        html.AppendLine(@"                            </div>
-                        </li>");
+        html.AppendLine(@"                        </li>");
 
         return html.ToString();
     }
@@ -2737,7 +2798,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         html.AppendLine(@"                    <div class=""examples-section"">");
         
         // Examples header with toggle functionality (like Pickles)
-        html.AppendLine($@"                        <h4 class=""examples-header"" onclick=""toggleExamples(this)"">");
+        html.AppendLine($@"                        <h4 class=""examples-header"">");
         html.AppendLine($@"                            <i class=""fas fa-table""></i> Examples{(!string.IsNullOrEmpty(example.Name) ? $": {System.Web.HttpUtility.HtmlEncode(example.Name)}" : "")}");
         html.AppendLine($@"                            <i class=""fas fa-chevron-up toggle-icon""></i>");
         html.AppendLine($@"                        </h4>");
@@ -3075,9 +3136,13 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         // Debounced search functionality with highlighting and result count
         let searchTimeout;
+        let searchResults = [];
+        let currentSearchIndex = 0;
         const searchBox = document.getElementById('search-box');
         const searchResultCount = document.getElementById('search-result-count');
         const searchClearBtn = document.getElementById('search-clear-btn');
+        const searchPrevBtn = document.getElementById('search-prev-btn');
+        const searchNextBtn = document.getElementById('search-next-btn');
         
         function removeHighlights() {
             document.querySelectorAll('.search-highlight').forEach(highlight => {
@@ -3112,8 +3177,9 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         function performSearch() {
             const searchTerm = searchBox.value.toLowerCase().trim();
-            const features = document.querySelectorAll('.feature');
-            let visibleCount = 0;
+            const features = document.querySelectorAll('.feature[data-feature-id]');
+            searchResults = [];
+            currentSearchIndex = 0;
             let totalCount = features.length;
             
             // Remove previous highlights
@@ -3122,44 +3188,173 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             // Performance: Batch DOM reads and writes
             const featureData = [];
             features.forEach(feature => {
-                const text = feature.textContent.toLowerCase();
-                const isVisible = !searchTerm || text.includes(searchTerm);
-                featureData.push({ element: feature, isVisible, text });
-                if (isVisible) visibleCount++;
+                // Render lazy features before searching their content
+                if (USE_LAZY_RENDERING && feature.hasAttribute('data-lazy')) {
+                    renderFeatureContent(feature);
+                    // Get the newly rendered element
+                    const featureId = feature.getAttribute('data-feature-id');
+                    feature = document.getElementById(featureId) || feature;
+                }
+                
+                // Search only in feature title and scenario names
+                let isMatch = false;
+                if (!searchTerm) {
+                    isMatch = false;
+                } else {
+                    // Check feature title
+                    const featureTitle = feature.querySelector('.feature-title h2');
+                    if (featureTitle && featureTitle.textContent.toLowerCase().includes(searchTerm)) {
+                        isMatch = true;
+                    }
+                    
+                    // Check scenario names
+                    if (!isMatch) {
+                        const scenarioTitles = feature.querySelectorAll('.scenario-title strong');
+                        for (let title of scenarioTitles) {
+                            if (title.textContent.toLowerCase().includes(searchTerm)) {
+                                isMatch = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                featureData.push({ element: feature, isMatch });
+                if (isMatch) {
+                    searchResults.push(feature);
+                }
             });
             
             // Performance: Use requestAnimationFrame for DOM writes
             requestAnimationFrame(() => {
-                featureData.forEach(({ element, isVisible }) => {
-                    element.style.display = isVisible ? 'block' : 'none';
-                    
-                    // Highlight matches
-                    if (searchTerm && isVisible) {
-                        // Highlight in feature title
-                        const title = element.querySelector('.feature-title h2');
-                        if (title) highlightText(title, searchTerm);
-                        
-                        // Highlight in scenario names
-                        element.querySelectorAll('.scenario-title strong').forEach(el => {
-                            highlightText(el, searchTerm);
-                        });
-                        
-                        // Highlight in step text
-                        element.querySelectorAll('.step-text').forEach(el => {
-                            const textDiv = el.querySelector('div');
-                            if (textDiv) highlightText(textDiv, searchTerm);
-                        });
-                    }
+                // First, hide all features
+                document.querySelectorAll('.feature[data-feature-id]').forEach(f => {
+                    f.classList.add('feature-hidden');
                 });
                 
-                // Update result count and clear button visibility
-                if (searchTerm) {
-                    searchResultCount.textContent = `${visibleCount} of ${totalCount}`;
-                    searchResultCount.style.display = 'block';
-                    searchClearBtn.classList.add('visible');
+                if (!searchTerm) {
+                    // No search term - show only first feature
+                    const firstFeature = document.getElementById('feature-0');
+                    if (firstFeature) {
+                        firstFeature.classList.remove('feature-hidden');
+                    }
                 } else {
-                    searchResultCount.style.display = 'none';
-                    searchClearBtn.classList.remove('visible');
+                    // Show first matching feature
+                    if (searchResults.length > 0) {
+                        searchResults[0].classList.remove('feature-hidden');
+                    }
+                    
+                    // Highlight matches in all results (feature titles and scenario names only)
+                    featureData.forEach(({ element, isMatch }) => {
+                        if (isMatch) {
+                            // Highlight in feature title
+                            const title = element.querySelector('.feature-title h2');
+                            if (title) highlightText(title, searchTerm);
+                            
+                            // Highlight in scenario names
+                            element.querySelectorAll('.scenario-title strong').forEach(el => {
+                                highlightText(el, searchTerm);
+                            });
+                        }
+                    });
+                }
+                
+                // Update result count and button visibility
+                updateSearchUI();
+            });
+        }
+        
+        function updateSearchUI() {
+            const searchTerm = searchBox.value.trim();
+            
+            if (searchTerm && searchResults.length > 0) {
+                searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+                searchResultCount.classList.add('visible');
+                searchClearBtn.classList.add('visible');
+                searchPrevBtn.classList.add('visible');
+                searchNextBtn.classList.add('visible');
+                
+                // Update button states
+                searchPrevBtn.disabled = currentSearchIndex === 0;
+                searchNextBtn.disabled = currentSearchIndex === searchResults.length - 1;
+                
+                // Scroll to top of current result
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) {
+                    mainContent.scrollTop = 0;
+                }
+            } else {
+                searchResultCount.classList.remove('visible');
+                searchClearBtn.classList.remove('visible');
+                searchPrevBtn.classList.remove('visible');
+                searchNextBtn.classList.remove('visible');
+            }
+        }
+        
+        function navigateSearchResults(direction) {
+            if (searchResults.length === 0) return;
+            
+            // Hide current result
+            searchResults[currentSearchIndex].classList.add('feature-hidden');
+            
+            // Update index
+            if (direction === 'next') {
+                currentSearchIndex = Math.min(currentSearchIndex + 1, searchResults.length - 1);
+            } else {
+                currentSearchIndex = Math.max(currentSearchIndex - 1, 0);
+            }
+            
+            // Show new result
+            const currentFeature = searchResults[currentSearchIndex];
+            currentFeature.classList.remove('feature-hidden');
+            
+            // Update UI
+            updateSearchUI();
+            
+            // Scroll to the feature in main content
+            requestAnimationFrame(() => {
+                const mainContent = document.getElementById('main-content');
+                if (mainContent && currentFeature) {
+                    // Find first highlighted element
+                    const firstHighlight = currentFeature.querySelector('.highlight');
+                    if (firstHighlight) {
+                        // If highlight is in a step, we need to expand the scenario first
+                        const stepElement = firstHighlight.closest('.step');
+                        if (stepElement) {
+                            const scenarioBody = stepElement.closest('.scenario-body');
+                            if (scenarioBody && !scenarioBody.classList.contains('expanded')) {
+                                // Expand the scenario to show the steps
+                                const scenarioHeader = scenarioBody.previousElementSibling;
+                                if (scenarioHeader && scenarioHeader.classList.contains('scenario-header')) {
+                                    toggleScenario(scenarioHeader);
+                                }
+                            }
+                        }
+                        
+                        // Wait for expansion animation, then scroll to highlight
+                        setTimeout(() => {
+                            // Calculate position relative to main content
+                            const highlightRect = firstHighlight.getBoundingClientRect();
+                            const mainContentRect = mainContent.getBoundingClientRect();
+                            const relativeTop = highlightRect.top - mainContentRect.top + mainContent.scrollTop;
+                            
+                            // Scroll to center the highlight in the viewport
+                            const centerOffset = mainContent.clientHeight / 2 - highlightRect.height / 2;
+                            mainContent.scrollTo({
+                                top: relativeTop - centerOffset,
+                                behavior: 'smooth'
+                            });
+                        }, 200);
+                    } else {
+                        // No highlight found, just scroll to top of feature
+                        mainContent.scrollTop = 0;
+                    }
+                }
+                
+                // Also update sidebar selection
+                const featureId = currentFeature.getAttribute('data-feature-id');
+                if (featureId) {
+                    selectFeature(featureId);
                 }
             });
         }
@@ -3183,12 +3378,28 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             searchBox.focus();
         });
         
-        // ESC key to clear search
+        // Navigation buttons
+        searchPrevBtn.addEventListener('click', function() {
+            navigateSearchResults('prev');
+        });
+        
+        searchNextBtn.addEventListener('click', function() {
+            navigateSearchResults('next');
+        });
+        
+        // Keyboard shortcuts for search
         searchBox.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && searchBox.value) {
                 e.preventDefault();
                 searchBox.value = '';
                 performSearch();
+            } else if (e.key === 'Enter' && searchBox.value) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    navigateSearchResults('prev');
+                } else {
+                    navigateSearchResults('next');
+                }
             }
         });
 
@@ -3239,19 +3450,32 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         // Filter by tag
         function filterByTag(tag) {
-            const features = document.querySelectorAll('.feature');
+            const features = document.querySelectorAll('.feature[data-feature-id]');
             let visibleCount = 0;
             
+            // First hide all features
+            features.forEach(f => f.classList.add('feature-hidden'));
+            
             features.forEach(feature => {
+                // Render lazy features before checking tags
+                if (USE_LAZY_RENDERING && feature.hasAttribute('data-lazy')) {
+                    renderFeatureContent(feature);
+                    // Get the newly rendered element
+                    const featureId = feature.getAttribute('data-feature-id');
+                    feature = document.getElementById(featureId) || feature;
+                }
+                
                 if (tag === 'all') {
-                    feature.style.display = 'block';
+                    feature.classList.remove('feature-hidden');
                     visibleCount++;
                 } else {
                     const featureTags = Array.from(feature.querySelectorAll('.tag'))
                         .map(t => t.textContent.trim().toLowerCase());
                     const hasTag = featureTags.some(t => t.includes(tag.toLowerCase()));
-                    feature.style.display = hasTag ? 'block' : 'none';
-                    if (hasTag) visibleCount++;
+                    if (hasTag) {
+                        feature.classList.remove('feature-hidden');
+                        visibleCount++;
+                    }
                 }
             });
             
@@ -3261,8 +3485,11 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 : `Showing ${visibleCount} feature${visibleCount !== 1 ? 's' : ''} with tag: ${tag}`;
             announceToScreenReader(announcement);
             
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Scroll main content to top
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                mainContent.scrollTop = 0;
+            }
         }
 
         // Attach to filter buttons
@@ -3271,6 +3498,15 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 filterByStatus(this.dataset.filter);
             });
         });
+        
+        // Attach to tag filter dropdown
+        const tagFilterDropdown = document.getElementById('tag-filter');
+        if (tagFilterDropdown) {
+            tagFilterDropdown.addEventListener('change', function() {
+                const selectedTag = this.value;
+                filterByTag(selectedTag);
+            });
+        }
 
         // Screen reader announcement helper
         function announceToScreenReader(message) {
@@ -3379,9 +3615,17 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             if (!data || !data.features[featureIndex]) return;
             
             const featureHtml = data.features[featureIndex].html;
-            featureElement.innerHTML = featureHtml;
-            featureElement.classList.remove('lazy-feature');
-            featureElement.removeAttribute('data-lazy');
+            
+            // Create a temporary container to parse the HTML
+            const temp = document.createElement('div');
+            temp.innerHTML = featureHtml;
+            const newFeatureElement = temp.firstElementChild;
+            
+            // Replace the placeholder with the actual feature content
+            if (newFeatureElement && featureElement.parentNode) {
+                featureElement.parentNode.replaceChild(newFeatureElement, featureElement);
+            }
+            
             renderedFeatures.add(featureIndex);
         }
         
@@ -3572,10 +3816,20 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             });
             
             // Show selected feature
-            const selectedFeature = document.getElementById(featureId);
+            let selectedFeature = document.getElementById(featureId);
             if (selectedFeature) {
-                selectedFeature.classList.remove('feature-hidden');
-                currentFeatureId = featureId;
+                // Render lazy-loaded feature content if needed
+                if (USE_LAZY_RENDERING && selectedFeature.hasAttribute('data-lazy')) {
+                    renderFeatureContent(selectedFeature);
+                    // Get the element again after rendering (it was replaced)
+                    selectedFeature = document.getElementById(featureId);
+                }
+                
+                // Remove hidden class from the (possibly new) element
+                if (selectedFeature) {
+                    selectedFeature.classList.remove('feature-hidden');
+                    currentFeatureId = featureId;
+                }
                 
                 // Update active state in sidebar
                 document.querySelectorAll('.feature-item').forEach(item => {
@@ -3587,7 +3841,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 }
                 
                 // Scroll to top of content
-                document.getElementById('content').scrollTop = 0;
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) {
+                    mainContent.scrollTop = 0;
+                }
                 
                 // Save last viewed feature
                 localStorage.setItem('bdd-last-feature', featureId);

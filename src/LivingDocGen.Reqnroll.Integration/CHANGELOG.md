@@ -119,6 +119,34 @@ For more details, see: https://github.com/suban5/LivingDocGen
 
 ---
 
+## [2.0.4] - 2026-01-22
+
+### Fixed
+
+- **Critical Bug Fixes** (inherited from Generator):
+  - Generated reports with 50+ features now have fully functional sidebar navigation
+  - Search works correctly with dynamically loaded feature content
+  - Tag filtering displays features properly in main content area
+  - Background, Rule, and Examples sections toggle correctly
+  - Fixed content overflow when Rule and Background sections collapsed
+
+- **UI/UX Improvements** (inherited from Generator):
+  - More compact step display (keywords and text on same line)
+  - Search result navigation with previous/next buttons
+  - Keyboard shortcuts for search navigation (Enter/Shift+Enter/Esc)
+  - Improved search performance (feature titles and scenario names only)
+
+### Details
+
+- All 12 bug fixes from Generator v2.0.4 applied to generated reports
+- Large test suites (50+ feature files) now produce fully functional HTML reports
+- Search, filtering, and navigation work seamlessly with lazy-rendered content
+- Collapsible sections (Background, Rules, Examples) now behave correctly
+
+**Impact**: Test projects with extensive feature coverage now generate reliable, fully-functional living documentation.
+
+---
+
 ## [2.0.3] - 2026-01-22
 
 ### Changed
@@ -346,7 +374,8 @@ First public release of LivingDocGen.Reqnroll.Integration.
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.3...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
 [2.0.2]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.2
 [2.0.1]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.1

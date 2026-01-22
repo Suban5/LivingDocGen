@@ -19,6 +19,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.4] - 2026-01-22
+
+### Fixed
+
+- **Generator**: Critical bug fixes for Phase 2 lazy rendering implementation
+  - Fixed sidebar navigation broken with lazy rendering (50+ features)
+  - Fixed search functionality to work with dynamically rendered content
+  - Fixed tag filtering not displaying features in main content
+  - Fixed Background, Rule, and Examples section toggle functionality
+  - Fixed Rule and Background sections showing content when collapsed
+  - All fixes inherited by CLI and Reqnroll.Integration packages
+
+- **Generator**: UI/UX improvements
+  - Compact step display: Gherkin keywords and step text now on same line (40% vertical space reduction)
+  - Added search result navigation with previous/next buttons
+  - Search now includes keyboard shortcuts (Enter/Shift+Enter/Esc)
+  - Simplified search scope to feature titles and scenario names only (faster, more reliable)
+  - Fixed collapse CSS for rule-body and background-body (no content overflow)
+
+- **CLI**: Inherits all Generator bug fixes and improvements (see above)
+
+- **Reqnroll.Integration**: Inherits all Generator bug fixes and improvements (see above)
+
+### Technical Details
+
+- **12 Critical Bug Fixes**:
+  1. Incorrect element ID reference (content → main-content)
+  2. Missing on-demand rendering in selectFeature()
+  3. Initial visibility state mismatch for lazy features
+  4. Double-nesting bug in renderFeatureContent()
+  5. Stale element reference after lazy rendering
+  6. Search broken with lazy rendering
+  7. Search result navigation missing
+  8. Search scope too broad (causing collapse issues)
+  9. Tag filter had no event listener
+  10. Toggle functionality broken (inline onclick handlers)
+  11. Step display too verbose (separate lines)
+  12. Rule/Background collapse showing content
+
+- **JavaScript Enhancements**:
+  - Added searchResults array and currentSearchIndex tracking
+  - New updateSearchUI() function for button states
+  - New navigateSearchResults(direction) function
+  - Enhanced performSearch() with lazy rendering support
+  - Event delegation now handles all toggle operations
+
+- **CSS Updates**:
+  - Added .search-nav-btn styles for navigation buttons
+  - Repositioned search UI elements for new buttons
+  - Changed .step-keyword display: inline for compact layout
+  - Fixed .rule-body and .background-body padding when collapsed
+
+---
+
 ## [2.0.3] - 2026-01-22
 
 ### Changed
@@ -364,10 +418,13 @@ First public release of LivingDocGen - Universal BDD Living Documentation Genera
 | 1.0.0   | .NET 8.0 only | ⚠️ Legacy |
 
 ---
+
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
 [1.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.4
 [1.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.3
 [1.0.2]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.2
 [1.0.1]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.1
 [1.0.0]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.0
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.3...HEAD
+

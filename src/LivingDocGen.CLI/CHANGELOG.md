@@ -102,6 +102,35 @@ For more information, visit: https://github.com/suban5/LivingDocGen
 
 ---
 
+## [2.0.4] - 2026-01-22
+
+### Fixed
+
+- **Critical Bug Fixes** (inherited from Generator):
+  - Sidebar navigation now works correctly with lazy rendering (50+ features)
+  - Search functionality restored for dynamically loaded content
+  - Tag filtering now properly displays filtered features
+  - Background, Rule, and Examples sections toggle correctly
+  - Rule and Background sections fully collapse without content overflow
+
+- **UI/UX Improvements** (inherited from Generator):
+  - Compact step display: keywords and text on same line (saves 40% vertical space)
+  - Search result navigation with previous/next buttons and keyboard shortcuts
+  - Simplified search scope (feature titles and scenario names only)
+  - Fixed collapse behavior for all collapsible sections
+
+### Details
+
+- Fixed 12 critical bugs in Phase 2 lazy rendering implementation
+- Added search navigation buttons with Enter/Shift+Enter keyboard shortcuts
+- Removed inline onclick handlers (now uses event delegation)
+- Step structure changed from separate divs to inline spans
+- CSS fixes for rule-body and background-body collapse behavior
+
+**Impact**: Reports with 50+ features now fully functional with all navigation, search, and filtering working correctly.
+
+---
+
 ## [2.0.3] - 2026-01-22
 
 ### Changed
@@ -303,7 +332,8 @@ First public release of LivingDocGen CLI - Universal BDD Living Documentation Ge
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.3...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
 [2.0.2]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.2
 [2.0.1]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.1
