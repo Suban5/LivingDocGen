@@ -69,8 +69,8 @@ artifacts/
 *.nuget.targets
 .nuget/
 
-# Keep sample NuGet package for testing
-!nupkg/BDD.LivingDocGenerator.*.nupkg
+# NuGet package build output directory
+nupkg/
 
 # Test Results
 TestResults/
@@ -211,3 +211,4 @@ tests/cli-test-output/*
 
 copilot-instructions.md
 COMMIT_MESSAGE.txt
+RELEASE_v*_CHECKLIST.md

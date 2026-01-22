@@ -4,7 +4,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-6.0%2B-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-v2.0.3-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
+[![NuGet](https://img.shields.io/badge/NuGet-v2.0.4-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
 
 ---
 
@@ -346,8 +346,8 @@ This is a **Master's thesis project**, but contributions are welcome!
 
 ## 📜 Version History
 
-**Latest Version: v2.0.3** (January 22, 2026)  
-**Previous Version: v2.0.2** (January 19, 2026)
+**Latest Version: v2.0.4** (January 22, 2026)  
+**Previous Version: v2.0.3** (January 22, 2026)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
