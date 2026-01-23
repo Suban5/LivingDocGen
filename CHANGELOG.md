@@ -11,9 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Generator**: Tag filtering functionality
+  - Filter scenarios by tags with dropdown selector
+  - Feature-level and scenario-level tag support
+  - Case-insensitive tag matching
+  - Integrated with unified filter system (works with status and search filters)
+  - Lazy rendering support for tag filtering
+
 ### Changed
 
+- **Generator**: Reorganized controls layout for better UX
+  - New order: Status filters → Tag filter → Search input → Clear All → Theme
+  - Improved visual grouping of related controls
+  - Better logical flow for filtering workflow
+
 ### Fixed
+
+- **Generator**: Tag filtering extraction and matching
+  - Fixed tag selector to target `.tags` div in `.feature-body`
+  - Removed Font Awesome icon interference when extracting tag text
+  - Fixed tag matching between dropdown and scenario tags
+  - Tag filtering now correctly displays matching scenarios
+
+- **Generator**: Search navigation improvements
+  - Added missing `updateSearchUI()` function
+  - Fixed ReferenceError when using search prev/next buttons
+  - Fixed button state management for search navigation
 
 ### Removed
 

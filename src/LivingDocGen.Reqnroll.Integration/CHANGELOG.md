@@ -111,9 +111,20 @@ For more details, see: https://github.com/suban5/LivingDocGen
 
 ### Added
 
+- Tag filtering functionality (inherited from Generator)
+  - Filter scenarios by tags with dropdown selector
+  - Feature-level and scenario-level tag support
+  - Case-insensitive tag matching
+
 ### Changed
 
+- Reorganized controls layout for better UX (inherited from Generator)
+  - Status filters → Tag filter → Search → Clear All → Theme
+
 ### Fixed
+
+- Tag filtering now correctly displays matching scenarios (inherited from Generator)
+- Search navigation ReferenceError resolved (inherited from Generator)
 
 ### Removed
 
