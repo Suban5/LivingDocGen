@@ -286,6 +286,27 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             --focus-ring: " + theme.FocusRing + @";
             --shadow-color: " + theme.ShadowColor + @";
             --code-bg: " + theme.CodeBg + @";
+            
+            /* Animation Guardrails - Performance & Accessibility */
+            --transition-fast: 100ms ease-out;
+            --transition-normal: 150ms ease-out;
+            --transition-slow: 300ms ease-out;
+            
+            /* Layout Variables */
+            --header-height: 80px;
+            --header-height-shrunk: 50px;
+            --controls-height: 60px;
+            --stats-height: auto;
+        }
+        
+        /* Respect user motion preferences - Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
 
         body {
@@ -303,13 +324,34 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             color: white;
             padding: 1.25rem 1.5rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: padding var(--transition-normal), height var(--transition-normal), box-shadow var(--transition-normal);
+            height: var(--header-height);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* Shrunk header on scroll */
+        header.shrunk {
+            padding: 0.75rem 1.5rem;
+            height: var(--header-height-shrunk);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         header h1 {
-            font-size: 1.75rem;
+            font-size: clamp(1.5rem, 2vw, 1.75rem);
             margin-bottom: 0.25rem;
             font-weight: 700;
             letter-spacing: -0.02em;
+            transition: font-size var(--transition-normal), margin var(--transition-normal);
+        }
+        
+        header.shrunk h1 {
+            font-size: clamp(1.3rem, 1.8vw, 1.5rem);
+            margin-bottom: 0;
         }
 
         header .subtitle {
@@ -317,6 +359,15 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             font-size: 0.95rem;
             font-weight: 300;
             letter-spacing: 0.01em;
+            transition: opacity var(--transition-fast), height var(--transition-fast), margin var(--transition-fast);
+            max-height: 2rem;
+            overflow: hidden;
+        }
+        
+        header.shrunk .subtitle {
+            opacity: 0;
+            max-height: 0;
+            margin: 0;
         }
 
         .container {
@@ -343,18 +394,26 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             top: 0;
         }
 
-        /* Controls Section */
+        /* Controls Section - Compact Single-Row Design */
         #controls {
             background: var(--card-bg);
-            padding: 1.5rem;
-            margin: 2rem auto;
-            max-width: 1400px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
-            display: grid;
-            grid-template-columns: 1fr auto auto auto;
-            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            margin: 0;
+            max-width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            display: flex;
+            gap: 0.75rem;
             align-items: center;
+            flex-wrap: wrap;
+            position: sticky;
+            top: var(--header-height);
+            z-index: 99;
+            transition: top var(--transition-normal);
+        }
+        
+        header.shrunk ~ #controls {
+            top: var(--header-height-shrunk);
         }
 
         /* Search Highlighting */
@@ -367,16 +426,20 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         #search-box {
-            padding: 0.75rem 3rem 0.75rem 3rem;
+            padding: 0.625rem 3rem 0.625rem 2.5rem;
             border: 2px solid var(--border-color);
             border-radius: 8px;
-            font-size: 1rem;
-            width: 100%;
+            font-size: 0.95rem;
+            flex: 1 1 300px;
+            min-width: 250px;
+            max-width: 500px;
             background-color: var(--card-bg);
-            background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22%3E%3C/circle%3E%3Cpath d=%22m21 21-4.35-4.35%22%3E%3C/path%3E%3C/svg%3E');
+            background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2218%22 height=%2218%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22%3E%3C/circle%3E%3Cpath d=%22m21 21-4.35-4.35%22%3E%3C/path%3E%3C/svg%3E');
             background-repeat: no-repeat;
-            background-position: 10px center;
+            background-position: 8px center;
+            background-size: 18px;
             color: var(--text-color);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
         }
 
         #search-box:focus {
@@ -501,30 +564,85 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             display: block; 
         }
 
-        #controls {
-            position: relative;
-        }
-
         .search-wrapper {
             position: relative;
+            flex: 1 1 300px;
+            min-width: 250px;
+            max-width: 500px;
         }
 
-        .filter-group, .theme-group {
+        .filter-group {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .theme-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+        
+        /* Responsive Breakpoints */
+        @media (max-width: 1400px) {
+            #controls {
+                padding: 0.75rem 1rem;
+            }
+            
+            .theme-group {
+                margin-left: 0;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .filter-group .filter-btn span:not(.fa) {
+                display: none;
+            }
+            
+            .filter-btn {
+                padding: 0.625rem;
+                min-width: 40px;
+            }
+            
+            header h1 {
+                font-size: 1.4rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #controls {
+                position: relative;
+                top: 0;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-wrapper {
+                max-width: 100%;
+                flex: 1;
+            }
+            
+            .filter-group, .theme-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            #stats {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
         }
 
         .theme-selector {
-            padding: 0.75rem 1rem;
+            padding: 0.625rem 0.875rem;
             border: 2px solid var(--border-color);
             background: var(--card-bg);
             color: var(--text-color);
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
-            transition: all 0.2s;
-            min-width: 180px;
+            transition: all var(--transition-fast);
+            min-width: 150px;
         }
 
         .theme-selector:hover {
@@ -544,18 +662,19 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
 
         .filter-btn {
-            padding: 0.75rem 1.25rem;
+            padding: 0.625rem 1rem;
             border: 2px solid var(--border-color);
             background: var(--card-bg);
             color: var(--text-color);
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all var(--transition-fast);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
+            white-space: nowrap;
         }
 
         .filter-btn[data-filter=""all""] i.fa-list {
@@ -572,6 +691,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         .filter-btn[data-filter=""skipped""] i.fa-minus-circle {
             color: var(--warning-color);
+        }
+
+        .filter-btn[data-filter=""untested""] i.fa-circle {
+            color: var(--text-secondary);
         }
 
         /* Keep icons white when button is active */
@@ -594,21 +717,100 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             color: white;
         }
 
-        /* Statistics Dashboard */
+        /* Clear All button styling */
+        .filter-btn.clear-all-btn {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .filter-btn.clear-all-btn:hover {
+            background: #d32f2f;
+            border-color: #d32f2f;
+        }
+
+        .filter-btn.clear-all-btn i {
+            color: white;
+        }
+
+        /* Statistics Dashboard - Collapsible */
+        #stats-container {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: calc(var(--header-height) + var(--controls-height));
+            z-index: 98;
+            transition: top var(--transition-normal);
+        }
+        
+        header.shrunk ~ #stats-container {
+            top: calc(var(--header-height-shrunk) + var(--controls-height));
+        }
+        
+        #stats-toggle {
+            width: 100%;
+            background: var(--card-bg);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: background var(--transition-fast);
+        }
+        
+        #stats-toggle:hover {
+            background: var(--hover-bg);
+        }
+        
+        #stats-toggle .stats-summary {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        #stats-toggle .stats-summary span {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        #stats-toggle i.fa-chevron-down {
+            transition: transform var(--transition-normal);
+        }
+        
+        #stats-toggle.collapsed i.fa-chevron-down {
+            transform: rotate(-90deg);
+        }
+        
        #stats {
-            max-width: 1400px;
-            margin: 1rem auto;
+            max-width: 100%;
+            margin: 0;
+            padding: 1rem 1.5rem;
+            transition: max-height var(--transition-normal), opacity var(--transition-fast), padding var(--transition-normal);
+            max-height: 500px;
+            opacity: 1;
+            overflow: hidden;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 0.75rem;
         }
+        
+        #stats.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding: 0 1.5rem;
+        }
 
         .stat-card {
             background: var(--card-bg);
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px var(--shadow-color), 0 1px 2px var(--shadow-color);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            padding: 1rem;\n            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
             cursor: pointer;
         }
 
@@ -2181,6 +2383,31 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     {
         return @"
     <div id=""controls"" role=""search"" aria-label=""Search and filter controls"">
+        <div class=""filter-group"" role=""group"" aria-label=""Status filters"">
+            <button class=""filter-btn active"" data-filter=""all"" aria-label=""Show all scenarios"" aria-pressed=""true"">
+                <i class=""fas fa-list"" aria-hidden=""true""></i> <span>All</span>
+            </button>
+            <button class=""filter-btn"" data-filter=""passed"" aria-label=""Show only passed scenarios"" aria-pressed=""false"">
+                <i class=""fas fa-check-circle"" aria-hidden=""true""></i> <span>Passed</span>
+            </button>
+            <button class=""filter-btn"" data-filter=""failed"" aria-label=""Show only failed scenarios"" aria-pressed=""false"">
+                <i class=""fas fa-times-circle"" aria-hidden=""true""></i> <span>Failed</span>
+            </button>
+            <button class=""filter-btn"" data-filter=""skipped"" aria-label=""Show only skipped scenarios"" aria-pressed=""false"">
+                <i class=""fas fa-minus-circle"" aria-hidden=""true""></i> <span>Skipped</span>
+            </button>
+            <button class=""filter-btn"" data-filter=""untested"" aria-label=""Show only untested scenarios"" aria-pressed=""false"">
+                <i class=""fas fa-circle"" aria-hidden=""true""></i> <span>Untested</span>
+            </button>
+        </div>
+        <div class=""theme-group"" role=""group"" aria-label=""Tag and theme filters"">
+            <select id=""tag-filter"" 
+                    class=""theme-selector"" 
+                    onchange=""filterByTag(this.value)""
+                    aria-label=""Filter by tag"">
+                <option value=""all"">🏷️ Tags</option>
+            </select>
+        </div>
         <div class=""search-wrapper"">
             <input type=""text"" 
                    id=""search-box"" 
@@ -2210,38 +2437,22 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             </button>
             <span id=""search-result-count"" class=""search-result-count"" aria-live=""polite""></span>
         </div>
-        <div class=""filter-group"" role=""group"" aria-label=""Status filters"">
-            <button class=""filter-btn active"" data-filter=""all"" aria-label=""Show all scenarios"" aria-pressed=""true"">
-                <i class=""fas fa-list"" aria-hidden=""true""></i> All
-            </button>
-            <button class=""filter-btn"" data-filter=""passed"" aria-label=""Show only passed scenarios"" aria-pressed=""false"">
-                <i class=""fas fa-check-circle"" aria-hidden=""true""></i> Passed
-            </button>
-            <button class=""filter-btn"" data-filter=""failed"" aria-label=""Show only failed scenarios"" aria-pressed=""false"">
-                <i class=""fas fa-times-circle"" aria-hidden=""true""></i> Failed
-            </button>
-            <button class=""filter-btn"" data-filter=""skipped"" aria-label=""Show only skipped scenarios"" aria-pressed=""false"">
-                <i class=""fas fa-minus-circle"" aria-hidden=""true""></i> Skipped
+        <div class=""clear-all-group"">
+            <button id=""clear-all-filters-btn"" class=""filter-btn clear-all-btn"" aria-label=""Clear all filters"" title=""Reset all filters"">
+                <i class=""fas fa-eraser"" aria-hidden=""true""></i> <span>Clear All</span>
             </button>
         </div>
-        <div class=""theme-group"" role=""group"" aria-label=""Tag and theme filters"">
-            <select id=""tag-filter"" 
-                    class=""theme-selector"" 
-                    onchange=""filterByTag(this.value)""
-                    aria-label=""Filter by tag""
-                    style=""margin-right: 0.5rem;"">
-                <option value=""all"">🏷️ All Tags</option>
-            </select>
+        <div class=""theme-selector-group"">
             <select id=""theme-selector"" 
                     class=""theme-selector"" 
                     onchange=""changeTheme(this.value)""
                     aria-label=""Select theme"">
-                <option value=""purple"">🎨 Purple</option>
-                <option value=""blue"">🌊 Ocean Blue</option>
-                <option value=""green"">🌲 Forest Green</option>
-                <option value=""dark"">🌙 Dark Mode</option>
-                <option value=""light"">☀️ Clean Light</option>
-                <option value=""pickles"">🥒 Pickles Classic</option>
+                <option value=""purple"">🎨 Theme</option>
+                <option value=""blue"">🌊 Blue</option>
+                <option value=""green"">🌲 Green</option>
+                <option value=""dark"">🌙 Dark</option>
+                <option value=""light"">☀️ Light</option>
+                <option value=""pickles"">🥒 Pickles</option>
             </select>
         </div>
     </div>";
@@ -2250,56 +2461,118 @@ public class HtmlGeneratorService : IHtmlGeneratorService
            private string GenerateStatistics(LivingDocumentation documentation)
     {
         var stats = documentation.Statistics;
+        var failedCount = stats.FailedScenarios;
+        var executedCount = stats.PassedScenarios + stats.FailedScenarios + stats.SkippedScenarios;
+        
+        // Determine action message based on test execution state
+        string actionText;
+        string actionIcon;
+        string actionColor;
+        
+        if (executedCount == 0)
+        {
+            // No tests executed - no test results attached
+            actionText = "No test results attached";
+            actionIcon = "fa-info-circle";
+            actionColor = "var(--info-color)";
+        }
+        else if (failedCount > 0)
+        {
+            // Some tests failed
+            actionText = $"{failedCount} failure{(failedCount == 1 ? "" : "s")} need attention";
+            actionIcon = "fa-exclamation-triangle";
+            actionColor = "var(--danger-color)";
+        }
+        else if (stats.SkippedScenarios > 0 && stats.PassedScenarios == 0)
+        {
+            // All tests skipped
+            actionText = "All tests skipped";
+            actionIcon = "fa-minus-circle";
+            actionColor = "var(--warning-color)";
+        }
+        else
+        {
+            // All executed tests passed
+            actionText = "All tests passing!";
+            actionIcon = "fa-check-circle";
+            actionColor = "var(--success-color)";
+        }
+        
         return $@"
-    <div id=""stats"">
-        <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all features"" role=""button"" tabindex=""0"">
-            <div class=""label"">
-                <i class=""fas fa-file-alt icon""></i>
-                <span>Features</span>
+    <div id=""stats-container"">
+        <button id=""stats-toggle"" onclick=""toggleStats()"" aria-expanded=""true"" aria-controls=""stats"">
+            <div style=""display: flex; align-items: center; gap: 0.75rem;"">
+                <i class=""fas fa-chart-bar""></i>
+                <span>Statistics</span>
+                <div class=""stats-summary"">
+                    <span style=""color: var(--success-color);"">
+                        <i class=""fas fa-check-circle""></i> {stats.PassRate:F1}% ({stats.PassedScenarios})
+                    </span>
+                    <span style=""color: var(--danger-color);"">
+                        <i class=""fas fa-times-circle""></i> {stats.FailRate:F1}% ({stats.FailedScenarios})
+                    </span>
+                    <span style=""color: var(--warning-color);"">
+                        <i class=""fas fa-minus-circle""></i> {stats.SkipRate:F1}% ({stats.SkippedScenarios})
+                    </span>
+                </div>
             </div>
-            <div class=""value"">{stats.TotalFeatures}</div>
-        </div>
-        <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all scenarios"" role=""button"" tabindex=""0"">
-            <div class=""label"">
-                <i class=""fas fa-list-check icon""></i>
-                <span>Scenarios</span>
+            <div style=""display: flex; align-items: center; gap: 1rem;"">
+                <span style=""color: {actionColor}; font-size: 0.9rem; font-weight: 500;"">
+                    <i class=""fas {actionIcon}""></i> {actionText}
+                </span>
+                <i class=""fas fa-chevron-down""></i>
             </div>
-            <div class=""value"">{stats.TotalScenarios}</div>
-        </div>
-        <div class=""stat-card stat-passed clickable"" onclick=""filterByStatus('passed')"" title=""Click to show only passed scenarios"" role=""button"" tabindex=""0"">
-            <div class=""label"">
-                <i class=""fas fa-check-circle icon""></i>
-                <span>Passed ({stats.PassRate:F1}%)</span>
+        </button>
+        <div id=""stats"">
+            <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all features"" role=""button"" tabindex=""0"">
+                <div class=""label"">
+                    <i class=""fas fa-file-alt icon""></i>
+                    <span>Features</span>
+                </div>
+                <div class=""value"">{stats.TotalFeatures}</div>
             </div>
-            <div class=""value"">{stats.PassedScenarios}</div>
-        </div>
-        <div class=""stat-card stat-failed clickable"" onclick=""filterByStatus('failed')"" title=""Click to show only failed scenarios"" role=""button"" tabindex=""0"">
-            <div class=""label"">
-                <i class=""fas fa-times-circle icon""></i>
-                <span>Failed ({stats.FailRate:F1}%)</span>
+            <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('all')"" title=""Click to show all scenarios"" role=""button"" tabindex=""0"">
+                <div class=""label"">
+                    <i class=""fas fa-list-check icon""></i>
+                    <span>Scenarios</span>
+                </div>
+                <div class=""value"">{stats.TotalScenarios}</div>
             </div>
-            <div class=""value"">{stats.FailedScenarios}</div>
-        </div>
-        <div class=""stat-card stat-skipped clickable"" onclick=""filterByStatus('skipped')"" title=""Click to show only skipped scenarios"" role=""button"" tabindex=""0"">
-            <div class=""label"">
-                <i class=""fas fa-minus-circle icon""></i>
-                <span>Skipped ({stats.SkipRate:F1}%)</span>
+            <div class=""stat-card stat-passed clickable"" onclick=""filterByStatus('passed')"" title=""Click to show only passed scenarios"" role=""button"" tabindex=""0"">
+                <div class=""label"">
+                    <i class=""fas fa-check-circle icon""></i>
+                    <span>Passed ({stats.PassRate:F1}%)</span>
+                </div>
+                <div class=""value"">{stats.PassedScenarios}</div>
             </div>
-            <div class=""value"">{stats.SkippedScenarios}</div>
-        </div>
-        <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('untested')"" title=""Click to show untested scenarios"" role=""button"" tabindex=""0"">
-            <div class=""label"">
-                <i class=""fas fa-question-circle icon""></i>
-                <span>Untested</span>
+            <div class=""stat-card stat-failed clickable"" onclick=""filterByStatus('failed')"" title=""Click to show only failed scenarios"" role=""button"" tabindex=""0"">
+                <div class=""label"">
+                    <i class=""fas fa-times-circle icon""></i>
+                    <span>Failed ({stats.FailRate:F1}%)</span>
+                </div>
+                <div class=""value"">{stats.FailedScenarios}</div>
             </div>
-            <div class=""value"">{stats.UntestedScenarios}</div>
-        </div>
-        <div class=""stat-card stat-info"" title=""Test coverage percentage"">
-            <div class=""label"">
-                <i class=""fas fa-chart-line icon""></i>
-                <span>Coverage</span>
+            <div class=""stat-card stat-skipped clickable"" onclick=""filterByStatus('skipped')"" title=""Click to show only skipped scenarios"" role=""button"" tabindex=""0"">
+                <div class=""label"">
+                    <i class=""fas fa-minus-circle icon""></i>
+                    <span>Skipped ({stats.SkipRate:F1}%)</span>
+                </div>
+                <div class=""value"">{stats.SkippedScenarios}</div>
             </div>
-            <div class=""value"">{stats.Coverage:F1}%</div>
+            <div class=""stat-card stat-info clickable"" onclick=""filterByStatus('untested')"" title=""Click to show untested scenarios"" role=""button"" tabindex=""0"">
+                <div class=""label"">
+                    <i class=""fas fa-question-circle icon""></i>
+                    <span>Untested</span>
+                </div>
+                <div class=""value"">{stats.UntestedScenarios}</div>
+            </div>
+            <div class=""stat-card stat-info"" title=""Test coverage percentage"">
+                <div class=""label"">
+                    <i class=""fas fa-chart-line icon""></i>
+                    <span>Coverage</span>
+                </div>
+                <div class=""value"">{stats.Coverage:F1}%</div>
+            </div>
         </div>
     </div>";
     }
@@ -2422,7 +2695,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
     private int _scenarioCounter = 0;
 
-    private string GenerateFeature(EnrichedFeature feature, int index = 0)
+    private string GenerateFeature(EnrichedFeature feature, int index = 0, bool forLazyLoading = false)
     {
         var statusClass = GetStatusClass(feature.OverallStatus);
         var statusIcon = GetStatusIcon(feature.OverallStatus);
@@ -2430,8 +2703,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var isFirstFeature = index == 0;
         
         var html = new StringBuilder();
+        // When generating for lazy loading, dont include feature-hidden (JavaScript will handle visibility)
+        var hiddenClass = forLazyLoading ? "" : (isFirstFeature ? "" : " feature-hidden");
         html.AppendLine($@"
-    <div class=""feature{(isFirstFeature ? "" : " feature-hidden")}"" data-status=""{statusClass}"" id=""{featureId}"" data-feature-id=""{featureId}"">
+    <div class=""feature{hiddenClass}"" data-status=""{statusClass}"" id=""{featureId}"" data-feature-id=""{featureId}"">
         <div class=""feature-header status-{statusClass}"">
             <div class=""feature-title"">
                 <span class=""status-icon {statusClass}"">{statusIcon}</span>
@@ -2931,6 +3206,108 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
         
         // ============================================
+        // PHASE 1: ADAPTIVE HEADER & STATISTICS
+        // ============================================
+        
+        // Adaptive Header: Shrink on scroll
+        let lastScrollTop = 0;
+        const header = document.querySelector('header');
+        const scrollThreshold = 100;
+        
+        function handleHeaderScroll() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > scrollThreshold) {
+                header.classList.add('shrunk');
+            } else {
+                header.classList.remove('shrunk');
+            }
+            
+            lastScrollTop = scrollTop;
+        }
+        
+        // Throttle scroll events for performance
+        let ticking = false;
+        window.addEventListener('scroll', function() {
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    handleHeaderScroll();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+        
+        // Statistics Toggle Function
+        function toggleStats() {
+            const statsPanel = document.getElementById('stats');
+            const statsToggle = document.getElementById('stats-toggle');
+            const isCollapsed = statsPanel.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                statsPanel.classList.remove('collapsed');
+                statsToggle.classList.remove('collapsed');
+                statsToggle.setAttribute('aria-expanded', 'true');
+                localStorage.setItem('statsExpanded', 'true');
+            } else {
+                statsPanel.classList.add('collapsed');
+                statsToggle.classList.add('collapsed');
+                statsToggle.setAttribute('aria-expanded', 'false');
+                localStorage.setItem('statsExpanded', 'false');
+            }
+        }
+        
+        // Restore stats state from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const statsExpanded = localStorage.getItem('statsExpanded');
+            // Default to collapsed after first visit (unless explicitly set to true)
+            if (statsExpanded === 'false') {
+                const statsPanel = document.getElementById('stats');
+                const statsToggle = document.getElementById('stats-toggle');
+                if (statsPanel && statsToggle) {
+                    statsPanel.classList.add('collapsed');
+                    statsToggle.classList.add('collapsed');
+                    statsToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+        
+        // ============================================
+        // SMART PROGRESSIVE DISCLOSURE
+        // ============================================
+        
+        // Auto-expand failures and search hits
+        function autoExpandFeature(featureId, reason) {
+            const feature = document.getElementById(featureId);
+            if (!feature) return;
+            
+            // Ensure feature is visible
+            if (feature.classList.contains('feature-hidden')) {
+                feature.classList.remove('feature-hidden');
+            }
+            
+            // Auto-expand failed scenarios
+            if (reason === 'failure') {
+                const failedScenarios = feature.querySelectorAll('.scenario-header.failed');
+                failedScenarios.forEach(header => {
+                    const body = header.nextElementSibling;
+                    if (body && !body.classList.contains('expanded')) {
+                        body.classList.add('expanded');
+                    }
+                });
+            }
+            
+            // Scroll feature into view
+            feature.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Auto-compact view for large datasets
+        if (FEATURE_COUNT > 100) {
+            console.log('📊 Large dataset detected - using compact view');
+            // Compact mode is handled by lazy rendering
+        }
+        
+        // ============================================
         // PERFORMANCE: UNIFIED EVENT DELEGATION
         // ============================================
         // Single event listener handles ALL toggle operations
@@ -3177,91 +3554,101 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         function performSearch() {
             const searchTerm = searchBox.value.toLowerCase().trim();
-            const features = document.querySelectorAll('.feature[data-feature-id]');
-            searchResults = [];
-            currentSearchIndex = 0;
-            let totalCount = features.length;
             
             // Remove previous highlights
             removeHighlights();
-
-            // Performance: Batch DOM reads and writes
-            const featureData = [];
-            features.forEach(feature => {
-                // Render lazy features before searching their content
-                if (USE_LAZY_RENDERING && feature.hasAttribute('data-lazy')) {
-                    renderFeatureContent(feature);
-                    // Get the newly rendered element
-                    const featureId = feature.getAttribute('data-feature-id');
-                    feature = document.getElementById(featureId) || feature;
-                }
-                
-                // Search only in feature title and scenario names
-                let isMatch = false;
-                if (!searchTerm) {
-                    isMatch = false;
-                } else {
-                    // Check feature title
-                    const featureTitle = feature.querySelector('.feature-title h2');
-                    if (featureTitle && featureTitle.textContent.toLowerCase().includes(searchTerm)) {
-                        isMatch = true;
-                    }
-                    
-                    // Check scenario names
-                    if (!isMatch) {
-                        const scenarioTitles = feature.querySelectorAll('.scenario-title strong');
-                        for (let title of scenarioTitles) {
-                            if (title.textContent.toLowerCase().includes(searchTerm)) {
-                                isMatch = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                featureData.push({ element: feature, isMatch });
-                if (isMatch) {
-                    searchResults.push(feature);
-                }
-            });
             
-            // Performance: Use requestAnimationFrame for DOM writes
-            requestAnimationFrame(() => {
-                // First, hide all features
-                document.querySelectorAll('.feature[data-feature-id]').forEach(f => {
-                    f.classList.add('feature-hidden');
+            // Update global filter state
+            activeFilters.searchTerm = searchTerm;
+            
+            // Render all lazy features if searching
+            if (searchTerm && USE_LAZY_RENDERING) {
+                document.querySelectorAll('.feature[data-lazy]').forEach(feature => {
+                    renderFeatureContent(feature);
                 });
+            }
+            
+            // Apply all filters (includes search)
+            applyAllFilters();
+            
+            // Highlight search matches
+            if (searchTerm) {
+                const features = document.querySelectorAll('.feature[data-feature-id]');
+                features.forEach(feature => {
+                    if (feature.style.display !== 'none') {
+                        // Highlight in feature title
+                        const title = feature.querySelector('.feature-title h2');
+                        if (title) highlightText(title, searchTerm);
+                        
+                        // Highlight in scenario names
+                        feature.querySelectorAll('.scenario-title strong').forEach(el => {
+                            highlightText(el, searchTerm);
+                        });
+                        
+                        // SMART PROGRESSIVE DISCLOSURE: Auto-expand matched scenarios
+                        const scenarios = feature.querySelectorAll('.scenario');
+                        scenarios.forEach(scenario => {
+                            if (scenario.style.display !== 'none') {
+                                const scenarioTitle = scenario.querySelector('.scenario-title strong');
+                                if (scenarioTitle && scenarioTitle.textContent.toLowerCase().includes(searchTerm)) {
+                                    const scenarioHeader = scenario.querySelector('.scenario-header');
+                                    if (scenarioHeader) {
+                                        const scenarioBody = scenarioHeader.nextElementSibling;
+                                        if (scenarioBody && scenarioBody.classList.contains('scenario-body')) {
+                                            scenarioBody.classList.add('expanded');
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Update search UI (counts, navigation buttons)
+            updateSearchNavigationUI();
+        }
+        
+        function updateSearchNavigationUI() {
+            const searchTerm = searchBox.value.trim();
+            
+            // Collect visible scenarios that match search
+            searchResults = [];
+            if (searchTerm) {
+const visibleScenarios = document.querySelectorAll(
+    '.scenario[style*=""display: block""], .scenario:not([style*=""display: none""])'
+);
+                visibleScenarios.forEach(scenario => {
+                    const scenarioText = scenario.textContent.toLowerCase();
+                    if (scenarioText.includes(searchTerm.toLowerCase())) {
+                        searchResults.push(scenario);
+                    }
+                });
+            }
+            currentSearchIndex = 0;
+            
+            if (searchTerm && searchResults.length > 0) {
+                searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+                searchResultCount.classList.add('visible');
+                searchClearBtn.classList.add('visible');
+                searchPrevBtn.classList.add('visible');
+                searchNextBtn.classList.add('visible');
                 
-                if (!searchTerm) {
-                    // No search term - show only first feature
-                    const firstFeature = document.getElementById('feature-0');
-                    if (firstFeature) {
-                        firstFeature.classList.remove('feature-hidden');
-                    }
-                } else {
-                    // Show first matching feature
-                    if (searchResults.length > 0) {
-                        searchResults[0].classList.remove('feature-hidden');
-                    }
-                    
-                    // Highlight matches in all results (feature titles and scenario names only)
-                    featureData.forEach(({ element, isMatch }) => {
-                        if (isMatch) {
-                            // Highlight in feature title
-                            const title = element.querySelector('.feature-title h2');
-                            if (title) highlightText(title, searchTerm);
-                            
-                            // Highlight in scenario names
-                            element.querySelectorAll('.scenario-title strong').forEach(el => {
-                                highlightText(el, searchTerm);
-                            });
-                        }
-                    });
+                // Update button states
+                searchPrevBtn.disabled = currentSearchIndex === 0;
+                searchNextBtn.disabled = currentSearchIndex === searchResults.length - 1;
+                
+                // Scroll to top of current result
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) {
+                    mainContent.scrollTop = 0;
                 }
-                
-                // Update result count and button visibility
-                updateSearchUI();
-            });
+            } else {
+                searchResultCount.classList.remove('visible');
+                searchClearBtn.classList.remove('visible');
+                searchPrevBtn.classList.remove('visible');
+                searchNextBtn.classList.remove('visible');
+            }
         }
         
         function updateSearchUI() {
@@ -3403,8 +3790,130 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             }
         });
 
-        // Filter by status (unified function for buttons and stat cards)
+        // ============================================
+        // GLOBAL FILTER STATE
+        // ============================================
+        let activeFilters = {
+            status: 'all',      // 'all', 'passed', 'failed', 'skipped', 'untested'
+            tags: [],           // Array of tag strings
+            searchTerm: ''      // Current search text
+        };
+
+        // ============================================
+        // HELPER FUNCTIONS FOR FILTERING
+        // ============================================
+        
+        function updateSidebarForFilter(visibleFeatureIds) {
+            const sidebarItems = document.querySelectorAll('.feature-item');
+            let matchCount = 0;
+            
+            sidebarItems.forEach(item => {
+                const featureId = item.getAttribute('data-feature-id');
+                if (visibleFeatureIds.has(featureId)) {
+                    item.style.display = 'flex';
+                    item.style.opacity = '1';
+                    matchCount++;
+                } else {
+                    // Hide non-matching features completely
+                    item.style.display = 'none';
+                    item.style.opacity = '1';
+                }
+            });
+            
+            // Update folder visibility and expansion
+            document.querySelectorAll('.folder').forEach(folder => {
+                const visibleItems = Array.from(folder.querySelectorAll('.feature-item'))
+                    .filter(item => item.style.display !== 'none');
+                
+                if (visibleItems.length > 0) {
+                    folder.style.display = 'block';
+                    folder.style.opacity = '1';
+                    folder.classList.remove('collapsed'); // Auto-expand folders with matches
+                } else {
+                    // Hide empty folders completely
+                    folder.style.display = 'none';
+                    folder.style.opacity = '1';
+                }
+            });
+        }
+        
+        function showEmptyStateIfNeeded(visibleCount, filter) {
+    const mainContent = document.getElementById('main-content');
+    let emptyState = document.getElementById('empty-state-message');
+
+    if (visibleCount === 0) {
+        if (!emptyState) {
+            emptyState = document.createElement('div');
+            emptyState.id = 'empty-state-message';
+            emptyState.className = 'empty-state';
+            emptyState.style.cssText = `
+                text-align: center;
+                padding: 60px 20px;
+                color: var(--text-secondary);
+            `;
+            mainContent.insertBefore(emptyState, mainContent.firstChild);
+        }
+
+        const filterText = filter === 'all' ? 'scenarios' :
+                           filter === 'passed' ? 'passed scenarios' :
+                           filter === 'failed' ? 'failed scenarios' :
+                           filter === 'skipped' ? 'skipped scenarios' :
+                           filter === 'untested' ? 'untested scenarios' : 'scenarios';
+
+        emptyState.innerHTML =
+            '<div style=""font-size: 48px; margin-bottom: 16px;"">&#128269;</div>' +
+            '<h2 style=""margin: 0 0 8px 0;"">No ' + filterText + ' found</h2>' +
+            '<p style=""margin: 0 0 24px 0;"">Try clearing all filters to view all scenarios.</p>' +
+            '<button onclick=""clearAllFilters();"" style=""' +
+                'padding: 10px 24px;' +
+                'background: var(--primary-color);' +
+                'color: white;' +
+                'border: none;' +
+                'border-radius: 6px;' +
+                'cursor: pointer;' +
+                'font-size: 14px;' +
+            '"">Clear All Filters</button>';
+
+        emptyState.style.display = 'block';
+    } else if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+}
+
+        
+        function announceToScreenReader(message) {
+            let announcer = document.getElementById('screen-reader-announcer');
+            
+            if (!announcer) {
+                announcer = document.createElement('div');
+                announcer.id = 'screen-reader-announcer';
+                announcer.setAttribute('role', 'status');
+                announcer.setAttribute('aria-live', 'polite');
+                announcer.setAttribute('aria-atomic', 'true');
+                announcer.style.cssText = `
+                    position: absolute;
+                    left: -10000px;
+                    width: 1px;
+                    height: 1px;
+                    overflow: hidden;
+                `;
+                document.body.appendChild(announcer);
+            }
+            
+            announcer.textContent = message;
+            
+            setTimeout(() => {
+                announcer.textContent = '';
+            }, 100);
+        }
+
+        // ============================================
+        // FILTER BY STATUS (INTEGRATED WITH ALL FILTERS)
+        // ============================================
         function filterByStatus(filter) {
+            // Update global filter state
+            activeFilters.status = filter;
+            
             // Update active state on filter buttons
             document.querySelectorAll('.filter-btn[data-filter]').forEach(b => {
                 if (b.dataset.filter === filter) {
@@ -3416,96 +3925,171 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 }
             });
 
-            // Filter scenarios
-            const scenarios = document.querySelectorAll('.scenario');
-            let visibleScenarios = 0;
-            
-            scenarios.forEach(scenario => {
-                if (filter === 'all') {
-                    scenario.style.display = 'block';
-                    visibleScenarios++;
-                } else {
-                    const isVisible = scenario.dataset.status === filter;
-                    scenario.style.display = isVisible ? 'block' : 'none';
-                    if (isVisible) visibleScenarios++;
-                }
-            });
-
-            // Hide features with no visible scenarios
-            let visibleFeatures = 0;
-            document.querySelectorAll('.feature').forEach(feature => {
-                const visibleInFeature = Array.from(feature.querySelectorAll('.scenario'))
-                    .filter(s => s.style.display !== 'none');
-                feature.style.display = visibleInFeature.length > 0 ? 'block' : 'none';
-                if (visibleInFeature.length > 0) visibleFeatures++;
-            });
-            
-            // Announce filter results to screen readers
-            const announcement = `Showing ${visibleScenarios} scenario${visibleScenarios !== 1 ? 's' : ''} in ${visibleFeatures} feature${visibleFeatures !== 1 ? 's' : ''}`;
-            announceToScreenReader(announcement);
+            // Apply all filters (this respects search, tags, and status together)
+            applyAllFilters();
             
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Filter by tag
-        function filterByTag(tag) {
-            const features = document.querySelectorAll('.feature[data-feature-id]');
-            let visibleCount = 0;
+        // ============================================
+        // CLEAR ALL FILTERS
+        // ============================================
+        function clearAllFilters() {
+            // Reset filter state
+            activeFilters.status = 'all';
+            activeFilters.tags = [];
+            activeFilters.searchTerm = '';
             
-            // First hide all features
-            features.forEach(f => f.classList.add('feature-hidden'));
+            // Clear search box
+            if (searchBox) searchBox.value = '';
+            
+            // Reset filter buttons
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+                if (btn.dataset.filter === 'all') {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-pressed', 'true');
+                } else {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                }
+            });
+            
+            // Reset tag dropdown
+            const tagFilter = document.getElementById('tag-filter');
+            if (tagFilter) tagFilter.value = 'all';
+            
+            // Remove highlights
+            removeHighlights();
+            
+            // Apply filters (will show all)
+            applyAllFilters();
+            
+            // Update search UI
+            updateSearchNavigationUI();
+            
+            // Announce to screen reader
+            announceToScreenReader('All filters cleared. Showing all scenarios.');
+        }
+        
+        // ============================================
+        // MASTER FILTER FUNCTION (COMBINED FILTERS)
+        // ============================================
+        function applyAllFilters() {
+            const features = document.querySelectorAll('.feature[data-feature-id]');
+            let totalVisibleScenarios = 0;
+            const visibleFeatureIds = new Set();
             
             features.forEach(feature => {
-                // Render lazy features before checking tags
-                if (USE_LAZY_RENDERING && feature.hasAttribute('data-lazy')) {
-                    renderFeatureContent(feature);
-                    // Get the newly rendered element
-                    const featureId = feature.getAttribute('data-feature-id');
-                    feature = document.getElementById(featureId) || feature;
-                }
+                const scenarios = feature.querySelectorAll('.scenario');
+                let visibleInFeature = 0;
                 
-                if (tag === 'all') {
-                    feature.classList.remove('feature-hidden');
-                    visibleCount++;
-                } else {
-                    const featureTags = Array.from(feature.querySelectorAll('.tag'))
-                        .map(t => t.textContent.trim().toLowerCase());
-                    const hasTag = featureTags.some(t => t.includes(tag.toLowerCase()));
-                    if (hasTag) {
-                        feature.classList.remove('feature-hidden');
-                        visibleCount++;
+                scenarios.forEach(scenario => {
+                    // Check status filter
+                    const status = scenario.dataset.status;
+                    const matchesStatus = activeFilters.status === 'all' || status === activeFilters.status;
+                    
+                    // Check tag filters (AND logic: scenario must have ALL selected tags)
+                    // Get scenario-level tags (from scenario's own tags div)
+                    const scenarioTagsDiv = scenario.querySelector('.tags');
+                    const scenarioTags = scenarioTagsDiv ? Array.from(scenarioTagsDiv.querySelectorAll('.tag'))
+                        .map(t => {
+                            const clone = t.cloneNode(true);
+                            const icon = clone.querySelector('i');
+                            if (icon) icon.remove();
+                            return clone.textContent.trim();
+                        }) : [];
+                    
+                    // Get feature-level tags (from feature body's tags div, not from scenarios)
+                    const featureBody = feature.querySelector('.feature-body');
+                    const featureTagsDiv = featureBody ? featureBody.querySelector(':scope > .tags') : null;
+                    const featureHeaderTags = featureTagsDiv ? Array.from(featureTagsDiv.querySelectorAll('.tag'))
+                        .map(t => {
+                            const clone = t.cloneNode(true);
+                            const icon = clone.querySelector('i');
+                            if (icon) icon.remove();
+                            return clone.textContent.trim();
+                        }) : [];
+                    
+                    const allTags = [...new Set([...scenarioTags, ...featureHeaderTags])];
+                    
+                    const matchesTags = activeFilters.tags.length === 0 || 
+                        activeFilters.tags.every(filterTag => 
+                            allTags.some(scenarioTag => 
+                                scenarioTag.toLowerCase().includes(filterTag.toLowerCase())
+                            )
+                        );
+                    
+                    // Check search term (search in feature title and scenario names only)
+                    let matchesSearch = !activeFilters.searchTerm;
+                    if (activeFilters.searchTerm && !matchesSearch) {
+                        const searchLower = activeFilters.searchTerm.toLowerCase();
+                        // Check feature title
+                        const featureTitle = feature.querySelector('.feature-title h2');
+                        if (featureTitle && featureTitle.textContent.toLowerCase().includes(searchLower)) {
+                            matchesSearch = true;
+                        }
+                        // Check scenario name
+                        if (!matchesSearch) {
+                            const scenarioTitle = scenario.querySelector('.scenario-title strong');
+                            if (scenarioTitle && scenarioTitle.textContent.toLowerCase().includes(searchLower)) {
+                                matchesSearch = true;
+                            }
+                        }
                     }
+                    
+                    // Apply AND logic: scenario must match ALL active filters
+                    const matchesAllFilters = matchesStatus && matchesTags && matchesSearch;
+                    
+                    if (matchesAllFilters) {
+                        scenario.style.display = 'block';
+                        visibleInFeature++;
+                        totalVisibleScenarios++;
+                    } else {
+                        scenario.style.display = 'none';
+                    }
+                });
+                
+                // Hide feature if no scenarios match
+                if (visibleInFeature > 0) {
+                    feature.style.display = 'block';
+                    const featureId = feature.getAttribute('data-feature-id');
+                    if (featureId) visibleFeatureIds.add(featureId);
+                } else {
+                    feature.style.display = 'none';
                 }
             });
+            
+            // Update UI elements
+            updateSidebarForFilter(visibleFeatureIds);
+            showEmptyStateIfNeeded(totalVisibleScenarios, activeFilters.status);
             
             // Announce results
-            const announcement = tag === 'all' 
-                ? `Showing all ${visibleCount} features`
-                : `Showing ${visibleCount} feature${visibleCount !== 1 ? 's' : ''} with tag: ${tag}`;
+            const announcement = `Filter applied. Showing ${totalVisibleScenarios} scenario${totalVisibleScenarios !== 1 ? 's' : ''} in ${visibleFeatureIds.size} feature${visibleFeatureIds.size !== 1 ? 's' : ''}`;
             announceToScreenReader(announcement);
-            
-            // Scroll main content to top
-            const mainContent = document.getElementById('main-content');
-            if (mainContent) {
-                mainContent.scrollTop = 0;
-            }
         }
 
-        // Attach to filter buttons
-        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                filterByStatus(this.dataset.filter);
-            });
-        });
-        
-        // Attach to tag filter dropdown
-        const tagFilterDropdown = document.getElementById('tag-filter');
-        if (tagFilterDropdown) {
-            tagFilterDropdown.addEventListener('change', function() {
-                const selectedTag = this.value;
-                filterByTag(selectedTag);
-            });
+        // Filter by tag
+        function filterByTag(tag) {
+            // Update global filter state
+            if (tag === 'all') {
+                activeFilters.tags = [];
+            } else {
+                activeFilters.tags = [tag];
+            }
+            
+            // Render all lazy features if filtering by tag
+            if (tag !== 'all' && USE_LAZY_RENDERING) {
+                document.querySelectorAll('.feature[data-lazy]').forEach(feature => {
+                    renderFeatureContent(feature);
+                });
+            }
+            
+            // Apply all filters (this respects search, status, and tags together)
+            applyAllFilters();
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // Screen reader announcement helper
@@ -3623,6 +4207,8 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             
             // Replace the placeholder with the actual feature content
             if (newFeatureElement && featureElement.parentNode) {
+                // Remove feature-hidden class to make the feature visible
+                newFeatureElement.classList.remove('feature-hidden');
                 featureElement.parentNode.replaceChild(newFeatureElement, featureElement);
             }
             
@@ -3673,6 +4259,35 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             // Initialize lazy rendering first (if enabled)
             initLazyRendering();
             
+            // Attach filter event listeners after lazy rendering is initialized
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const filter = this.dataset.filter;
+                    // Use clearAllFilters for 'all' button, filterByStatus for specific filters
+                    if (filter === 'all') {
+                        clearAllFilters();
+                    } else {
+                        filterByStatus(filter);
+                    }
+                });
+            });
+            
+            // Clear All button
+            const clearAllBtn = document.getElementById('clear-all-filters-btn');
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', function() {
+                    clearAllFilters();
+                });
+            }
+            
+            const tagFilterDropdown = document.getElementById('tag-filter');
+            if (tagFilterDropdown) {
+                tagFilterDropdown.addEventListener('change', function() {
+                    const selectedTag = this.value;
+                    filterByTag(selectedTag);
+                });
+            }
+            
             const savedTheme = localStorage.getItem('bdd-theme') || 'purple';
             const themeSelector = document.getElementById('theme-selector');
             themeSelector.value = savedTheme;
@@ -3683,7 +4298,13 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             const allTags = new Set();
             
             document.querySelectorAll('.tag').forEach(tag => {
-                const tagText = tag.textContent.trim();
+                // Extract tag text, excluding icon by cloning and removing it
+                const clone = tag.cloneNode(true);
+                const icon = clone.querySelector('i');
+                if (icon) {
+                    icon.remove();
+                }
+                const tagText = clone.textContent.trim();
                 if (tagText) allTags.add(tagText);
             });
             
@@ -4148,7 +4769,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         
         for (int i = 0; i < documentation.Features.Count; i++)
         {
-            var featureHtml = GenerateFeature(documentation.Features[i], i);
+            var featureHtml = GenerateFeature(documentation.Features[i], i, forLazyLoading: true);
             // Escape for JSON
             var escapedHtml = featureHtml
                 .Replace("\\", "\\\\")
