@@ -108,8 +108,14 @@ For more information, visit: https://github.com/suban5/LivingDocGen
 
 - Tag filtering now correctly displays matching scenarios (inherited from Generator)
 - Search navigation ReferenceError resolved (inherited from Generator)
+- Untested scenario count now calculated correctly (inherited from Generator)
+  - Uses formula: Total - (Passed + Failed + Skipped)
+  - Accurately shows all untested scenarios
 
 ### Removed
+
+- Sidebar search feature (inherited from Generator)
+  - Main search in top controls provides comprehensive functionality
 
 ---
 

@@ -1949,26 +1949,6 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             color: var(--primary-color);
         }
 
-        .sidebar-search {
-            padding: 0.75rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sidebar-search input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-size: 0.9rem;
-        }
-
-        .sidebar-search input:focus {
-            outline: none;
-            border-color: var(--focus-ring);
-        }
-
         .sidebar-nav {
             flex: 1;
             overflow-y: auto;
@@ -2592,13 +2572,6 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                     aria-expanded=""true"">
                 <i class=""fas fa-angles-left""></i>
             </button>
-        </div>
-        
-        <div class=""sidebar-search"">
-            <input type=""text"" 
-                   id=""sidebar-search"" 
-                   placeholder=""Search features...""
-                   aria-label=""Search features in sidebar"" />
         </div>
         
         <nav class=""sidebar-nav"" id=""sidebar-nav"" role=""tree"" aria-label=""Features tree"">");
@@ -4569,54 +4542,12 @@ const visibleScenarios = document.querySelectorAll(
             });
         }
         
-        // Sidebar Search
-        document.getElementById('sidebar-search')?.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const featureItems = document.querySelectorAll('.feature-item');
-            
-            featureItems.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                const folder = item.closest('.folder');
-                
-                if (text.includes(searchTerm)) {
-                    item.style.display = 'flex';
-                    // Expand parent folder
-                    if (folder) {
-                        folder.classList.remove('collapsed');
-                    }
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-            
-            // Hide empty folders
-            document.querySelectorAll('.folder').forEach(folder => {
-                const visibleItems = Array.from(folder.querySelectorAll('.feature-item'))
-                    .filter(item => item.style.display !== 'none');
-                folder.style.display = visibleItems.length > 0 ? 'block' : 'none';
-            });
-        });
-        
         // Enhanced Keyboard Shortcuts
         document.addEventListener('keydown', function(e) {
             // Cmd/Ctrl + B: Toggle sidebar
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault();
                 toggleSidebar();
-            }
-            
-            // Cmd/Ctrl + P: Focus sidebar search
-            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                e.preventDefault();
-                const sidebar = document.getElementById('sidebar');
-                // If sidebar is collapsed, open it first
-                if (sidebar && sidebar.classList.contains('collapsed')) {
-                    toggleSidebar();
-                }
-                // Small delay to ensure sidebar is visible before focusing
-                setTimeout(() => {
-                    document.getElementById('sidebar-search')?.focus();
-                }, 100);
             }
         });
         

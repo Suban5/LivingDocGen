@@ -20,6 +20,7 @@ public class EnrichedFeature
     public int PassedCount { get; set; }
     public int FailedCount { get; set; }
     public int SkippedCount { get; set; }
+    public int UntestedCount { get; set; }
     public double PassRate => Scenarios.Count > 0 ? (double)PassedCount / Scenarios.Count * 100 : 0;
 }
 

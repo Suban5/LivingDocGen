@@ -38,7 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed ReferenceError when using search prev/next buttons
   - Fixed button state management for search navigation
 
+- **Generator**: Fixed untested scenario count calculation
+  - Changed calculation from enumeration-based to formula-based: Total - (Passed + Failed + Skipped)
+  - Now correctly shows all untested scenarios (e.g., 615 instead of 9 for 630 total with 15 executed)
+  - More reliable and accurate untested count
+
 ### Removed
+
+- **Generator**: Removed sidebar search feature
+  - Simplified sidebar navigation by removing redundant search
+  - Main search functionality still available in top controls
 
 ---
 

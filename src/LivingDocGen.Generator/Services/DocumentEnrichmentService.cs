@@ -311,6 +311,9 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
                 case ExecutionStatus.Skipped:
                     enriched.SkippedCount++;
                     break;
+                case ExecutionStatus.NotExecuted:
+                    enriched.UntestedCount++;
+                    break;
             }
         }
         
@@ -360,6 +363,9 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
                         break;
                     case ExecutionStatus.Skipped:
                         enriched.SkippedCount++;
+                        break;
+                    case ExecutionStatus.NotExecuted:
+                        enriched.UntestedCount++;
                         break;
                 }
             }
@@ -589,20 +595,21 @@ public class DocumentEnrichmentService : IDocumentEnrichmentService
 
         foreach (var feature in features)
         {
+            // Count all scenarios from the enriched feature (includes scenarios from rules)
             stats.TotalScenarios += feature.Scenarios.Count;
             stats.PassedScenarios += feature.PassedCount;
             stats.FailedScenarios += feature.FailedCount;
             stats.SkippedScenarios += feature.SkippedCount;
 
+            // Count total steps
             foreach (var scenario in feature.Scenarios)
             {
                 stats.TotalSteps += scenario.Steps.Count;
-                if (scenario.Status == ExecutionStatus.NotExecuted)
-                {
-                    stats.UntestedScenarios++;
-                }
             }
         }
+
+        // Calculate untested as: Total - (Passed + Failed + Skipped)
+        stats.UntestedScenarios = stats.TotalScenarios - (stats.PassedScenarios + stats.FailedScenarios + stats.SkippedScenarios);
 
         return stats;
     }
