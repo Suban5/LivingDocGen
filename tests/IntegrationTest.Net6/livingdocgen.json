@@ -1,8 +1,9 @@
 {
   "featurePath": "Features",
   "testResultsPath": "TestResults",
-  "outputPath": "living-documentation.html",
+  "outputPath": "TestResults/living-documentation.html",
   "title": "Integration Test .NET 6 - Living Documentation",
-  "theme": "purple",
-  "includeTestResults": true
+  "theme": "blue",
+  "includeTestResults": true,
+  "includeComments": true
 }

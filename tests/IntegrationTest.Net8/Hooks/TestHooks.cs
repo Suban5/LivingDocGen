@@ -1,49 +1,89 @@
 using Reqnroll;
 using System;
+using System.Diagnostics;
 using System.IO;
+using LivingDocGen.Reqnroll.Integration.Bootstrap;
 
-namespace IntegrationTest.Net6.Hooks
+namespace IntegrationTest.Net8.Hooks
 {
     [Binding]
-    public class TestHooks
+    public class LivingDocGenBridge
     {
-        private static readonly object _lockObject = new object();
-        private static readonly string _markerFile = Path.Combine(Path.GetTempPath(), $"livingdoc-{DateTime.Now:yyyyMMdd-HHmmss}.marker");
-        private static int _scenarioCount = 0;
-
-        [BeforeScenario(Order = int.MinValue)]
-        public void BeforeScenario()
+        [BeforeTestRun(Order = int.MinValue)]
+        public static void BeforeAllTests()
         {
-            lock (_lockObject)
+            try
             {
-                _scenarioCount++;
+                // Add console trace listener to see Trace.WriteLine output
+                Trace.Listeners.Add(new ConsoleTraceListener());
                 
-                // Log only once at the start
-                if (_scenarioCount == 1)
-                {
-                    Console.WriteLine($"🚀 BDD Living Documentation - Test run starting (marker: {Path.GetFileName(_markerFile)})");
-                }
+                Console.WriteLine("========================================");
+                Console.WriteLine("BEFORE TEST RUN - LivingDocGen Starting");
+                Console.WriteLine($"Current Directory: {Directory.GetCurrentDirectory()}");
+                Console.WriteLine($"Base Directory: {AppDomain.CurrentDomain.BaseDirectory}");
+                Console.WriteLine("========================================");
+                
+                // Create marker file to verify hook execution
+                var markerPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HOOK_BEFORE_EXECUTED.txt");
+                File.WriteAllText(markerPath, $"Before hook executed at {DateTime.Now}\nCurrent Dir: {Directory.GetCurrentDirectory()}\nBase Dir: {AppDomain.CurrentDomain.BaseDirectory}");
+                
+                LivingDocBootstrap.BeforeTestRun();
+                
+                Console.WriteLine("BeforeTestRun completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR in BeforeAllTests: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
-
-        [AfterScenario(Order = int.MaxValue)]
-        public void AfterScenario()
+        
+        [AfterTestRun(Order = int.MaxValue)]
+        public static void AfterAllTests()
         {
-            lock (_lockObject)
+            try
             {
-                Console.WriteLine($"DEBUG: Scenario {_scenarioCount} completed. Marker exists: {File.Exists(_markerFile)}");
+                var debugLog = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DEBUG_AFTER.txt");
+                File.WriteAllText(debugLog, $"After hook started at {DateTime.Now}\n");
                 
-                // Generate documentation only once
-                if (!File.Exists(_markerFile))
+                Console.WriteLine("========================================");
+                Console.WriteLine("AFTER TEST RUN - LivingDocGen Generating");
+                Console.WriteLine($"Current Directory: {Directory.GetCurrentDirectory()}");
+                Console.WriteLine("========================================");
+                
+                // Create marker file to verify hook execution
+                var markerPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HOOK_AFTER_EXECUTED.txt");
+                File.WriteAllText(markerPath, $"After hook executed at {DateTime.Now}");
+                
+                File.AppendAllText(debugLog, "About to call LivingDocBootstrap.AfterTestRun()\n");
+                
+                try
                 {
-                    File.WriteAllText(_markerFile, DateTime.Now.ToString());
-                    
-                    // Wait for other scenarios to complete
-                    System.Threading.Thread.Sleep(3000);
-                    
-                    Console.WriteLine($"📊 Generating Living Documentation... (Scenario #{_scenarioCount})");
+                    LivingDocBootstrap.AfterTestRun();
+                    File.AppendAllText(debugLog, "LivingDocBootstrap.AfterTestRun() completed successfully\n");
                 }
+                catch (Exception ex2)
+                {
+                    File.AppendAllText(debugLog, $"ERROR in LivingDocBootstrap.AfterTestRun(): {ex2.Message}\n{ex2.StackTrace}\n");
+                    throw;
+                }
+                
+                Console.WriteLine("========================================");
+                Console.WriteLine("AFTER TEST RUN - LivingDocGen Complete");
+                Console.WriteLine("========================================");
+                
+                // Flush trace output
+                Trace.Flush();
+            }
+            catch (Exception ex)
+            {
+                var debugLog = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DEBUG_AFTER_ERROR.txt");
+                File.WriteAllText(debugLog, $"ERROR in AfterAllTests: {ex.Message}\n{ex.StackTrace}\n");
+                
+                Console.WriteLine($"ERROR in AfterAllTests: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
     }
 }
+   

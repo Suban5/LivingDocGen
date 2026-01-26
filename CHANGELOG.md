@@ -11,9 +11,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Reqnroll.Integration**: Enhanced diagnostic logging in LivingDocBootstrap.cs
+  - Comprehensive console output with full file paths and metadata
+  - Project root, test results path, and test runner information
+  - Configuration values display (feature path, output location, theme)
+  - File metadata for test results (path, size in bytes/KB, modification timestamp)
+  - HTML generation confirmation with output path and size
+  - Structured error messages with error type, paths, and solutions
+  - Debug log file (LIVINGDOC_DEBUG.txt) for detailed troubleshooting
+
 ### Changed
 
+- **Reqnroll.Integration**: Upgraded Reqnroll from 2.4.1 to 3.3.2
+  - Requires Reqnroll 3.3.2 or higher for consuming projects
+  - Compatible with Gherkin 35.0.0
+  - Improved test result parsing for Scenario Outlines
+  - Enhanced logging and error diagnostics
+- **Reqnroll.Integration**: Comprehensive README.md improvements
+  - Added clear distinction from CLI tool (no CLI installation needed)
+  - Expanded installation instructions with prerequisites and multiple options
+  - Rewritten troubleshooting guide with problem/solution format
+  - Added debug log file documentation with practical examples
+  - Simplified configuration explanations with comparison tables
+  - Replaced CI/CD examples with practical Reqnroll usage scenarios
+  - Improved clarity and accessibility for all user skill levels
+- **Parser**: Updated Gherkin library to 35.0.0 (aligned with Reqnroll 3.3.2)
+  - Ensures version consistency with Reqnroll 3.3.2 dependency
+  - Resolves version conflicts in integration scenarios
+  - No breaking changes - Location API remains backward compatible
+
 ### Fixed
+
+- **TestReporter**: Fixed NUnit test result parsing for nested test cases
+  - Changed from `.Elements()` to `.Descendants()` to recursively find all test-case elements
+  - Resolves missing test results for Scenario Outlines (parameterized tests)
+  - Affects Reqnroll 3.3.2+ which nests test-cases under ParameterizedMethod suites
 
 ### Removed
 

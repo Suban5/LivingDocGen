@@ -11,9 +11,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enhanced diagnostic logging in LivingDocBootstrap.cs**
+  - Comprehensive console output during test execution
+  - Full file paths for all key operations (test results, features, HTML output)
+  - File metadata: size (bytes + KB), modification timestamps
+  - Configuration values display: feature path, output location, theme
+  - Structured error messages with error type and troubleshooting guidance
+  - Debug log file (LIVINGDOC_DEBUG.txt) with detailed execution diagnostics
+  - Browser-ready file:// links for generated HTML reports
+- **Debug log file documentation in README.md**
+  - Explanation of LIVINGDOC_DEBUG.txt contents and location
+  - When to check the debug log for troubleshooting
+  - Example debug log entries with real diagnostic output
+
 ### Changed
 
+- **Upgraded Reqnroll from 2.4.1 to 3.3.2**
+  - **Breaking Change**: Consuming projects must use Reqnroll 3.3.2 or higher
+  - Improved compatibility with latest Reqnroll features
+  - Enhanced test result parsing for Scenario Outlines
+- **Comprehensive README.md rewrite for accessibility**
+  - Added "Integration vs CLI" distinction section (no CLI installation needed)
+  - Expanded installation instructions with system requirements and 3 installation options
+  - Detailed bridge file setup with visual project structure examples
+  - Rewritten troubleshooting guide with 4 problem/solution scenarios:
+    * Problem 1: No HTML Report Created (6-step diagnostic)
+    * Problem 2: Features Directory Not Found (fix options with examples)
+    * Problem 3: Report Shows No Test Results (detailed explanation)
+    * Problem 4: Bridge File Not Working (5-step resolution)
+  - Configuration explanations simplified with comparison tables
+  - Replaced CI/CD integration examples with practical Reqnroll usage examples
+  - Improved clarity with plain language throughout (accessible to beginners)
+- Updated Gherkin library to 35.0.0 (aligned with Reqnroll 3.3.2)
+  - Ensures version consistency with Reqnroll 3.3.2 dependency
+  - Resolves MissingMethodException with Gherkin API compatibility
+
 ### Fixed
+
+- Test results now correctly display for Scenario Outlines (inherited from TestReporter)
+  - Fixed NUnit parser to recursively find all nested test-case elements
+  - Resolves missing test statistics in generated HTML reports
+  - Test statistics now accurate: 24 passed, 10 failed, 6 skipped (40 total scenarios)
 
 ### Removed
 

@@ -9,9 +9,10 @@ This library abstracts away the complexities of parsing Gherkin syntax. It uses 
 ## 🚀 Key Features
 
 *   **Universal Model**: Converts feature files into a standardized `UniversalFeature` object, regardless of the underlying BDD framework.
-*   **Official Gherkin Support**: Uses the industry-standard `Gherkin` NuGet package for robust parsing of all Gherkin dialects and versions.
+*   **Official Gherkin Support**: Uses the industry-standard `Gherkin` NuGet package (v35.0.0) for robust parsing of all Gherkin dialects and versions.
 *   **Framework Agnostic**: Supports Cucumber, SpecFlow, and Reqnroll out of the box.
 *   **Resilient Parsing**: Handles comments, tags, rules, backgrounds, and scenario outlines with data tables.
+*   **Version Compatibility**: Fully compatible with Reqnroll 3.3.2+ (Gherkin 35.0.0 aligned).
 
 ## 🏗 Architecture
 

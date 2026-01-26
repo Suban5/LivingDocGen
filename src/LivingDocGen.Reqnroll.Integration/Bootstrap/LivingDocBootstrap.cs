@@ -60,9 +60,12 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
             _projectRoot = FindProjectRoot();
             _testResultsPath = Path.Combine(_projectRoot, "TestResults");
             
+            Trace.WriteLine("========================================");
             Trace.WriteLine("🚀 LivingDocGen - Test run starting");
             Trace.WriteLine($"   Project Root: {_projectRoot}");
+            Trace.WriteLine($"   Test Results Path: {_testResultsPath}");
             Trace.WriteLine($"   Test Runner: {GetTestRunnerName()}");
+            Trace.WriteLine("========================================");
         }
 
         /// <summary>
@@ -81,9 +84,16 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
 
         private static void GenerateDocumentation()
         {
+            var debugLog = Path.Combine(_projectRoot, "LIVINGDOC_DEBUG.txt");
+            
             try
             {
                 Trace.WriteLine("\n📊 Generating Living Documentation...");
+                
+                // Initialize debug log
+                File.WriteAllText(debugLog, $"Living Documentation Generation Debug Log\n");
+                File.AppendAllText(debugLog, $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n");
+                File.AppendAllText(debugLog, $"Project Root: {_projectRoot}\n\n");
                 
                 var configPath = Path.Combine(_projectRoot, "livingdocgen.json");
                 
@@ -91,20 +101,34 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 GenerationConfig config;
                 if (File.Exists(configPath))
                 {
-                    Trace.WriteLine($"   ✓ Using config file: {configPath}");
-                    config = LoadConfiguration(configPath);
+                    Trace.WriteLine($"   ✓ Config File: {configPath}");
+                    File.AppendAllText(debugLog, $"Loading configuration from: {configPath}\n");
+                    config = LoadConfiguration(configPath, debugLog);
+                    
+                    Trace.WriteLine($"      Feature Path: {config.FeaturePath}");
+                    Trace.WriteLine($"      Test Results: {config.TestResultsPath}");
+                    Trace.WriteLine($"      Output: {config.OutputPath}");
+                    Trace.WriteLine($"      Theme: {config.Theme}");
                 }
                 else
                 {
                     Trace.WriteLine("   ℹ Using default configuration");
+                    File.AppendAllText(debugLog, "No config file found, using defaults\n");
                     config = GetDefaultConfiguration();
                 }
 
                 // Validate feature path
                 if (!Directory.Exists(config.FeaturePath))
                 {
-                    Trace.WriteLine($"   ⚠️ Features directory not found: {config.FeaturePath}");
-                    Trace.WriteLine("   Create a 'Features' folder or use livingdocgen.json to specify custom path");
+                    Trace.WriteLine("========================================");
+                    Trace.WriteLine($"   ❌ ERROR: Features directory not found");
+                    Trace.WriteLine($"      Expected path: {config.FeaturePath}");
+                    Trace.WriteLine($"      Current directory: {Directory.GetCurrentDirectory()}");
+                    Trace.WriteLine($"      Project root: {_projectRoot}");
+                    Trace.WriteLine("   Solution: Create a 'Features' folder or specify custom path in livingdocgen.json");
+                    Trace.WriteLine("========================================");
+                    
+                    File.AppendAllText(debugLog, $"ERROR: Features directory not found: {config.FeaturePath}\n");
                     return;
                 }
 
@@ -113,25 +137,51 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 
                 if (featureFiles.Length == 0)
                 {
-                    Trace.WriteLine($"   ⚠️ No .feature files found in: {config.FeaturePath}");
+                    Trace.WriteLine("========================================");
+                    Trace.WriteLine($"   ❌ ERROR: No .feature files found");
+                    Trace.WriteLine($"      Searched in: {config.FeaturePath}");
+                    Trace.WriteLine($"      Search pattern: *.feature (recursive)");
+                    Trace.WriteLine("   Solution: Ensure .feature files exist in the specified directory");
+                    Trace.WriteLine("========================================");
+                    
+                    File.AppendAllText(debugLog, $"ERROR: No .feature files found in: {config.FeaturePath}\n");
                     return;
                 }
 
                 Trace.WriteLine($"   ✓ Found {featureFiles.Length} feature file(s)");
+                Trace.WriteLine($"      First file: {Path.GetFileName(featureFiles[0])}");
+                if (featureFiles.Length > 1)
+                {
+                    Trace.WriteLine($"      Last file: {Path.GetFileName(featureFiles[featureFiles.Length - 1])}");
+                }
+                
+                File.AppendAllText(debugLog, $"Feature files found: {featureFiles.Length}\n");
 
                 // Find test results if available
                 var testResultFiles = new string[0];
-                var latestTestResult = FindLatestTestResult(config.TestResultsPath ?? _testResultsPath);
+                var latestTestResult = FindLatestTestResult(config.TestResultsPath ?? _testResultsPath, debugLog);
                 
                 if (!string.IsNullOrEmpty(latestTestResult) && config.IncludeTestResults)
                 {
-                    Trace.WriteLine($"   ✓ Using test results: {Path.GetFileName(latestTestResult)}");
+                    var testResultFileInfo = new FileInfo(latestTestResult);
+                    Trace.WriteLine($"   ✓ Using test results:");
+                    Trace.WriteLine($"      File: {latestTestResult}");
+                    Trace.WriteLine($"      Size: {testResultFileInfo.Length:N0} bytes ({testResultFileInfo.Length / 1024.0:F2} KB)");
+                    Trace.WriteLine($"      Modified: {testResultFileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}");
+                    
+                    File.AppendAllText(debugLog, $"Test Result File: {latestTestResult}\n");
+                    File.AppendAllText(debugLog, $"File Size: {testResultFileInfo.Length} bytes\n");
+                    File.AppendAllText(debugLog, $"Last Modified: {testResultFileInfo.LastWriteTime}\n");
                     testResultFiles = new[] { latestTestResult };
                 }
                 else if (config.IncludeTestResults)
                 {
-                    Trace.WriteLine($"   ⚠️ No test results found in: {config.TestResultsPath ?? _testResultsPath}");
+                    Trace.WriteLine($"   ⚠️ No test results found");
+                    Trace.WriteLine($"      Searched in: {config.TestResultsPath ?? _testResultsPath}");
+                    Trace.WriteLine("      Note: Test results may not be written yet (async write in progress)");
                     Trace.WriteLine("   Generating documentation without test execution data...");
+                    
+                    File.AppendAllText(debugLog, $"No test results found in: {config.TestResultsPath ?? _testResultsPath}\n");
                 }
 
                 // Generate HTML documentation
@@ -140,11 +190,14 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                     ? config.OutputPath 
                     : Path.Combine(_projectRoot, config.OutputPath);
                 
+                File.AppendAllText(debugLog, $"Output Path: {outputPath}\n");
+                
                 // Ensure output directory exists
                 var outputDir = Path.GetDirectoryName(outputPath);
                 if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
                 {
                     Directory.CreateDirectory(outputDir);
+                    File.AppendAllText(debugLog, $"Created output directory: {outputDir}\n");
                 }
 
                 // Generate documentation
@@ -154,6 +207,7 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                     IncludeComments = config.IncludeComments
                 };
 
+                File.AppendAllText(debugLog, "Starting HTML generation...\n");
                 var task = generator.GenerateToFileAsync(
                     featureFiles,
                     testResultFiles,
@@ -163,18 +217,67 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                 );
                 
                 task.Wait(); // Synchronously wait for completion
+                File.AppendAllText(debugLog, "HTML generation completed successfully\n");
 
-                Trace.WriteLine("   ✅ Living documentation generated successfully!");
-                Trace.WriteLine($"   📄 file://{outputPath}");
+                // Verify output file was created
+                if (File.Exists(outputPath))
+                {
+                    var fileInfo = new FileInfo(outputPath);
+                    Trace.WriteLine("========================================");
+                    Trace.WriteLine("   ✅ Living documentation generated successfully!");
+                    Trace.WriteLine($"   📄 Output File: {outputPath}");
+                    Trace.WriteLine($"   📊 File Size: {fileInfo.Length:N0} bytes ({fileInfo.Length / 1024.0:F2} KB)");
+                    Trace.WriteLine($"   🔗 Open in browser: file://{outputPath}");
+                    Trace.WriteLine("========================================");
+                    
+                    File.AppendAllText(debugLog, $"Output file created: {outputPath}\n");
+                    File.AppendAllText(debugLog, $"File size: {fileInfo.Length} bytes\n");
+                }
+                else
+                {
+                    Trace.WriteLine("========================================");
+                    Trace.WriteLine("   ❌ ERROR: File was not created!");
+                    Trace.WriteLine($"   Expected path: {outputPath}");
+                    Trace.WriteLine("========================================");
+                    
+                    File.AppendAllText(debugLog, "ERROR: Output file was not created\n");
+                }
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"❌ Error generating living documentation: {ex.Message}");
+                Trace.WriteLine("========================================");
+                Trace.WriteLine($"❌ ERROR: Failed to generate living documentation");
+                Trace.WriteLine($"   Error Type: {ex.GetType().Name}");
+                Trace.WriteLine($"   Message: {ex.Message}");
+                Trace.WriteLine($"   Project Root: {_projectRoot}");
+                Trace.WriteLine($"   Test Results: {_testResultsPath}");
+                Trace.WriteLine($"   Debug Log: {debugLog}");
+                
+                if (ex.InnerException != null)
+                {
+                    Trace.WriteLine($"   Inner Exception: {ex.InnerException.GetType().Name}");
+                    Trace.WriteLine($"   Inner Message: {ex.InnerException.Message}");
+                }
+                
                 Trace.WriteLine($"   Stack trace: {ex.StackTrace}");
+                Trace.WriteLine("========================================");
+                
+                File.AppendAllText(debugLog, $"\nERROR:\n");
+                File.AppendAllText(debugLog, $"Message: {ex.Message}\n");
+                File.AppendAllText(debugLog, $"Type: {ex.GetType().FullName}\n");
+                File.AppendAllText(debugLog, $"Stack Trace:\n{ex.StackTrace}\n");
+                
+                if (ex.InnerException != null)
+                {
+                    File.AppendAllText(debugLog, $"\nInner Exception:\n");
+                    File.AppendAllText(debugLog, $"Message: {ex.InnerException.Message}\n");
+                    File.AppendAllText(debugLog, $"Type: {ex.InnerException.GetType().FullName}\n");
+                    File.AppendAllText(debugLog, $"Stack Trace:\n{ex.InnerException.StackTrace}\n");
+                }
             }
         }
 
-        private static GenerationConfig LoadConfiguration(string configPath)
+        private static GenerationConfig LoadConfiguration(string configPath, string debugLog)
         {
             try
             {
@@ -192,6 +295,11 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                     
                     if (config.TestResultsPath != null && !Path.IsPathRooted(config.TestResultsPath))
                         config.TestResultsPath = Path.Combine(_projectRoot, config.TestResultsPath);
+                    
+                    File.AppendAllText(debugLog, $"Config loaded - Feature Path: {config.FeaturePath}\n");
+                    File.AppendAllText(debugLog, $"Config loaded - Test Results: {config.TestResultsPath}\n");
+                    File.AppendAllText(debugLog, $"Config loaded - Output: {config.OutputPath}\n");
+                    File.AppendAllText(debugLog, $"Config loaded - Theme: {config.Theme}\n");
                 }
                 
                 return config ?? GetDefaultConfiguration();
@@ -200,6 +308,8 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
             {
                 Trace.WriteLine($"   ⚠️ Error loading config file: {ex.Message}");
                 Trace.WriteLine("   Using default configuration");
+                File.AppendAllText(debugLog, $"Error loading config: {ex.Message}\n");
+                File.AppendAllText(debugLog, "Using default configuration\n");
                 return GetDefaultConfiguration();
             }
         }
@@ -254,10 +364,16 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
             return currentDir;
         }
 
-        private static string FindLatestTestResult(string testResultsPath)
+        private static string FindLatestTestResult(string testResultsPath, string debugLog)
         {
+            File.AppendAllText(debugLog, $"Searching for test results in: {testResultsPath}\n");
+            
             if (!Directory.Exists(testResultsPath))
+            {
+                File.AppendAllText(debugLog, "Test results directory does not exist\n");
+                Trace.WriteLine($"      Directory not found: {testResultsPath}");
                 return null;
+            }
 
             try
             {
@@ -269,10 +385,18 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
                     .OrderByDescending(f => File.GetLastWriteTime(f))
                     .FirstOrDefault();
 
+                if (testFiles == null)
+                {
+                    var allFiles = Directory.GetFiles(testResultsPath, "*.*", SearchOption.AllDirectories);
+                    File.AppendAllText(debugLog, $"No test result files found. Total files in directory: {allFiles.Length}\n");
+                }
+                
                 return testFiles;
             }
-            catch
+            catch (Exception ex)
             {
+                File.AppendAllText(debugLog, $"Error searching for test results: {ex.Message}\n");
+                Trace.WriteLine($"      Error accessing directory: {ex.Message}");
                 return null;
             }
         }

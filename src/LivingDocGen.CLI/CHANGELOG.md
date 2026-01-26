@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated Gherkin library to 35.0.0 (inherited from Parser)
+  - Aligned with Reqnroll 3.3.2 dependency for version consistency
+- Improved test result parsing for Scenario Outlines (inherited from TestReporter)
+  - Now recursively finds all nested test-case elements
+  - Test statistics display correctly for parameterized scenarios
+
 ### Fixed
 
 ### Removed

@@ -1,0 +1,9 @@
+{
+  "featurePath": "Features",
+  "testResultsPath": "TestResults/xml",
+  "outputPath": "TestResult/living-documentation-test.html",
+  "title": "IntegrationTest .NET 8 - Living Documentation",
+  "theme": "blue",
+  "includeTestResults": true,
+  "includeComments": true
+}

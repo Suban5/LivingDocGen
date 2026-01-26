@@ -110,8 +110,9 @@ public class NUnitResultParser : ITestResultParser
             .Where(p => p.Attribute("name")?.Value == "Category");
         feature.Tags = categories.Select(c => c.Attribute("value")?.Value ?? "").ToList();
 
-        // Parse test cases (scenarios)
-        var testCases = testSuite.Elements("test-case");
+        // Parse test cases (scenarios) - use Descendants to get all test-cases including nested ones
+        // (e.g., test-cases under ParameterizedMethod suites for Scenario Outlines)
+        var testCases = testSuite.Descendants("test-case");
         foreach (var testCase in testCases)
         {
             feature.Scenarios.Add(ParseScenario(testCase));
