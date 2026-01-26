@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.5] - 2026-01-26
+
+### Added
+
+- Tag filtering functionality for better scenario organization (inherited from Core)
+  - Filter scenarios by tags using dropdown selector
+  - Feature-level and scenario-level tag support
+  - Case-insensitive tag matching
+
+### Changed
+
+- Reorganized controls layout for improved UX (inherited from Core)
+  - New logical order: Status filters → Tag filter → Search → Clear All → Theme
+  - Better visual grouping and filtering workflow
+
+### Fixed
+
+- Tag filtering extraction and matching issues (inherited from Core)
+  - Fixed tag selector targeting and Font Awesome icon interference
+  - Tag filtering now displays matching scenarios correctly
+
+- Search navigation improvements (inherited from Core)
+  - Fixed ReferenceError with prev/next buttons
+  - Improved button state management
+
+- Untested scenario count calculation (inherited from Core)
+  - Now uses formula-based calculation for accuracy
+  - Correctly shows all untested scenarios
+
+### Removed
+
+- Sidebar search feature (inherited from Core)
+  - Simplified navigation, main search still available
+
+---
+
 ## How to Use
 
 ### Installation
@@ -391,7 +439,8 @@ First public release of LivingDocGen.Reqnroll.Integration.
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.5...HEAD
+[2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
 [2.0.2]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.2

@@ -9,7 +9,28 @@
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
 | Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
 
-### Recent Completions (v2.0.4)
+### Recent Completions (v2.0.5)
+- ✅ **Tag Filtering Functionality** - Complete tag-based scenario filtering
+  - Filter scenarios by tags with dropdown selector
+  - Feature-level and scenario-level tag support
+  - Case-insensitive tag matching
+  - Integrated with unified filter system
+- ✅ **Improved Controls Layout** - Better UX organization
+  - New logical order: Status filters → Tag filter → Search → Clear All → Theme
+  - Improved visual grouping and filtering workflow
+- ✅ **Tag Filtering Fixes** - Resolved extraction and matching issues
+  - Fixed tag selector targeting
+  - Removed Font Awesome icon interference
+  - Corrected tag matching logic
+- ✅ **Search Navigation Enhancements** - Better search UX
+  - Fixed prev/next button functionality
+  - Improved button state management
+- ✅ **Untested Count Accuracy** - More reliable calculations
+  - Formula-based calculation: Total - (Passed + Failed + Skipped)
+  - Correctly displays all untested scenarios
+- ✅ **Simplified Navigation** - Removed redundant sidebar search
+
+### Previous Completions (v2.0.4)
 - ✅ **Critical Bug Fixes for Lazy Rendering** - 12 issues resolved
   - Fixed sidebar navigation with lazy rendering (50+ features)
   - Restored search functionality with dynamically loaded content
@@ -198,6 +219,7 @@ We're actively seeking feedback on:
 
 | Version | Target Date | Focus |
 |---------|-------------|-------|
+| v2.0.5 | ✅ Jan 26, 2026 | Tag filtering and UX improvements |
 | v2.0.4 | ✅ Jan 22, 2026 | Critical lazy rendering bug fixes |
 | v2.0.3 | ✅ Jan 22, 2026 | Phase 2 performance (lazy rendering) |
 | v2.0.2 | ✅ Jan 19, 2026 | Phase 1 performance optimizations |
@@ -237,6 +259,6 @@ See [CHANGELOG.md](../CHANGELOG.md) for detailed release notes.
 
 ---
 
-**Last Updated:** January 22, 2026
+**Last Updated:** January 26, 2026
 
 **Have suggestions for the roadmap?** [Open a discussion](https://github.com/Suban5/LivingDocGen/discussions)!

@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.5] - 2026-01-26
+
+### Added
+
 - **Generator**: Tag filtering functionality
   - Filter scenarios by tags with dropdown selector
   - Feature-level and scenario-level tag support
@@ -451,7 +463,8 @@ First public release of LivingDocGen - Universal BDD Living Documentation Genera
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.5...HEAD
+[2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
 [1.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v1.0.4

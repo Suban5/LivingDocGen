@@ -5,22 +5,23 @@
 
 The **LivingDocGen CLI** is a cross-platform .NET Global Tool that generates beautiful, interactive living documentation from your Gherkin feature files and test results.
 
-## ✨ What's New in v2.0.4 🎉
+## ✨ What's New in v2.0.5 🎉
 
-**Release Date:** January 22, 2026
+**Release Date:** January 26, 2026
 
-**Critical Bug Fixes** - All lazy rendering features now fully functional:
-- ✅ **Sidebar Navigation** - Fixed with 50+ feature reports
-- ✅ **Search Functionality** - Restored with dynamically loaded content
-- ✅ **Search Navigation** - Added prev/next buttons with keyboard shortcuts
-- ✅ **Tag Filtering** - Now displays features properly
-- ✅ **Toggle Sections** - Background, Rules, Examples work correctly
-- ✅ **Compact Display** - Steps show inline (40% space savings)
-- ✅ **Collapse Behavior** - No content overflow when collapsed
-- ✅ **Event Delegation** - Proper event handling for all toggles
-- ✅ **Element References** - Fixed stale reference issues
+**Tag Filtering & UX Improvements:**
+- ✅ **Tag Filtering** - Filter scenarios by tags with dropdown selector
+  - Feature-level and scenario-level tag support
+  - Case-insensitive tag matching
+  - Integrated with unified filter system
+- ✅ **Improved Controls Layout** - Better UX organization
+  - New logical order: Status filters → Tag filter → Search → Clear All → Theme
+  - Enhanced visual grouping and filtering workflow
+- ✅ **Search Navigation** - Fixed prev/next button functionality
+- ✅ **Accurate Counts** - Formula-based untested scenario calculation
+- ✅ **Simplified Navigation** - Removed redundant sidebar search
 
-**Impact:** Reports with 50+ features are now fully functional with all navigation, search, and filtering working correctly.
+**Impact:** Enhanced filtering capabilities and more intuitive controls layout for better user experience.
 
 See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
 
