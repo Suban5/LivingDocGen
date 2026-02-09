@@ -5,6 +5,22 @@
 
 The **LivingDocGen CLI** is a cross-platform .NET Global Tool that generates beautiful, interactive living documentation from your Gherkin feature files and test results.
 
+## ✨ What's New in v2.0.6 🎉
+
+**Release Date:** February 10, 2026
+
+**Improvements:**
+- ✅ **Gherkin 35.0.0 Library** - Updated Gherkin library for version consistency
+  - Aligned with Reqnroll 3.3.2 dependency
+  - Improved parser compatibility
+- ✅ **Enhanced Scenario Outline Parsing** - Better test result parsing
+  - Recursive test-case element finding (inherited from TestReporter)
+  - Test statistics display correctly for parameterized scenarios
+
+**Impact:** Improved compatibility with latest Reqnroll version and more accurate test results for Scenario Outlines.
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
+
 ## ✨ What's New in v2.0.5 🎉
 
 **Release Date:** January 26, 2026

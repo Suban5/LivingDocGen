@@ -41,11 +41,50 @@
 
 ### Q: Why aren't my test results showing up?
 **A:** Common causes:
-1. Missing `test.runsettings` file (for NUnit)
+1. Using NUnit 4 with `test.runsettings` (see below)
 2. Running tests from VS Code Testing tab (limited runsettings support)
 3. Test results in different folder than configured
 
-**Solution:** Create `test.runsettings` and run `dotnet test --settings test.runsettings`. See [Bridge Setup Guide](BRIDGE_SETUP.md#test-results-setup-nunit).
+### Q: Why aren't my test results showing with NUnit + test.runsettings?
+**A: This is a known limitation when using NUnit 4 with `test.runsettings` and the Reqnroll Integration package.**
+
+**Root Cause:**
+NUnit 4 with `test.runsettings` writes XML test results **AFTER the entire test process exits**, not during the `[AfterTestRun]` hook. The integration package generates documentation in the `[AfterTestRun]` hook, but the XML file doesn't exist yet at that point.
+
+**Timeline of events:**
+```
+1. Tests execute
+2. [AfterTestRun] hook runs → LivingDoc tries to find XML file
+3. Hook completes and returns
+4. NUnit THEN starts writing XML file (too late!)
+5. Test process exits
+```
+
+**✅ Solution Option 1: Use CLI Package (Recommended)**
+```bash
+# Install CLI tool
+dotnet tool install --local LivingDocGen.CLI
+
+# Run tests with runsettings
+dotnet test --settings test.runsettings
+
+# Generate documentation AFTER tests complete
+dotnet livingdocgen
+```
+
+**✅ Solution Option 2: Remove test.runsettings**
+```bash
+# Run tests without runsettings - integration package works fine
+dotnet test
+```
+
+The integration package works perfectly with:
+- NUnit **without** test.runsettings ✅
+- xUnit (all configurations) ✅
+- MSTest (all configurations) ✅
+
+**Why not just add a longer delay?**
+We tried polling for up to 10 seconds, but NUnit doesn't even *start* writing until the hook returns control. No amount of delay inside the hook helps.
 
 ### Q: What test result formats are supported?
 **A:** 

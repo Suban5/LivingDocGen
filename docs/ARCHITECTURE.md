@@ -231,13 +231,71 @@ LivingDocGen is a modular, framework-agnostic BDD living documentation generator
 
 **Purpose:** Automatic generation via Reqnroll hooks
 
-**Components:**
-- `Hooks/` - Reqnroll `[AfterTestRun]` hook implementation
+**Architecture:** Clean three-layer design
 
-**Key Design:**
-- **Zero Configuration:** Works automatically when package is installed
-- **AfterTestRun Hook:** Generates docs after all tests complete
-- **Reqnroll Aware:** Uses Reqnroll's test execution context
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Bootstrap Layer (Public API)                               │
+│  - LivingDocBootstrap: Public hook interface                │
+│  - Delegates to Runtime layer                               │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│  Runtime Layer (Internal Execution)                         │
+│  - LivingDocJob: Orchestrates generation workflow           │
+│  - PostTestJobRunner: Foreground thread lifecycle manager   │
+│  - TestResultAwaiter: Intelligent test result waiting       │
+│  - LivingDocLogger: Shutdown-safe structured logging        │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│  Generator Layer (Core Work)                                │
+│  - Uses LivingDocGen.Generator for HTML creation            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Components:**
+
+**Bootstrap/** - Public API layer (124 lines)
+- `LivingDocBootstrap.cs` - Public hook interface
+  - `BeforeTestRun()` - Initializes paths and configuration
+  - `AfterTestRun()` - Schedules documentation generation
+  - Returns immediately, never blocks test hooks
+
+**Runtime/** - Internal execution layer (342 lines)
+- `LivingDocJob.cs` (179 lines) - Orchestration entry point
+  - `Schedule()` - Spawns foreground thread and returns
+  - `Execute()` - Runs generation workflow
+  - `GenerateDocumentation()` - Loads config, finds files, generates HTML
+  - `LoadConfiguration()` - Reads livingdocgen.json or provides defaults
+
+- `PostTestJobRunner.cs` (58 lines) - Foreground thread lifecycle
+  - Exactly-once execution via `Interlocked.Exchange`
+  - `IsBackground = false` keeps process alive
+  - Never blocks test runner hooks
+
+- `TestResultAwaiter.cs` (65 lines) - Intelligent waiting logic
+  - 3-minute default timeout
+  - Polls every 1 second for test result files
+  - Progress logging every 10 seconds
+  - Logs warning on timeout (non-blocking)
+
+- `LivingDocLogger.cs` (40 lines) - Shutdown-safe logging
+  - Writes to `LIVINGDOC_RUNTIME.log`
+  - Three levels: Info(), Warn(), Error()
+  - Never throws exceptions during file writes
+  - Timestamp format: `HH:mm:ss.fff [LEVEL] message`
+
+**Key Design Principles:**
+- **Never Block Hooks:** Spawn foreground thread, return immediately
+- **Foreground Threads:** `IsBackground = false` controls process lifetime
+- **Exactly-Once Execution:** Atomic operations prevent duplicate runs
+- **Shutdown-Safe:** Logging never throws during process termination
+- **Framework-Agnostic:** Runtime layer has no test framework dependencies
+- **Intelligent Waiting:** Polls AFTER hook returns (when NUnit writes files)
+- **Structured Logging:** Single log file tracks entire lifecycle
+
+**Total Code:** 499 lines (extremely concise)
 
 **Dependencies:** `LivingDocGen.Generator`, `Reqnroll`
 

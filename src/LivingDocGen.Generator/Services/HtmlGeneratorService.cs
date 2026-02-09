@@ -50,8 +50,8 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     private const int PerFeatureCapacity = 5 * 1024; // 5 KB per feature
     private const int HeadSectionCapacity = 4 * 1024; // 4 KB for CSS/meta
     
-    // Lazy rendering threshold
-    private const int LazyRenderingThreshold = 50; // Enable lazy rendering for 50+ features
+    // Lazy rendering threshold (Phase 3 optimization: lowered from 50 to 30)
+    private const int LazyRenderingThreshold = 30; // Enable lazy rendering for 30+ features
     
     // HTML encoding cache to avoid redundant encoding operations
     private readonly Dictionary<string, string> _encodingCache = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -128,6 +128,13 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         // Skip to content link for accessibility
         html.AppendLine(@"
     <a href=""#main-content"" class=""skip-to-content"">Skip to main content</a>");
+        
+        // Global loading spinner (Phase 3 optimization)
+        html.AppendLine(@"
+    <div id=""global-loader"" class=""global-loader"">
+        <div class=""spinner""></div>
+        <p class=""loader-text"">Loading...</p>
+    </div>");
         
         // Header
         html.AppendLine(GenerateHeader(documentation));
@@ -392,6 +399,47 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         .skip-to-content:focus {
             left: 0;
             top: 0;
+        }
+
+        /* Global Loading Spinner (Phase 3 optimization) */
+        .global-loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            display: none;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .global-loader.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin: 0;
         }
 
         /* Controls Section - Compact Single-Row Design */
@@ -864,6 +912,9 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             overflow: hidden;
             transition: box-shadow 0.3s ease, transform 0.2s ease;
             animation: fadeIn 0.3s ease-out;
+            /* Phase 3 optimization: Browser-native lazy rendering */
+            content-visibility: auto;
+            contain-intrinsic-size: auto 300px;
         }
         
         /* Lazy loading styles */
@@ -2325,6 +2376,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         /* Print Styles */
         @media print {
+            .feature {
+                content-visibility: visible !important;
+            }
+            
             .feature-body {
                 display: block !important;
             }
@@ -2344,6 +2399,10 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             
             .layout-container {
                 display: block;
+            }
+            
+            .global-loader {
+                display: none !important;
             }
         }";
     }
@@ -3249,6 +3308,32 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         // SMART PROGRESSIVE DISCLOSURE
         // ============================================
         
+        // Phase 3: Loading Spinner Utilities for UX feedback
+        let loaderTimeout;
+        
+        function showLoader(message = 'Loading...', delay = 100) {
+            // Don't show spinner for quick operations (<100ms)
+            loaderTimeout = setTimeout(() => {
+                const loader = document.getElementById('global-loader');
+                if (loader) {
+                    const text = loader.querySelector('.loader-text');
+                    if (text) text.textContent = message;
+                    loader.classList.add('active');
+                    
+                    // Accessibility announcement
+                    announceToScreenReader(message);
+                }
+            }, delay);
+        }
+        
+        function hideLoader() {
+            clearTimeout(loaderTimeout); // Cancel if operation was fast
+            const loader = document.getElementById('global-loader');
+            if (loader) {
+                loader.classList.remove('active');
+            }
+        }
+        
         // Auto-expand failures and search hits
         function autoExpandFeature(featureId, reason) {
             const feature = document.getElementById(featureId);
@@ -3287,15 +3372,35 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         // Critical for 200+ features with 500+ scenarios
         
         document.addEventListener('click', function(e) {
-            // Scenario toggle - most common operation
+            // Scenario toggle - most common operation (Phase 3: Enhanced with requestIdleCallback)
             const scenarioHeader = e.target.closest('.scenario-header');
             if (scenarioHeader && scenarioHeader.hasAttribute('data-toggle-scenario')) {
                 e.preventDefault();
                 const scenarioBody = scenarioHeader.nextElementSibling;
                 if (scenarioBody && scenarioBody.classList.contains('scenario-body')) {
-                    requestAnimationFrame(() => {
-                        scenarioBody.classList.toggle('expanded');
-                    });
+                    const isExpanding = !scenarioBody.classList.contains('expanded');
+                    
+                    if (isExpanding) {
+                        // Immediate visual feedback
+                        requestAnimationFrame(() => {
+                            scenarioBody.style.willChange = 'max-height, opacity';
+                        });
+                        
+                        // Defer heavy DOM work
+                        requestIdleCallback(() => {
+                            requestAnimationFrame(() => {
+                                scenarioBody.classList.add('expanded');
+                                setTimeout(() => {
+                                    scenarioBody.style.willChange = 'auto';
+                                }, 300);
+                            });
+                        }, { timeout: 50 });
+                    } else {
+                        // Collapse immediately (fast operation)
+                        requestAnimationFrame(() => {
+                            scenarioBody.classList.remove('expanded');
+                        });
+                    }
                 }
                 return;
             }
@@ -3528,6 +3633,11 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         function performSearch() {
             const searchTerm = searchBox.value.toLowerCase().trim();
             
+            // Show loader for search operation
+            if (searchTerm && FEATURE_COUNT > 50) {
+                showLoader('Searching features...', 50);
+            }
+            
             // Remove previous highlights
             removeHighlights();
             
@@ -3541,45 +3651,51 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 });
             }
             
-            // Apply all filters (includes search)
-            applyAllFilters();
-            
-            // Highlight search matches
-            if (searchTerm) {
-                const features = document.querySelectorAll('.feature[data-feature-id]');
-                features.forEach(feature => {
-                    if (feature.style.display !== 'none') {
-                        // Highlight in feature title
-                        const title = feature.querySelector('.feature-title h2');
-                        if (title) highlightText(title, searchTerm);
-                        
-                        // Highlight in scenario names
-                        feature.querySelectorAll('.scenario-title strong').forEach(el => {
-                            highlightText(el, searchTerm);
-                        });
-                        
-                        // SMART PROGRESSIVE DISCLOSURE: Auto-expand matched scenarios
-                        const scenarios = feature.querySelectorAll('.scenario');
-                        scenarios.forEach(scenario => {
-                            if (scenario.style.display !== 'none') {
-                                const scenarioTitle = scenario.querySelector('.scenario-title strong');
-                                if (scenarioTitle && scenarioTitle.textContent.toLowerCase().includes(searchTerm)) {
-                                    const scenarioHeader = scenario.querySelector('.scenario-header');
-                                    if (scenarioHeader) {
-                                        const scenarioBody = scenarioHeader.nextElementSibling;
-                                        if (scenarioBody && scenarioBody.classList.contains('scenario-body')) {
-                                            scenarioBody.classList.add('expanded');
+            // Defer heavy operations
+            requestIdleCallback(() => {
+                // Apply all filters (includes search)
+                applyAllFilters();
+                
+                // Highlight search matches
+                if (searchTerm) {
+                    const features = document.querySelectorAll('.feature[data-feature-id]');
+                    features.forEach(feature => {
+                        if (feature.style.display !== 'none') {
+                            // Highlight in feature title
+                            const title = feature.querySelector('.feature-title h2');
+                            if (title) highlightText(title, searchTerm);
+                            
+                            // Highlight in scenario names
+                            feature.querySelectorAll('.scenario-title strong').forEach(el => {
+                                highlightText(el, searchTerm);
+                            });
+                            
+                            // SMART PROGRESSIVE DISCLOSURE: Auto-expand matched scenarios
+                            const scenarios = feature.querySelectorAll('.scenario');
+                            scenarios.forEach(scenario => {
+                                if (scenario.style.display !== 'none') {
+                                    const scenarioTitle = scenario.querySelector('.scenario-title strong');
+                                    if (scenarioTitle && scenarioTitle.textContent.toLowerCase().includes(searchTerm)) {
+                                        const scenarioHeader = scenario.querySelector('.scenario-header');
+                                        if (scenarioHeader) {
+                                            const scenarioBody = scenarioHeader.nextElementSibling;
+                                            if (scenarioBody && scenarioBody.classList.contains('scenario-body')) {
+                                                scenarioBody.classList.add('expanded');
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        });
-                    }
-                });
-            }
-            
-            // Update search UI (counts, navigation buttons)
-            updateSearchNavigationUI();
+                            });
+                        }
+                    });
+                }
+                
+                // Update search UI (counts, navigation buttons)
+                updateSearchNavigationUI();
+                
+                // Hide loader
+                hideLoader();
+            }, { timeout: 200 });
         }
         
         function updateSearchNavigationUI() {
@@ -4403,46 +4519,64 @@ const visibleScenarios = document.querySelectorAll(
         }
         
         // Select Feature
+        // Phase 3: Enhanced with requestIdleCallback for non-blocking sidebar navigation
         function selectFeature(featureId) {
-            // Hide all features
-            document.querySelectorAll('.feature[data-feature-id]').forEach(feature => {
-                feature.classList.add('feature-hidden');
+            // Show loader for large reports
+            if (FEATURE_COUNT > 100) {
+                showLoader('Loading feature...', 30);
+            }
+            
+            // Immediate visual feedback - hide all features
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.feature[data-feature-id]').forEach(feature => {
+                    feature.classList.add('feature-hidden');
+                });
             });
             
-            // Show selected feature
-            let selectedFeature = document.getElementById(featureId);
-            if (selectedFeature) {
-                // Render lazy-loaded feature content if needed
-                if (USE_LAZY_RENDERING && selectedFeature.hasAttribute('data-lazy')) {
-                    renderFeatureContent(selectedFeature);
-                    // Get the element again after rendering (it was replaced)
-                    selectedFeature = document.getElementById(featureId);
-                }
-                
-                // Remove hidden class from the (possibly new) element
+            // Defer heavy operations to idle time
+            requestIdleCallback(() => {
+                // Show selected feature
+                let selectedFeature = document.getElementById(featureId);
                 if (selectedFeature) {
-                    selectedFeature.classList.remove('feature-hidden');
-                    currentFeatureId = featureId;
+                    // Render lazy-loaded feature content if needed
+                    if (USE_LAZY_RENDERING && selectedFeature.hasAttribute('data-lazy')) {
+                        renderFeatureContent(selectedFeature);
+                        // Get the element again after rendering (it was replaced)
+                        selectedFeature = document.getElementById(featureId);
+                    }
+                    
+                    // Show the feature with smooth animation
+                    requestAnimationFrame(() => {
+                        if (selectedFeature) {
+                            selectedFeature.classList.remove('feature-hidden');
+                            currentFeatureId = featureId;
+                        }
+                        
+                        // Update active state in sidebar
+                        document.querySelectorAll('.feature-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
+                        if (activeItem) {
+                            activeItem.classList.add('active');
+                        }
+                        
+                        // Scroll to top of content
+                        const mainContent = document.getElementById('main-content');
+                        if (mainContent) {
+                            mainContent.scrollTop = 0;
+                        }
+                        
+                        // Save last viewed feature
+                        localStorage.setItem('bdd-last-feature', featureId);
+                        
+                        // Hide loader
+                        hideLoader();
+                    });
+                } else {
+                    hideLoader();
                 }
-                
-                // Update active state in sidebar
-                document.querySelectorAll('.feature-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
-                if (activeItem) {
-                    activeItem.classList.add('active');
-                }
-                
-                // Scroll to top of content
-                const mainContent = document.getElementById('main-content');
-                if (mainContent) {
-                    mainContent.scrollTop = 0;
-                }
-                
-                // Save last viewed feature
-                localStorage.setItem('bdd-last-feature', featureId);
-            }
+            }, { timeout: 50 });
         }
         
         // Toggle Folder

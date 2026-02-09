@@ -79,6 +79,37 @@
           "default": true
         }
       }
+    },
+    "testResults": {
+      "type": "object",
+      "description": "Test results configuration for multi-format support",
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "description": "File patterns to search for test results (e.g., ['*.trx', '*.xml'])",
+          "items": {
+            "type": "string"
+          },
+          "default": ["*.trx", "*.xml"],
+          "examples": [
+            ["*.trx"],
+            ["*.xml"],
+            ["*.trx", "*.xml"],
+            ["TestResults*.xml", "results.trx"]
+          ]
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory to search for test results (overrides paths.testResults if specified)",
+          "default": "./TestResults"
+        },
+        "format": {
+          "type": "string",
+          "description": "Shorthand for common test result formats (sets appropriate patterns automatically)",
+          "enum": ["trx", "nunit", "xunit", "junit", "specflow", "all"],
+          "examples": ["trx", "nunit", "all"]
+        }
+      }
     }
   }
 }

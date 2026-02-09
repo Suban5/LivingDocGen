@@ -11,18 +11,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Enhanced diagnostic logging in LivingDocBootstrap.cs**
-  - Comprehensive console output during test execution
-  - Full file paths for all key operations (test results, features, HTML output)
-  - File metadata: size (bytes + KB), modification timestamps
-  - Configuration values display: feature path, output location, theme
-  - Structured error messages with error type and troubleshooting guidance
-  - Debug log file (LIVINGDOC_DEBUG.txt) with detailed execution diagnostics
-  - Browser-ready file:// links for generated HTML reports
-- **Debug log file documentation in README.md**
-  - Explanation of LIVINGDOC_DEBUG.txt contents and location
-  - When to check the debug log for troubleshooting
-  - Example debug log entries with real diagnostic output
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.6] - 2026-02-10
+
+### ⚠️ BREAKING CHANGES
+
+- **Now requires .NET 8.0 or higher**
+  - Dropped support for .NET 6.0 and .NET 7.0
+  - Projects using .NET 6/7 must upgrade to .NET 8 before updating this package
+  - Worker process and all dependencies target net8.0
+
+### Added
+
+- **Worker Process**: New standalone worker for reliable documentation generation
+  - Detached process runs independently of test host
+  - Resolves VSTest shutdown issue completely
+  - File-based job queue via `livingdoc-job-*.json` files
+  - Intelligent test result waiting with stability detection
+  - Configurable timeout (default 3 minutes)
+  - Comprehensive console logging with timestamps
+
+- **Multi-Format Test Results**: Configurable test result file patterns
+  - New `testResults.format` shorthand: trx, nunit, xunit, junit, specflow, all
+  - New `testResults.patterns` array for custom patterns: `["*.trx", "*.xml"]`
+  - Auto-detection via parser `CanParse()` methods
+  - Backward compatible with legacy `testResultFormat` config
+
+- **NUnit XML runsettings Support**
+  - Example `test.runsettings` with NUnit adapter configuration
+  - `OutputXmlFolderMode` for proper TestResults folder structure
+  - No `--logger` flag needed when using runsettings
+
+### Changed
+
+- **Simplified to Worker-Only Architecture**
+  - Removed InProcess mode (unreliable with dotnet test shutdown)
+  - Removed DeferredExternal mode (CLI dependency eliminated)
+  - Single execution path: Hooks → Worker process → Documentation
+  - Significantly reduced codebase complexity (~200 lines vs 650+)
+  - All 48 Worker dependencies now properly copied to consumer projects
+
+- **LivingDocJob simplified to job file writer** (~30 lines)
+  - Writes job JSON file with all configuration
+  - Launches Worker process in detached mode
+  - No longer handles execution logic directly
+
+### Removed
+
+- **InProcess execution mode files**
+  - `Runtime/PostTestJobRunner.cs` - No longer needed
+  - `Runtime/TestResultAwaiter.cs` - Moved to Worker
+  - `Runtime/LivingDocExecutionMode.cs` - Single mode now
+  - `Runtime/LivingDocExecutionPolicy.cs` - No longer needed
+  - `Runtime/TestExecutionEnvironment.cs` - No longer needed
+
+- **.NET 6/7 Integration Test Projects**
+  - Removed `IntegrationTest.Net6` project
+  - Removed `IntegrationTest.Net7` project
+  - Package now targets .NET 8.0 only
+  - Removed `WaitForTrxFiles()`, `GenerateDocumentation()`, `LoadConfiguration()`
+  - Removed `FindLatestTestResult()`, internal state management
+  - Now delegates all work to `LivingDocJob.Schedule()`
+  - Public API: `BeforeTestRun()`, `AfterTestRun()`, helper methods only
 
 ### Changed
 
@@ -477,7 +534,8 @@ First public release of LivingDocGen.Reqnroll.Integration.
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.5...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.6...HEAD
+[2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3

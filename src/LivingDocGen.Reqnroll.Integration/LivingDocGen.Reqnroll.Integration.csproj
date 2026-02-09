@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>LivingDocGen.Reqnroll.Integration</PackageId>
-    <Version>2.0.5</Version>
+    <Version>2.0.6</Version>
     <Authors>Suban Dhyako</Authors>
     <Description>Reqnroll integration for automatic living documentation generation. Self-contained - no global tool installation required!</Description>
     <PackageTags>BDD;Reqnroll;Living Documentation;Testing;SpecFlow</PackageTags>
@@ -11,8 +11,6 @@
     <RepositoryUrl>https://github.com/suban5/LivingDocGen</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    
-    <!-- Bundle all dependencies into single package -->
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
@@ -27,41 +25,44 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Bundle all internal dependencies - compile with PrivateAssets but include DLLs in package -->
-    <ProjectReference Include="..\LivingDocGen.Core\LivingDocGen.Core.csproj">
-      <PrivateAssets>all</PrivateAssets>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\LivingDocGen.Parser\LivingDocGen.Parser.csproj">
-      <PrivateAssets>all</PrivateAssets>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\LivingDocGen.Generator\LivingDocGen.Generator.csproj">
-      <PrivateAssets>all</PrivateAssets>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\LivingDocGen.TestReporter\LivingDocGen.TestReporter.csproj">
-      <PrivateAssets>all</PrivateAssets>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    <ProjectReference Include="..\LivingDocGen.Worker\LivingDocGen.Worker.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   
-  <!-- Explicitly include referenced DLL dependencies in the package lib folder -->
-  <Target Name="IncludeReferencedProjectsInPack" BeforeTargets="_GetPackageFiles">
+  <ItemGroup>
+    <!-- Copy ALL Worker output files (DLLs and runtime files) -->
+    <Content Include="../LivingDocGen.Worker/bin/$(Configuration)/net8.0/LivingDocGen.Worker" 
+             Condition="Exists('../LivingDocGen.Worker/bin/$(Configuration)/net8.0/LivingDocGen.Worker')"
+             CopyToOutputDirectory="PreserveNewest" Link="LivingDocGen.Worker" />
+    <Content Include="../LivingDocGen.Worker/bin/$(Configuration)/net8.0/LivingDocGen.Worker.dll"
+             CopyToOutputDirectory="PreserveNewest" Link="LivingDocGen.Worker.dll" />
+    <Content Include="../LivingDocGen.Worker/bin/$(Configuration)/net8.0/LivingDocGen.Worker.runtimeconfig.json"
+             CopyToOutputDirectory="PreserveNewest" Link="LivingDocGen.Worker.runtimeconfig.json" />
+    <Content Include="../LivingDocGen.Worker/bin/$(Configuration)/net8.0/LivingDocGen.Worker.deps.json"
+             CopyToOutputDirectory="PreserveNewest" Link="LivingDocGen.Worker.deps.json" />
+    <!-- Copy ALL dependency DLLs from Worker output -->
+    <Content Include="../LivingDocGen.Worker/bin/$(Configuration)/net8.0/*.dll"
+             Exclude="../LivingDocGen.Worker/bin/$(Configuration)/net8.0/LivingDocGen.Worker.dll"
+             CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <Target Name="IncludeWorkerFilesInPack" BeforeTargets="_GetPackageFiles">
     <ItemGroup>
-      <_PackageFiles Include="$(OutputPath)LivingDocGen.Core.dll">
+      <!-- Include ALL DLLs from Worker output in the NuGet package -->
+      <_PackageFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LivingDocGen.Reqnroll.Integration.dll">
         <PackagePath>lib/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </_PackageFiles>
-      <_PackageFiles Include="$(OutputPath)LivingDocGen.Parser.dll">
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.Worker" Condition="Exists('$(OutputPath)LivingDocGen.Worker')">
         <PackagePath>lib/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </_PackageFiles>
-      <_PackageFiles Include="$(OutputPath)LivingDocGen.Generator.dll">
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.Worker.runtimeconfig.json">
         <PackagePath>lib/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </_PackageFiles>
-      <_PackageFiles Include="$(OutputPath)LivingDocGen.TestReporter.dll">
+      <_PackageFiles Include="$(OutputPath)LivingDocGen.Worker.deps.json">
         <PackagePath>lib/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </_PackageFiles>

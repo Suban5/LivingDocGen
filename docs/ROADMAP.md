@@ -9,7 +9,53 @@
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
 | Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
 
-### Recent Completions (v2.0.5)
+### Recent Completions (v2.0.6)
+- ✅ **⚠️ BREAKING CHANGE: .NET 8.0+ Requirement for Reqnroll.Integration**
+  - Dropped support for .NET 6.0 and .NET 7.0
+  - Worker process and all dependencies target net8.0
+  - Projects using .NET 6/7 must upgrade to .NET 8
+- ✅ **Worker Process Architecture** - New standalone worker for reliable documentation generation
+  - Detached process runs independently of test host
+  - Resolves VSTest shutdown issue completely
+  - File-based job queue via `livingdoc-job-*.json` files
+  - Intelligent test result waiting with stability detection
+  - Configurable timeout (default 3 minutes)
+  - Comprehensive console logging with timestamps
+- ✅ **Multi-Format Test Results** - Configurable test result file patterns
+  - New `testResults.format` shorthand: trx, nunit, xunit, junit, specflow, all
+  - New `testResults.patterns` array for custom patterns
+  - Auto-detection of test result format via parsers
+  - Backward compatible with legacy `testResultFormat` config
+- ✅ **NUnit XML Support via runsettings**
+  - Example `test.runsettings` for NUnit XML output
+  - `OutputXmlFolderMode` configuration for proper folder structure
+  - Works without `--logger` command line flag
+- ✅ **Simplified Worker-Only Architecture**
+  - Removed InProcess mode (unreliable with dotnet test shutdown)
+  - Removed DeferredExternal mode (CLI dependency eliminated)
+  - Single execution path: Hooks → Worker process → Documentation
+  - Significantly reduced codebase complexity (~200 lines vs 650+)
+- ✅ **Enhanced Diagnostic Logging** - Comprehensive console output in LivingDocBootstrap.cs
+  - Full file paths and metadata
+  - Project root, test results path, test runner information
+  - Configuration values display
+  - File metadata (path, size, modification timestamp)
+  - Structured error messages with solutions
+  - Debug log file (LIVINGDOC_DEBUG.txt)
+- ✅ **Reqnroll 3.3.2 Upgrade**
+  - Updated from Reqnroll 2.4.1 to 3.3.2
+  - Compatible with Gherkin 35.0.0
+  - Improved test result parsing for Scenario Outlines
+  - Enhanced logging and error diagnostics
+- ✅ **Fixed NUnit Test Result Parsing**
+  - Changed from `.Elements()` to `.Descendants()` to recursively find all test-case elements
+  - Resolves missing test results for Scenario Outlines (parameterized tests)
+- ✅ **Removed .NET 6/7 Integration Tests**
+  - Removed IntegrationTest.Net6 project
+  - Removed IntegrationTest.Net7 project
+  - Cleaned up InProcess execution mode files
+
+### Previous Completions (v2.0.5)
 - ✅ **Tag Filtering Functionality** - Complete tag-based scenario filtering
   - Filter scenarios by tags with dropdown selector
   - Feature-level and scenario-level tag support
@@ -219,6 +265,7 @@ We're actively seeking feedback on:
 
 | Version | Target Date | Focus |
 |---------|-------------|-------|
+| v2.0.6 | ✅ Feb 10, 2026 | Worker architecture, .NET 8+ requirement (breaking change) |
 | v2.0.5 | ✅ Jan 26, 2026 | Tag filtering and UX improvements |
 | v2.0.4 | ✅ Jan 22, 2026 | Critical lazy rendering bug fixes |
 | v2.0.3 | ✅ Jan 22, 2026 | Phase 2 performance (lazy rendering) |
@@ -259,6 +306,6 @@ See [CHANGELOG.md](../CHANGELOG.md) for detailed release notes.
 
 ---
 
-**Last Updated:** January 26, 2026
+**Last Updated:** February 10, 2026
 
 **Have suggestions for the roadmap?** [Open a discussion](https://github.com/Suban5/LivingDocGen/discussions)!

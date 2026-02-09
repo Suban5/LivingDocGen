@@ -10,16 +10,33 @@ The bridge file is a simple class in your test project that calls the package's 
 
 ```
 Your Test Project                    NuGet Package
-┌────────────────────┐              ┌──────────────────────┐
-│ LivingDocGenBridge │──────────────│ LivingDocBootstrap   │
-│  [Binding]         │   calls      │  (public API)        │
-│  [BeforeTestRun]   │──────────────│  BeforeTestRun()     │
-│  [AfterTestRun]    │──────────────│  AfterTestRun()      │
-└────────────────────┘              └──────────────────────┘
-         ↑                                      ↓
-         │                                      │
-    Reqnroll discovers                  Generates documentation
+┌────────────────────┐              ┌──────────────────────────────────┐
+│ LivingDocGenBridge │──────────────│ LivingDocBootstrap (Public API)  │
+│  [Binding]         │   calls      │  - BeforeTestRun()               │
+│  [BeforeTestRun]   │──────────────│  - AfterTestRun()                │
+│  [AfterTestRun]    │──────────────│    Returns immediately ⚡        │
+└────────────────────┘              └──────────────┬───────────────────┘
+         ↑                                         │ delegates to
+         │                                         ▼
+    Reqnroll discovers              ┌──────────────────────────────────┐
+                                    │ Runtime Layer (Internal)         │
+                                    │  - LivingDocJob: Orchestration   │
+                                    │  - PostTestJobRunner: Lifecycle  │
+                                    │  - TestResultAwaiter: Polling    │
+                                    │  - LivingDocLogger: Logging      │
+                                    │    Runs on foreground thread ⚙️  │
+                                    └──────────────────────────────────┘
 ```
+
+**How It Works:**
+
+1. **Bridge calls Bootstrap** - Your test project invokes public API
+2. **Bootstrap schedules job** - Spawns foreground thread, returns immediately
+3. **Hook returns** - Test runner never blocked
+4. **Runtime executes** - Waits for results, generates documentation
+5. **Foreground thread** - Keeps process alive until generation complete
+
+**Logging:** Check `LIVINGDOC_RUNTIME.log` in your test output directory for lifecycle tracking.
 
 ## Complete Bridge File Code
 
@@ -56,6 +73,26 @@ namespace YourTestProject.Hooks
 - ✅ No locks needed
 - ✅ Optimal for large test suites (1000+ scenarios)
 - ✅ Minimal overhead
+
+**⚠️ IMPORTANT: Using test.runsettings with NUnit**
+
+If you use `test.runsettings` with NUnit-specific XML output configuration, this bridge setup **may not work reliably** because NUnit writes XML results AFTER the `[AfterTestRun]` hook completes.
+
+**✅ Solution: Use TRX logger (recommended):**
+```bash
+dotnet test --settings test.runsettings --logger "trx"
+```
+
+TRX format writes results **during** test execution, making it fully compatible with the integration package.
+
+**Alternative: Use CLI package for post-test generation:**
+```bash
+dotnet test --settings test.runsettings
+dotnet tool install --local LivingDocGen.CLI
+dotnet livingdocgen
+```
+
+See [FAQ: NUnit test.runsettings Issue](FAQ.md#q-why-arent-my-test-results-showing-with-nunit-testrunsettings) for detailed explanation.
 
 ### Alternative: Using [BeforeScenario] with Double-Checked Locking
 

@@ -1,9 +1,18 @@
 {
-  "featurePath": "Features",
-  "testResultsPath": "TestResults/xml",
-  "outputPath": "TestResult/living-documentation-test.html",
-  "title": "IntegrationTest .NET 8 - Living Documentation",
-  "theme": "blue",
-  "includeTestResults": true,
-  "includeComments": true
+  "paths": {
+    "features": "Features",
+    "testResults": "TestResults",
+    "output": "living-documentation.html"
+  },
+  "documentation": {
+    "title": "IntegrationTest .NET 8 - Living Documentation",
+    "theme": "blue"
+  },
+  "advanced": {
+    "includeTestResults": true,
+    "includeComments": true
+  },
+  "testResults": {
+    "format": "nunit"
+  }
 }

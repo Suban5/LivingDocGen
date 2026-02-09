@@ -4,7 +4,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-6.0%2B-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-v2.0.5-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
+[![NuGet](https://img.shields.io/badge/NuGet-v2.0.6-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
 
 ---
 
@@ -73,8 +73,10 @@ Documentation is automatically generated as `living-documentation.html`!
 | Component | .NET Versions |
 |-----------|---------------|
 | **CLI Tool** | .NET 6.0+ runtime |
-| **Reqnroll Integration** | .NET 6.0+ runtime |
+| **Reqnroll Integration** | .NET 8.0+ runtime ⚠️ |
 | **Library Packages** | .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+ |
+
+⚠️ **Breaking Change in v2.0.6:** Reqnroll.Integration now requires .NET 8.0 or higher (dropped .NET 6/7 support)
 
 ### Supported Frameworks
 
@@ -346,8 +348,8 @@ This is a **Master's thesis project**, but contributions are welcome!
 
 ## 📜 Version History
 
-**Latest Version: v2.0.5** (January 26, 2026)  
-**Previous Version: v2.0.4** (January 22, 2026)
+**Latest Version: v2.0.6** (February 10, 2026)  
+**Previous Version: v2.0.5** (January 26, 2026)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 

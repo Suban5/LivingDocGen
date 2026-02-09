@@ -13,15 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.6] - 2026-02-10
+
+### Changed
+
 - Updated Gherkin library to 35.0.0 (inherited from Parser)
   - Aligned with Reqnroll 3.3.2 dependency for version consistency
 - Improved test result parsing for Scenario Outlines (inherited from TestReporter)
   - Now recursively finds all nested test-case elements
   - Test statistics display correctly for parameterized scenarios
-
-### Fixed
-
-### Removed
 
 ---
 
@@ -403,7 +409,8 @@ First public release of LivingDocGen CLI - Universal BDD Living Documentation Ge
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.5...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.6...HEAD
+[2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3

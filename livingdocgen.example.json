@@ -12,6 +12,12 @@
     "theme": "purple",
     "primaryColor": "#9333ea"
   },
+  "testResults": {
+    "_comment": "Use 'format' shorthand OR 'patterns' array (not both)",
+    "format": "trx",
+    "_formatOptions": "trx | nunit | xunit | junit | specflow | all",
+    "_patternsExample": ["*.trx", "*.xml", "*.json"]
+  },
   "advanced": {
     "verbose": false,
     "includeSkipped": true,

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference core libraries for generation -->
+    <ProjectReference Include="../LivingDocGen.Core/LivingDocGen.Core.csproj" />
+    <ProjectReference Include="../LivingDocGen.Parser/LivingDocGen.Parser.csproj" />
+    <ProjectReference Include="../LivingDocGen.Generator/LivingDocGen.Generator.csproj" />
+    <ProjectReference Include="../LivingDocGen.TestReporter/LivingDocGen.TestReporter.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- For JSON deserialization -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

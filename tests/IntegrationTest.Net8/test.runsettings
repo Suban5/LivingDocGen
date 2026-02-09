@@ -1,19 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
-   <RunConfiguration>
-      <ResultsDirectory>TestResults/xml</ResultsDirectory>
-      <CollectSourceInformation>false</CollectSourceInformation>
-   </RunConfiguration>
-   
-   <NUnit>
-      <!-- Use the ResultsDirectory defined above -->
-      <OutputXmlFolderMode>UseResultDirectory</OutputXmlFolderMode>
-      
-      <!-- Generate NUnit XML results -->
-      <TestOutputXml>nunit-results.xml</TestOutputXml>
-      
-      <!-- Generate new XML file for each run with timestamp -->
-      <NewOutputXmlFileForEachRun>true</NewOutputXmlFileForEachRun>
-      
-      <NumberOfTestWorkers>1</NumberOfTestWorkers>
-   </NUnit>
+  <!-- NUnit Adapter Settings -->
+  <NUnit>
+    <!-- Generate NUnit3 XML test results directly in ResultsDirectory -->
+    <OutputXmlFolderMode>UseResultDirectory</OutputXmlFolderMode>
+  </NUnit>
+  
+  <!-- Logger Settings (optional - can use either NUnit XML or TRX) -->
+  <LoggerRunSettings>
+    <Loggers>
+      <!-- Uncomment to also generate TRX format -->
+      <!--
+      <Logger friendlyName="trx">
+        <Configuration>
+          <LogFileName>test-results.trx</LogFileName>
+        </Configuration>
+      </Logger>
+      -->
+    </Loggers>
+  </LoggerRunSettings>
+  
+  <!-- Run Configuration -->
+  <RunConfiguration>
+    <ResultsDirectory>TestResults</ResultsDirectory>
+  </RunConfiguration>
 </RunSettings>

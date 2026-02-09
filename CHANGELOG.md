@@ -11,6 +11,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.6] - 2026-02-10
+
+### ⚠️ BREAKING CHANGES
+
+- **Reqnroll.Integration**: Now requires **.NET 8.0 or higher**
+  - Dropped support for .NET 6.0 and .NET 7.0
+  - Projects using .NET 6/7 must upgrade to .NET 8 before updating this package
+  - Worker process and all dependencies target net8.0
+
+### Added
+
+- **Worker**: New standalone worker process for reliable documentation generation
+  - Detached process runs independently of test host (resolves VSTest shutdown issues)
+  - File-based job queue via `livingdoc-job-*.json` files
+  - Intelligent test result waiting with stability detection
+  - Supports configurable timeout (default 3 minutes)
+  - Comprehensive console logging with timestamps
+
+- **Multi-Format Test Results**: Configurable test result file patterns
+  - New `testResults.format` shorthand: trx, nunit, xunit, junit, specflow, all
+  - New `testResults.patterns` array for custom patterns: `["*.trx", "*.xml"]`
+  - Auto-detection of test result format via parsers
+  - Backward compatible with legacy `testResultFormat` config
+
+- **NUnit XML Support via runsettings**
+  - Example `test.runsettings` for NUnit XML output
+  - `OutputXmlFolderMode` configuration for proper folder structure
+  - Works without `--logger` command line flag
+
+### Changed
+
+- **Reqnroll.Integration**: Simplified to Worker-only mode
+  - Removed InProcess mode (was unreliable with dotnet test)
+  - Removed DeferredExternal mode (CLI dependency eliminated)
+  - Single execution path via detached Worker process
+  - Significantly reduced codebase complexity
+
 - **Reqnroll.Integration**: Enhanced diagnostic logging in LivingDocBootstrap.cs
   - Comprehensive console output with full file paths and metadata
   - Project root, test results path, and test runner information
@@ -20,34 +65,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Structured error messages with error type, paths, and solutions
   - Debug log file (LIVINGDOC_DEBUG.txt) for detailed troubleshooting
 
-### Changed
-
 - **Reqnroll.Integration**: Upgraded Reqnroll from 2.4.1 to 3.3.2
   - Requires Reqnroll 3.3.2 or higher for consuming projects
   - Compatible with Gherkin 35.0.0
   - Improved test result parsing for Scenario Outlines
   - Enhanced logging and error diagnostics
-- **Reqnroll.Integration**: Comprehensive README.md improvements
-  - Added clear distinction from CLI tool (no CLI installation needed)
-  - Expanded installation instructions with prerequisites and multiple options
-  - Rewritten troubleshooting guide with problem/solution format
-  - Added debug log file documentation with practical examples
-  - Simplified configuration explanations with comparison tables
-  - Replaced CI/CD examples with practical Reqnroll usage scenarios
-  - Improved clarity and accessibility for all user skill levels
+
 - **Parser**: Updated Gherkin library to 35.0.0 (aligned with Reqnroll 3.3.2)
-  - Ensures version consistency with Reqnroll 3.3.2 dependency
-  - Resolves version conflicts in integration scenarios
-  - No breaking changes - Location API remains backward compatible
+
+### Removed
+
+- **IntegrationTest.Net6**: Removed .NET 6 integration test project
+- **IntegrationTest.Net7**: Removed .NET 7 integration test project
+- **Reqnroll.Integration**: Removed InProcess execution mode files
+  - Deleted `PostTestJobRunner.cs`
+  - Deleted `TestResultAwaiter.cs`
+  - Deleted `LivingDocExecutionMode.cs`
+  - Deleted `LivingDocExecutionPolicy.cs`
+  - Deleted `TestExecutionEnvironment.cs`
 
 ### Fixed
 
 - **TestReporter**: Fixed NUnit test result parsing for nested test cases
   - Changed from `.Elements()` to `.Descendants()` to recursively find all test-case elements
   - Resolves missing test results for Scenario Outlines (parameterized tests)
-  - Affects Reqnroll 3.3.2+ which nests test-cases under ParameterizedMethod suites
-
-### Removed
 
 ---
 
@@ -495,7 +536,8 @@ First public release of LivingDocGen - Universal BDD Living Documentation Genera
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.5...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.6...HEAD
+[2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.3
