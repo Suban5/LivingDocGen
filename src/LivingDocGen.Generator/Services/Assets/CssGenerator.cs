@@ -260,13 +260,13 @@ public class CssGenerator : ICssGenerator
         }
 
         #search-box {
-            padding: 0.625rem 3rem 0.625rem 2.5rem;
+            padding: 0.625rem 2.5rem 0.625rem 2.5rem;
             border: 2px solid var(--border-color);
             border-radius: 8px;
             font-size: 0.95rem;
-            flex: 1 1 300px;
-            min-width: 250px;
-            max-width: 500px;
+            flex: 1 1 250px;
+            min-width: 200px;
+            max-width: 350px;
             background-color: var(--card-bg);
             background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2218%22 height=%2218%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22%3E%3C/circle%3E%3Cpath d=%22m21 21-4.35-4.35%22%3E%3C/path%3E%3C/svg%3E');
             background-repeat: no-repeat;
@@ -332,23 +332,19 @@ public class CssGenerator : ICssGenerator
 
         /* Search navigation buttons */
         .search-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
             background: transparent;
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            padding: 0.5rem;
+            padding: 0.4rem 0.5rem;
             border-radius: 4px;
             display: none;
             align-items: center;
             justify-content: center;
             font-size: 0.9rem;
             transition: all 0.2s;
-            width: 32px;
-            height: 32px;
-            z-index: 1;
+            min-width: 28px;
+            height: 28px;
         }
 
         .search-nav-btn.visible {
@@ -370,39 +366,35 @@ public class CssGenerator : ICssGenerator
             outline-offset: 2px;
         }
 
-        #search-prev-btn {
-            right: 6.5rem;
-        }
-
-        #search-next-btn {
-            right: 3.5rem;
-        }
-
         /* Search result count */
         .search-result-count {
-            position: absolute;
-            right: 9.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
             background: var(--hover-bg);
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
             font-weight: 500;
-            pointer-events: none;
-            display: none; 
+            display: none;
+            white-space: nowrap;
         }
 
         .search-result-count.visible {
-            display: block; 
+            display: flex;
+            align-items: center;
         }
 
         .search-wrapper {
-            position: relative;
-            flex: 1 1 300px;
-            min-width: 250px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 250px;
+            min-width: 200px;
             max-width: 500px;
+        }
+
+        .search-input-container {
+            position: relative;
+            flex: 1;
         }
 
         .filter-group {
@@ -477,6 +469,20 @@ public class CssGenerator : ICssGenerator
             font-weight: 500;
             transition: all var(--transition-fast);
             min-width: 150px;
+            max-width: 200px;
+        }
+
+        /* Tag filter specific styles for handling many tags */
+        #tag-filter {
+            max-width: 140px;
+            text-overflow: ellipsis;
+        }
+
+        #tag-filter option {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .theme-selector:hover {
@@ -811,6 +817,22 @@ public class CssGenerator : ICssGenerator
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
+        }
+
+        /* Scenario-level tags - slightly smaller and styled differently */
+        .tags.scenario-tags {
+            margin-bottom: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .tags.scenario-tags .tag {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
+        }
+
+        /* Rule-level tags */
+        .tags.rule-tags {
+            margin-bottom: 1rem;
         }
 
         .tag {

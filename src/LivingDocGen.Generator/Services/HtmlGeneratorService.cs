@@ -289,11 +289,21 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             </select>
         </div>
         <div class=""search-wrapper"">
-            <input type=""text"" 
-                   id=""search-box"" 
-                   placeholder=""Search features, scenarios, steps...""
-                   aria-label=""Search documentation""
-                   aria-describedby=""search-result-count"">
+            <div class=""search-input-container"">
+                <input type=""text"" 
+                       id=""search-box"" 
+                       placeholder=""Search features, scenarios...""
+                       aria-label=""Search documentation""
+                       aria-describedby=""search-result-count"">
+                <button type=""button"" 
+                        id=""search-clear-btn"" 
+                        class=""search-clear-btn"" 
+                        aria-label=""Clear search""
+                        title=""Clear search (Esc)"">
+                    <i class=""fas fa-times"" aria-hidden=""true""></i>
+                </button>
+            </div>
+            <span id=""search-result-count"" class=""search-result-count"" aria-live=""polite""></span>
             <button type=""button"" 
                     id=""search-prev-btn"" 
                     class=""search-nav-btn"" 
@@ -308,14 +318,6 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                     title=""Next result (Enter)"">
                 <i class=""fas fa-caret-down"" aria-hidden=""true""></i>
             </button>
-            <button type=""button"" 
-                    id=""search-clear-btn"" 
-                    class=""search-clear-btn"" 
-                    aria-label=""Clear search""
-                    title=""Clear search (Esc)"">
-                <i class=""fas fa-times"" aria-hidden=""true""></i>
-            </button>
-            <span id=""search-result-count"" class=""search-result-count"" aria-live=""polite""></span>
         </div>
         <div class=""clear-all-group"">
             <button id=""clear-all-filters-btn"" class=""filter-btn clear-all-btn"" aria-label=""Clear all filters"" title=""Reset all filters"">
@@ -944,6 +946,17 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             html.AppendLine($@"                <div class=""rule-description"">{System.Web.HttpUtility.HtmlEncode(rule.Description)}</div>");
         }
 
+        // Generate rule-level tags if present (important for tag filtering)
+        if (rule.Tags != null && rule.Tags.Any())
+        {
+            html.AppendLine(@"                <div class=""tags rule-tags"">");
+            foreach (var tag in rule.Tags)
+            {
+                html.AppendLine($@"                    <span class=""tag""><i class=""fas fa-tag""></i> {HtmlEncode(tag)}</span>");
+            }
+            html.AppendLine(@"                </div>");
+        }
+
         // Generate Background if present (at rule level)
         if (rule.Background != null)
         {
@@ -999,6 +1012,17 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         html.AppendLine(@"                    </div>
                 </div>
                 <div class=""scenario-body"">");
+
+        // Generate scenario-level tags if present (important for tag filtering)
+        if (scenario.Scenario.Tags != null && scenario.Scenario.Tags.Any())
+        {
+            html.AppendLine(@"                    <div class=""tags scenario-tags"">");
+            foreach (var tag in scenario.Scenario.Tags)
+            {
+                html.AppendLine($@"                        <span class=""tag""><i class=""fas fa-tag""></i> {HtmlEncode(tag)}</span>");
+            }
+            html.AppendLine(@"                    </div>");
+        }
 
         // Generate scenario comments if present and enabled
         if (_currentOptions?.IncludeComments == true && scenario.Scenario.Comments?.Any() == true)
@@ -1247,6 +1271,92 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     {
         var json = new StringBuilder();
         json.AppendLine("{");
+        
+        // Collect all unique tags from all features and scenarios for dropdown population
+        var allTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var feature in documentation.Features)
+        {
+            // Feature-level tags
+            if (feature.Feature.Tags != null)
+            {
+                foreach (var tag in feature.Feature.Tags)
+                {
+                    if (!string.IsNullOrWhiteSpace(tag))
+                        allTags.Add(tag);
+                }
+            }
+            
+            // Scenario-level tags and Example-level tags
+            foreach (var scenario in feature.Scenarios)
+            {
+                if (scenario.Scenario.Tags != null)
+                {
+                    foreach (var tag in scenario.Scenario.Tags)
+                    {
+                        if (!string.IsNullOrWhiteSpace(tag))
+                            allTags.Add(tag);
+                    }
+                }
+                
+                // Example-level tags (tags on Examples tables within Scenario Outlines)
+                if (scenario.Scenario.Examples != null)
+                {
+                    foreach (var example in scenario.Scenario.Examples)
+                    {
+                        if (example.Tags != null)
+                        {
+                            foreach (var tag in example.Tags)
+                            {
+                                if (!string.IsNullOrWhiteSpace(tag))
+                                    allTags.Add(tag);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Rule-level tags (if rules exist)
+            if (feature.Feature.Rules != null)
+            {
+                foreach (var rule in feature.Feature.Rules)
+                {
+                    if (rule.Tags != null)
+                    {
+                        foreach (var tag in rule.Tags)
+                        {
+                            if (!string.IsNullOrWhiteSpace(tag))
+                                allTags.Add(tag);
+                        }
+                    }
+                    
+                    // Scenarios within rules
+                    foreach (var ruleScenario in rule.Scenarios)
+                    {
+                        if (ruleScenario.Tags != null)
+                        {
+                            foreach (var tag in ruleScenario.Tags)
+                            {
+                                if (!string.IsNullOrWhiteSpace(tag))
+                                    allTags.Add(tag);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Output all tags as a JSON array (sorted)
+        var sortedTags = allTags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+        json.Append("  \"allTags\": [");
+        for (int i = 0; i < sortedTags.Count; i++)
+        {
+            var escapedTag = sortedTags[i].Replace("\\", "\\\\").Replace("\"", "\\\"");
+            json.Append($"\"{escapedTag}\"");
+            if (i < sortedTags.Count - 1)
+                json.Append(", ");
+        }
+        json.AppendLine("],");
+        
         json.AppendLine("  \"features\": [");
         
         for (int i = 0; i < documentation.Features.Count; i++)

@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Generator**: Navigation arrows (▲▼) enabled for all filter types
+  - Caret up/down buttons now work with status filters (Passed, Failed, Skipped, Untested)
+  - Navigation also enabled for tag filtering - not just text search
+  - Shows scenario count (e.g., "1 of 34") when any filter is active
+  - Allows navigation through all visible scenarios matching current filters
+
 - **Sidebar Navigation**: Nested folder tree structure with full hierarchy support
   - Displays complete folder hierarchy from Features folder (e.g., Performance/Banking/...)
   - Features and subfolders within same parent folder are both visible
@@ -23,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Folder count badges show total features including nested items
 
 ### Changed
+
+- **Generator**: Redesigned search UI layout for better usability
+  - Changed from absolute positioning to flexbox layout to prevent element overlapping
+  - Search elements now in proper order: [search input + ×] [count] [▲] [▼]
+  - Reduced tag filter dropdown max-width from 180px to 140px for compact layout
+  - Smaller search box (max-width 350px) for better space distribution
 
 - **Generator**: Major refactoring of HtmlGeneratorService for improved maintainability
   - Reduced from 5,492 lines to 1,309 lines (76% reduction)
@@ -40,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Total feature count displayed in sidebar header: "Features (116)"
 
 ### Fixed
+
+- **Generator**: Fixed search navigation not scrolling to specific scenario
+  - Caret up/down buttons now scroll directly to matching scenario instead of feature level only
+  - Fixed incorrect CSS selector (.feature-card → .feature[data-feature-id]) that prevented navigation
+  - Removed conflicting scroll-to-top behavior in updateSearchUI()
 
 - **Generator**: Fixed scroll-induced flickering in HTML reports for large documents
   - Added CSS transition optimization with `scrolling` class to disable transitions during scroll

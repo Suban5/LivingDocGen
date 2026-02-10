@@ -610,33 +610,62 @@ public class JavaScriptGenerator : IJavaScriptGenerator
         function updateSearchNavigationUI() {
             const searchTerm = searchBox.value.trim();
             
-            // Collect visible scenarios that match search
+            // Check if any filter is active
+            const hasActiveFilter = activeFilters.status !== 'all' || 
+                                   activeFilters.tags.length > 0 || 
+                                   searchTerm;
+            
+            // Collect visible scenarios when any filter is active
             searchResults = [];
-            if (searchTerm) {
-const visibleScenarios = document.querySelectorAll(
-    '.scenario[style*=""display: block""], .scenario:not([style*=""display: none""])'
-);
-                visibleScenarios.forEach(scenario => {
-                    const scenarioText = scenario.textContent.toLowerCase();
-                    if (scenarioText.includes(searchTerm.toLowerCase())) {
-                        searchResults.push(scenario);
+            if (hasActiveFilter) {
+                // Get all visible scenarios (not hidden by filters)
+                const allScenarios = document.querySelectorAll('.scenario');
+                allScenarios.forEach(scenario => {
+                    // Check if scenario is visible (not display: none)
+                    const style = window.getComputedStyle(scenario);
+                    if (style.display !== 'none') {
+                        // Also check parent feature is visible
+                        const parentFeature = scenario.closest('.feature[data-feature-id]');
+                        if (parentFeature && !parentFeature.classList.contains('feature-hidden')) {
+                            // If search term exists, also filter by text match
+                            if (searchTerm) {
+                                const scenarioText = scenario.textContent.toLowerCase();
+                                if (scenarioText.includes(searchTerm.toLowerCase())) {
+                                    searchResults.push(scenario);
+                                }
+                            } else {
+                                // No search term - include all visible scenarios
+                                searchResults.push(scenario);
+                            }
+                        }
                     }
                 });
             }
             currentSearchIndex = 0;
             
-            if (searchTerm && searchResults.length > 0) {
-                searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+            if (hasActiveFilter && searchResults.length > 0) {
+                // Show count - different format for search vs filter-only
+                if (searchTerm) {
+                    searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+                } else {
+                    searchResultCount.textContent = `${searchResults.length} scenario${searchResults.length !== 1 ? 's' : ''}`;
+                }
                 searchResultCount.classList.add('visible');
-                searchClearBtn.classList.add('visible');
                 searchPrevBtn.classList.add('visible');
                 searchNextBtn.classList.add('visible');
+                
+                // Only show clear button if there's search text
+                if (searchTerm) {
+                    searchClearBtn.classList.add('visible');
+                } else {
+                    searchClearBtn.classList.remove('visible');
+                }
                 
                 // Update button states
                 searchPrevBtn.disabled = currentSearchIndex === 0;
                 searchNextBtn.disabled = currentSearchIndex === searchResults.length - 1;
                 
-                // Scroll to top of current result
+                // Scroll to first result
                 const mainContent = document.getElementById('main-content');
                 if (mainContent) {
                     mainContent.scrollTop = 0;
@@ -652,22 +681,34 @@ const visibleScenarios = document.querySelectorAll(
         function updateSearchUI() {
             const searchTerm = searchBox.value.trim();
             
-            if (searchTerm && searchResults.length > 0) {
-                searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+            // Check if any filter is active
+            const hasActiveFilter = activeFilters.status !== 'all' || 
+                                   activeFilters.tags.length > 0 || 
+                                   searchTerm;
+            
+            if (hasActiveFilter && searchResults.length > 0) {
+                // Show count - different format for search vs filter-only
+                if (searchTerm) {
+                    searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+                } else {
+                    searchResultCount.textContent = `${currentSearchIndex + 1} of ${searchResults.length}`;
+                }
                 searchResultCount.classList.add('visible');
-                searchClearBtn.classList.add('visible');
                 searchPrevBtn.classList.add('visible');
                 searchNextBtn.classList.add('visible');
+                
+                // Only show clear button if there's search text
+                if (searchTerm) {
+                    searchClearBtn.classList.add('visible');
+                } else {
+                    searchClearBtn.classList.remove('visible');
+                }
                 
                 // Update button states
                 searchPrevBtn.disabled = currentSearchIndex === 0;
                 searchNextBtn.disabled = currentSearchIndex === searchResults.length - 1;
                 
-                // Scroll to top of current result
-                const mainContent = document.getElementById('main-content');
-                if (mainContent) {
-                    mainContent.scrollTop = 0;
-                }
+                // NOTE: Do NOT scroll here - let navigateSearchResults handle scrolling
             } else {
                 searchResultCount.classList.remove('visible');
                 searchClearBtn.classList.remove('visible');
@@ -679,9 +720,6 @@ const visibleScenarios = document.querySelectorAll(
         function navigateSearchResults(direction) {
             if (searchResults.length === 0) return;
             
-            // Hide current result
-            searchResults[currentSearchIndex].classList.add('feature-hidden');
-            
             // Update index
             if (direction === 'next') {
                 currentSearchIndex = Math.min(currentSearchIndex + 1, searchResults.length - 1);
@@ -689,57 +727,44 @@ const visibleScenarios = document.querySelectorAll(
                 currentSearchIndex = Math.max(currentSearchIndex - 1, 0);
             }
             
-            // Show new result
-            const currentFeature = searchResults[currentSearchIndex];
-            currentFeature.classList.remove('feature-hidden');
+            // Get the current scenario from searchResults
+            const currentScenario = searchResults[currentSearchIndex];
+            
+            // Find the parent feature and ensure it's visible
+            const currentFeature = currentScenario.closest('.feature[data-feature-id]');
+            if (currentFeature) {
+                currentFeature.classList.remove('feature-hidden');
+            }
             
             // Update UI
             updateSearchUI();
             
-            // Scroll to the feature in main content
+            // Scroll to the scenario in main content
             requestAnimationFrame(() => {
                 const mainContent = document.getElementById('main-content');
-                if (mainContent && currentFeature) {
-                    // Find first highlighted element
-                    const firstHighlight = currentFeature.querySelector('.highlight');
-                    if (firstHighlight) {
-                        // If highlight is in a step, we need to expand the scenario first
-                        const stepElement = firstHighlight.closest('.step');
-                        if (stepElement) {
-                            const scenarioBody = stepElement.closest('.scenario-body');
-                            if (scenarioBody && !scenarioBody.classList.contains('expanded')) {
-                                // Expand the scenario to show the steps
-                                const scenarioHeader = scenarioBody.previousElementSibling;
-                                if (scenarioHeader && scenarioHeader.classList.contains('scenario-header')) {
-                                    toggleScenario(scenarioHeader);
-                                }
-                            }
+                if (mainContent && currentScenario) {
+                    // Get the scenario header for scrolling (more visible target)
+                    const scenarioHeader = currentScenario.querySelector('.scenario-header');
+                    const scrollTarget = scenarioHeader || currentScenario;
+                    
+                    // Calculate position relative to main content container
+                    const targetRect = scrollTarget.getBoundingClientRect();
+                    const mainContentRect = mainContent.getBoundingClientRect();
+                    const relativeTop = targetRect.top - mainContentRect.top + mainContent.scrollTop;
+                    
+                    // Scroll to position the scenario near the top with some padding
+                    mainContent.scrollTo({
+                        top: Math.max(0, relativeTop - 80),
+                        behavior: 'smooth'
+                    });
+                    
+                    // Also update sidebar selection
+                    if (currentFeature) {
+                        const featureId = currentFeature.getAttribute('data-feature-id');
+                        if (featureId) {
+                            selectFeature(featureId);
                         }
-                        
-                        // Wait for expansion animation, then scroll to highlight
-                        setTimeout(() => {
-                            // Calculate position relative to main content
-                            const highlightRect = firstHighlight.getBoundingClientRect();
-                            const mainContentRect = mainContent.getBoundingClientRect();
-                            const relativeTop = highlightRect.top - mainContentRect.top + mainContent.scrollTop;
-                            
-                            // Scroll to center the highlight in the viewport
-                            const centerOffset = mainContent.clientHeight / 2 - highlightRect.height / 2;
-                            mainContent.scrollTo({
-                                top: relativeTop - centerOffset,
-                                behavior: 'smooth'
-                            });
-                        }, 200);
-                    } else {
-                        // No highlight found, just scroll to top of feature
-                        mainContent.scrollTop = 0;
                     }
-                }
-                
-                // Also update sidebar selection
-                const featureId = currentFeature.getAttribute('data-feature-id');
-                if (featureId) {
-                    selectFeature(featureId);
                 }
             });
         }
@@ -801,7 +826,7 @@ const visibleScenarios = document.querySelectorAll(
         // HELPER FUNCTIONS FOR FILTERING
         // ============================================
         
-        function updateSidebarForFilter(visibleFeatureIds) {
+        function updateSidebarForFilter(visibleFeatureIds, preserveFolderState = false) {
             const sidebarItems = document.querySelectorAll('.feature-item');
             let matchCount = 0;
             
@@ -826,7 +851,10 @@ const visibleScenarios = document.querySelectorAll(
                 if (visibleItems.length > 0) {
                     folder.style.display = 'block';
                     folder.style.opacity = '1';
-                    folder.classList.remove('collapsed'); // Auto-expand folders with matches
+                    // Only auto-expand folders when actively filtering, not when clearing filters
+                    if (!preserveFolderState) {
+                        folder.classList.remove('collapsed');
+                    }
                 } else {
                     // Hide empty folders completely
                     folder.style.display = 'none';
@@ -923,8 +951,30 @@ const visibleScenarios = document.querySelectorAll(
                 }
             });
 
+            // Render all lazy features if filtering by specific status
+            // This ensures scenarios are available for filtering
+            if (filter !== 'all' && USE_LAZY_RENDERING) {
+                const lazyFeatures = document.querySelectorAll('.feature[data-lazy]');
+                lazyFeatures.forEach(feature => {
+                    renderFeatureContent(feature);
+                });
+                // Use double requestAnimationFrame to ensure DOM is fully updated
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        applyAllFilters();
+                        // Auto-select first visible feature if any
+                        selectFirstVisibleFeature();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                });
+                return;
+            }
+
             // Apply all filters (this respects search, tags, and status together)
             applyAllFilters();
+            
+            // Auto-select first visible feature if any
+            selectFirstVisibleFeature();
             
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -978,9 +1028,23 @@ const visibleScenarios = document.querySelectorAll(
             let totalVisibleScenarios = 0;
             const visibleFeatureIds = new Set();
             
+            // Check if no filters are active (show all)
+            const noFiltersActive = activeFilters.status === 'all' && 
+                                    activeFilters.tags.length === 0 && 
+                                    !activeFilters.searchTerm;
+            
             features.forEach(feature => {
                 const scenarios = feature.querySelectorAll('.scenario');
+                const isLazyFeature = feature.hasAttribute('data-lazy');
                 let visibleInFeature = 0;
+                
+                // For lazy-loaded features with no filters active, show them without checking scenarios
+                if (isLazyFeature && noFiltersActive) {
+                    feature.style.display = 'block';
+                    const featureId = feature.getAttribute('data-feature-id');
+                    if (featureId) visibleFeatureIds.add(featureId);
+                    return; // Skip scenario iteration for lazy features when showing all
+                }
                 
                 scenarios.forEach(scenario => {
                     // Check status filter
@@ -988,9 +1052,22 @@ const visibleScenarios = document.querySelectorAll(
                     const matchesStatus = activeFilters.status === 'all' || status === activeFilters.status;
                     
                     // Check tag filters (AND logic: scenario must have ALL selected tags)
-                    // Get scenario-level tags (from scenario's own tags div)
-                    const scenarioTagsDiv = scenario.querySelector('.tags');
+                    // Get scenario-level tags (from scenario body's tags div)
+                    const scenarioBody = scenario.querySelector('.scenario-body');
+                    const scenarioTagsDiv = scenarioBody ? scenarioBody.querySelector(':scope > .tags') : null;
                     const scenarioTags = scenarioTagsDiv ? Array.from(scenarioTagsDiv.querySelectorAll('.tag'))
+                        .map(t => {
+                            const clone = t.cloneNode(true);
+                            const icon = clone.querySelector('i');
+                            if (icon) icon.remove();
+                            return clone.textContent.trim();
+                        }) : [];
+                    
+                    // Get rule-level tags if scenario is inside a rule
+                    const parentRule = scenario.closest('.rule');
+                    const ruleBody = parentRule ? parentRule.querySelector('.rule-body') : null;
+                    const ruleTagsDiv = ruleBody ? ruleBody.querySelector(':scope > .tags') : null;
+                    const ruleTags = ruleTagsDiv ? Array.from(ruleTagsDiv.querySelectorAll('.tag'))
                         .map(t => {
                             const clone = t.cloneNode(true);
                             const icon = clone.querySelector('i');
@@ -1009,7 +1086,20 @@ const visibleScenarios = document.querySelectorAll(
                             return clone.textContent.trim();
                         }) : [];
                     
-                    const allTags = [...new Set([...scenarioTags, ...featureHeaderTags])];
+                    // Get Example-level tags (tags on Examples tables within Scenario Outlines)
+                    const examplesTags = [];
+                    const examplesTagsDivs = scenario.querySelectorAll('.examples-tags');
+                    examplesTagsDivs.forEach(examplesTagsDiv => {
+                        Array.from(examplesTagsDiv.querySelectorAll('.tag')).forEach(t => {
+                            const clone = t.cloneNode(true);
+                            const icon = clone.querySelector('i');
+                            if (icon) icon.remove();
+                            examplesTags.push(clone.textContent.trim());
+                        });
+                    });
+                    
+                    // Combine all tags: scenario + rule + feature + examples level
+                    const allTags = [...new Set([...scenarioTags, ...ruleTags, ...featureHeaderTags, ...examplesTags])];
                     
                     const matchesTags = activeFilters.tags.length === 0 || 
                         activeFilters.tags.every(filterTag => 
@@ -1048,19 +1138,36 @@ const visibleScenarios = document.querySelectorAll(
                     }
                 });
                 
-                // Hide feature if no scenarios match
-                if (visibleInFeature > 0) {
+                // Handle feature visibility
+                // When no filters are active, show all features regardless of scenario count
+                if (noFiltersActive) {
                     feature.style.display = 'block';
+                    const featureId = feature.getAttribute('data-feature-id');
+                    if (featureId) visibleFeatureIds.add(featureId);
+                    // Show all scenarios when no filters active
+                    scenarios.forEach(scenario => {
+                        scenario.style.display = 'block';
+                    });
+                } else if (visibleInFeature > 0) {
+                    feature.style.display = 'block';
+                    // Remove feature-hidden class so it's visible in content area
+                    feature.classList.remove('feature-hidden');
                     const featureId = feature.getAttribute('data-feature-id');
                     if (featureId) visibleFeatureIds.add(featureId);
                 } else {
                     feature.style.display = 'none';
+                    // Add feature-hidden class for consistency
+                    feature.classList.add('feature-hidden');
                 }
             });
             
             // Update UI elements
-            updateSidebarForFilter(visibleFeatureIds);
+            // Preserve folder collapse state when clearing all filters (no active filters)
+            updateSidebarForFilter(visibleFeatureIds, noFiltersActive);
             showEmptyStateIfNeeded(totalVisibleScenarios, activeFilters.status);
+            
+            // Update navigation UI for filtered results
+            updateSearchNavigationUI();
             
             // Announce results
             const announcement = `Filter applied. Showing ${totalVisibleScenarios} scenario${totalVisibleScenarios !== 1 ? 's' : ''} in ${visibleFeatureIds.size} feature${visibleFeatureIds.size !== 1 ? 's' : ''}`;
@@ -1078,16 +1185,67 @@ const visibleScenarios = document.querySelectorAll(
             
             // Render all lazy features if filtering by tag
             if (tag !== 'all' && USE_LAZY_RENDERING) {
-                document.querySelectorAll('.feature[data-lazy]').forEach(feature => {
+                // Get all lazy features and render them
+                const lazyFeatures = document.querySelectorAll('.feature[data-lazy]');
+                lazyFeatures.forEach(feature => {
                     renderFeatureContent(feature);
                 });
+                
+                // Use double requestAnimationFrame to ensure DOM is fully updated
+                // First rAF waits for current frame, second ensures all DOM updates are processed
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        applyAllFilters();
+                        // Auto-select first visible feature if any
+                        selectFirstVisibleFeature();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                });
+                return;
             }
             
             // Apply all filters (this respects search, status, and tags together)
             applyAllFilters();
             
+            // Auto-select first visible feature if any
+            selectFirstVisibleFeature();
+            
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Helper function to select the first visible feature after filtering
+        function selectFirstVisibleFeature() {
+            // Find the first visible feature in the content area
+            const visibleFeature = document.querySelector('.feature[data-feature-id]:not(.feature-hidden)');
+            if (visibleFeature) {
+                const featureId = visibleFeature.getAttribute('data-feature-id');
+                if (featureId) {
+                    // Update sidebar active state
+                    document.querySelectorAll('.feature-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    const sidebarItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
+                    if (sidebarItem) {
+                        sidebarItem.classList.add('active');
+                        // Ensure the sidebar item is visible (expand parent folders)
+                        let parent = sidebarItem.parentElement;
+                        while (parent) {
+                            if (parent.classList.contains('folder-content')) {
+                                const folder = parent.closest('.folder');
+                                if (folder && folder.classList.contains('collapsed')) {
+                                    folder.classList.remove('collapsed');
+                                    folder.setAttribute('aria-expanded', 'true');
+                                }
+                            }
+                            parent = parent.parentElement;
+                        }
+                        // Scroll sidebar item into view
+                        sidebarItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                    currentFeatureId = featureId;
+                }
+            }
         }
 
         // Screen reader announcement helper
@@ -1309,6 +1467,21 @@ const visibleScenarios = document.querySelectorAll(
             const tagFilter = document.getElementById('tag-filter');
             const allTags = new Set();
             
+            // First try to get tags from JSON data (for lazy-loaded reports)
+            // This ensures tags are available even before features are rendered
+            const featureDataScript = document.getElementById('feature-data');
+            if (featureDataScript && USE_LAZY_RENDERING) {
+                try {
+                    const featureData = JSON.parse(featureDataScript.textContent);
+                    if (featureData.allTags && Array.isArray(featureData.allTags)) {
+                        featureData.allTags.forEach(tag => allTags.add(tag));
+                    }
+                } catch (e) {
+                    console.warn('Could not parse feature data for tags:', e);
+                }
+            }
+            
+            // Also collect tags from already-rendered DOM elements (for non-lazy or as fallback)
             document.querySelectorAll('.tag').forEach(tag => {
                 // Extract tag text, excluding icon by cloning and removing it
                 const clone = tag.cloneNode(true);
@@ -1320,7 +1493,7 @@ const visibleScenarios = document.querySelectorAll(
                 if (tagText) allTags.add(tagText);
             });
             
-            const sortedTags = Array.from(allTags).sort();
+            const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
             sortedTags.forEach(tag => {
                 const option = document.createElement('option');
                 option.value = tag;

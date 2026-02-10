@@ -11,12 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Navigation arrows (▲▼) enabled for all filter types (inherited from Generator)
+  - Works with status filters (Passed, Failed, Skipped, Untested) and tag filtering
+  - Shows scenario count when any filter is active
+  - Navigate through all visible scenarios matching current filters
+
 - Nested folder tree navigation with complete hierarchy support (inherited from Generator)
   - Full folder path visibility from Features root
   - Smart expand/collapse all toggle button
   - Visual depth indicators and folder count badges
 
 ### Changed
+
+- Redesigned search UI layout for better usability (inherited from Generator)
+  - Flexbox layout prevents element overlapping
+  - Reduced tag filter dropdown width for compact layout
 
 - Major refactoring of HTML generation for improved maintainability (inherited from Generator)
   - CSS and JavaScript generation extracted to dedicated services
@@ -28,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Root folder name extracted from base path
 
 ### Fixed
+
+- Fixed search navigation not scrolling to specific scenario (inherited from Generator)
+  - Caret navigation now scrolls directly to matching scenario
+  - Fixed CSS selector bug that prevented filter navigation
 
 - Fixed scroll-induced flickering in HTML reports for large documents (inherited from Generator)
   - CSS transition optimization during scroll
