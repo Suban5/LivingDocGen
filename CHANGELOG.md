@@ -11,7 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sidebar Navigation**: Nested folder tree structure with full hierarchy support
+  - Displays complete folder hierarchy from Features folder (e.g., Performance/Banking/...)
+  - Features and subfolders within same parent folder are both visible
+  - Folder expansion up to depth 3 by default for better initial visibility
+  - Root folder name extracted from base path (e.g., "Features" instead of "Root")
+  - Smart toggle button to expand/collapse all folders with dynamic icon
+    - Shows folder-open icon when expanded, folder-closed when collapsed
+    - Tooltip updates based on current state
+  - Visual depth indicators with indentation and connector lines
+  - Folder count badges show total features including nested items
+
 ### Changed
+
+- **Sidebar Navigation**: Filenames now displayed instead of feature names
+  - Sidebar shows file names (e.g., "Test_login" from "Test_login.feature")
+  - Feature names shown in tooltip and main content for context
+  - Removes duplicate folder wrapper (no nested "Features" folder)
+  - Total feature count displayed in sidebar header: "Features (116)"
 
 ### Fixed
 

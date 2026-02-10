@@ -11,7 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Nested folder tree navigation with complete hierarchy support (inherited from Generator)
+  - Full folder path visibility from Features root
+  - Smart expand/collapse all toggle button
+  - Visual depth indicators and folder count badges
+
 ### Changed
+
+- Sidebar displays filenames instead of feature names for easier file navigation (inherited from Generator)
+  - Feature names shown in tooltips and main content
+  - Root folder name extracted from base path
 
 ### Fixed
 

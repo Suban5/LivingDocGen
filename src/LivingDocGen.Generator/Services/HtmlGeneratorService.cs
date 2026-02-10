@@ -67,6 +67,22 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     // HTML generation options (set during GenerateHtml call)
     private HtmlGenerationOptions _currentOptions;
     
+    // Feature index counter for sidebar generation
+    private int _sidebarFeatureIndex = 0;
+    
+    /// <summary>
+    /// Represents a node in the folder tree hierarchy for sidebar navigation
+    /// </summary>
+    private class FolderNode
+    {
+        public string Name { get; set; } = string.Empty;
+        public string FullPath { get; set; } = string.Empty;
+        public Dictionary<string, FolderNode> SubFolders { get; } = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
+        public List<EnrichedFeature> Features { get; } = new List<EnrichedFeature>();
+        
+        public int TotalFeatureCount => Features.Count + SubFolders.Values.Sum(sf => sf.TotalFeatureCount);
+    }
+    
     /// <summary>
     /// Cached HTML encoding with thread safety
     /// </summary>
@@ -1985,6 +2001,42 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             gap: 0.5rem;
         }
 
+        .sidebar-header .feature-total {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: var(--border-color);
+            padding: 0.125rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .sidebar-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.375rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+        }
+
+        .sidebar-action-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-action-btn:focus {
+            outline: 2px solid var(--focus-ring);
+            outline-offset: 1px;
+        }
+
         .sidebar-toggle {
             background: none;
             border: none;
@@ -2094,6 +2146,76 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         .folder.collapsed .folder-content {
             max-height: 0;
+        }
+
+        /* Nested folder level styling for hierarchical navigation */
+        .folder-level-0 { margin-left: 0; }
+        .folder-level-1 { margin-left: 0.75rem; }
+        .folder-level-2 { margin-left: 0.75rem; }
+        .folder-level-3 { margin-left: 0.75rem; }
+        .folder-level-4 { margin-left: 0.75rem; }
+        .folder-level-5 { margin-left: 0.75rem; }
+
+        /* Nested folder visual indicators */
+        .folder-level-1 > .folder-header,
+        .folder-level-2 > .folder-header,
+        .folder-level-3 > .folder-header,
+        .folder-level-4 > .folder-header,
+        .folder-level-5 > .folder-header {
+            border-left: 2px solid var(--border-color);
+            margin-left: 0.25rem;
+        }
+
+        .folder-level-1 > .folder-header:hover,
+        .folder-level-2 > .folder-header:hover,
+        .folder-level-3 > .folder-header:hover,
+        .folder-level-4 > .folder-header:hover,
+        .folder-level-5 > .folder-header:hover {
+            border-left-color: var(--primary-color);
+        }
+
+        /* Nested feature item indentation */
+        .feature-level-1 { padding-left: 1.25rem; }
+        .feature-level-2 { padding-left: 1.5rem; }
+        .feature-level-3 { padding-left: 1.75rem; }
+        .feature-level-4 { padding-left: 2rem; }
+        .feature-level-5 { padding-left: 2.25rem; }
+
+        /* Folder tree connector lines */
+        .folder .folder-content {
+            position: relative;
+        }
+
+        .folder-level-1 > .folder-content::before,
+        .folder-level-2 > .folder-content::before,
+        .folder-level-3 > .folder-content::before,
+        .folder-level-4 > .folder-content::before,
+        .folder-level-5 > .folder-content::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0.5rem;
+            width: 1px;
+            background: var(--border-color);
+            opacity: 0.5;
+        }
+
+        /* Subfolder icon differentiation */
+        .folder-level-1 .folder-icon,
+        .folder-level-2 .folder-icon,
+        .folder-level-3 .folder-icon,
+        .folder-level-4 .folder-icon,
+        .folder-level-5 .folder-icon {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Performance optimization: limit max-height for deeply nested folders */
+        .folder-level-3 > .folder-content,
+        .folder-level-4 > .folder-content,
+        .folder-level-5 > .folder-content {
+            max-height: 1500px;
         }
 
         .feature-item {
@@ -2619,25 +2741,36 @@ public class HtmlGeneratorService : IHtmlGeneratorService
     private string GenerateSidebar(LivingDocumentation documentation)
     {
         var html = new StringBuilder();
+        var totalFeatures = documentation.Features.Count;
         
-        html.AppendLine(@"
+        html.AppendLine($@"
     <aside id=""sidebar"" class=""sidebar"" role=""navigation"" aria-label=""Feature navigation"">
         <div class=""sidebar-header"">
-            <h3><i class=""fas fa-folder-tree"" aria-hidden=""true""></i> Features</h3>
-            <button id=""sidebar-toggle"" 
-                    class=""sidebar-toggle"" 
-                    title=""Toggle Sidebar (⌘B)""
-                    aria-label=""Toggle sidebar navigation""
-                    aria-expanded=""true"">
-                <i class=""fas fa-angles-left""></i>
-            </button>
+            <h3><i class=""fas fa-folder-tree"" aria-hidden=""true""></i> Features <span class=""feature-total"">({totalFeatures})</span></h3>
+            <div class=""sidebar-actions"">
+                <button id=""toggle-folders-btn"" 
+                        class=""sidebar-action-btn""
+                        title=""Collapse All Folders""
+                        onclick=""toggleAllFolders()""
+                        data-state=""expanded"">
+                    <i class=""fas fa-folder-open""></i>
+                </button>
+                <button id=""sidebar-toggle"" 
+                        class=""sidebar-toggle"" 
+                        title=""Toggle Sidebar (⌘B)""
+                        aria-label=""Toggle sidebar navigation""
+                        aria-expanded=""true"">
+                    <i class=""fas fa-angles-left""></i>
+                </button>
+            </div>
         </div>
         
         <nav class=""sidebar-nav"" id=""sidebar-nav"" role=""tree"" aria-label=""Features tree"">");
         
-        // Build folder tree structure
-        var folderTree = BuildFolderTree(documentation.Features);
-        html.AppendLine(GenerateFolderTree(folderTree, documentation.Features));
+        // Build nested folder tree structure
+        _sidebarFeatureIndex = 0; // Reset counter for each sidebar generation
+        var rootNode = BuildNestedFolderTree(documentation.Features);
+        html.AppendLine(GenerateNestedFolderTree(rootNode, 0));
         
         html.AppendLine(@"
         </nav>
@@ -2646,6 +2779,260 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         return html.ToString();
     }
 
+    /// <summary>
+    /// Builds a nested folder tree structure from feature file paths.
+    /// Strips the common base path to show only relative folder structure.
+    /// Uses the last segment of the common base path as the root folder name (e.g., "Features").
+    /// </summary>
+    private FolderNode BuildNestedFolderTree(List<EnrichedFeature> features)
+    {
+        // Find the common base path to strip from all feature paths
+        var commonBasePath = FindCommonBasePath(features);
+        
+        // Extract root folder name from common base path (e.g., "Features" from "/path/to/Features")
+        var rootFolderName = "Features"; // Default name
+        if (!string.IsNullOrEmpty(commonBasePath))
+        {
+            var segments = commonBasePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Any())
+            {
+                rootFolderName = segments.Last();
+            }
+        }
+        
+        var root = new FolderNode { Name = rootFolderName, FullPath = rootFolderName };
+        
+        // Create a lookup for proper ordering - maintain original feature order within folders
+        var orderedFeatures = features.Select((f, i) => new { Feature = f, Index = i }).ToList();
+        
+        foreach (var item in orderedFeatures)
+        {
+            var feature = item.Feature;
+            var filePath = feature.Feature.FilePath ?? "";
+            
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // Features without path go to root
+                root.Features.Add(feature);
+                continue;
+            }
+            
+            // Normalize path separators and get directory path
+            var normalizedPath = filePath.Replace('\\', '/');
+            var directory = Path.GetDirectoryName(normalizedPath)?.Replace('\\', '/') ?? "";
+            
+            // Strip the common base path to get relative directory
+            if (!string.IsNullOrEmpty(commonBasePath) && directory.StartsWith(commonBasePath, StringComparison.OrdinalIgnoreCase))
+            {
+                directory = directory.Substring(commonBasePath.Length).TrimStart('/');
+            }
+            
+            if (string.IsNullOrEmpty(directory))
+            {
+                // Features in root directory (after stripping base path)
+                root.Features.Add(feature);
+                continue;
+            }
+            
+            // Split path into folder segments
+            var segments = directory.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            // Navigate/create the folder hierarchy
+            var currentNode = root;
+            var currentPath = "";
+            
+            foreach (var segment in segments)
+            {
+                currentPath = string.IsNullOrEmpty(currentPath) ? segment : $"{currentPath}/{segment}";
+                
+                if (!currentNode.SubFolders.ContainsKey(segment))
+                {
+                    currentNode.SubFolders[segment] = new FolderNode
+                    {
+                        Name = segment,
+                        FullPath = currentPath
+                    };
+                }
+                currentNode = currentNode.SubFolders[segment];
+            }
+            
+            // Add feature to the deepest folder
+            currentNode.Features.Add(feature);
+        }
+        
+        return root;
+    }
+    
+    /// <summary>
+    /// Finds the common base path shared by all feature file paths.
+    /// This is typically the "Features" folder specified in configuration.
+    /// </summary>
+    private string FindCommonBasePath(List<EnrichedFeature> features)
+    {
+        var paths = features
+            .Where(f => !string.IsNullOrEmpty(f.Feature.FilePath))
+            .Select(f => Path.GetDirectoryName(f.Feature.FilePath?.Replace('\\', '/'))?.Replace('\\', '/') ?? "")
+            .Where(p => !string.IsNullOrEmpty(p))
+            .ToList();
+        
+        if (!paths.Any())
+            return "";
+        
+        // Split all paths into segments
+        var segmentLists = paths.Select(p => p.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)).ToList();
+        
+        if (!segmentLists.Any())
+            return "";
+        
+        // Find the minimum segment count
+        var minSegments = segmentLists.Min(s => s.Length);
+        
+        // Find common prefix segments
+        var commonSegments = new List<string>();
+        for (int i = 0; i < minSegments; i++)
+        {
+            var segment = segmentLists[0][i];
+            if (segmentLists.All(s => string.Equals(s[i], segment, StringComparison.OrdinalIgnoreCase)))
+            {
+                commonSegments.Add(segment);
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        return commonSegments.Any() ? string.Join("/", commonSegments) : "";
+    }
+
+    /// <summary>
+    /// Generates nested HTML for the folder tree with proper indentation and recursion.
+    /// Supports unlimited nesting depth with performance optimizations.
+    /// Root level features and folders are displayed directly without a wrapper folder.
+    /// Features within a folder are displayed BEFORE subfolders.
+    /// </summary>
+    private string GenerateNestedFolderTree(FolderNode node, int depth)
+    {
+        var html = new StringBuilder();
+        
+        // For root level (depth 0), we directly display features and subfolders
+        // without wrapping in a "Features" folder (since header already shows "Features")
+        if (depth == 0)
+        {
+            // Features at root level (directly in the Features folder)
+            foreach (var feature in node.Features)
+            {
+                html.AppendLine(GenerateFeatureItem(feature, 0));
+            }
+            
+            // Subfolders at root level
+            foreach (var subFolder in node.SubFolders.Values.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                html.AppendLine(GenerateFolderNode(subFolder, 0));
+            }
+        }
+        
+        return html.ToString();
+    }
+
+    /// <summary>
+    /// Generates HTML for a single folder node including all its contents.
+    /// </summary>
+    private string GenerateFolderNode(FolderNode folder, int depth)
+    {
+        var html = new StringBuilder();
+        var folderIdBase = folder.FullPath.Replace("/", "-").Replace(" ", "-").Replace("\\", "-").ToLowerInvariant();
+        var folderId = $"folder-{folderIdBase}";
+        var levelClass = $"folder-level-{Math.Min(depth, 5)}"; // Cap at level 5 for CSS
+        var totalCount = folder.TotalFeatureCount;
+        var hasSubFolders = folder.SubFolders.Any();
+        var hasFeatures = folder.Features.Any();
+        var folderIcon = hasSubFolders ? "fa-folder-tree" : "fa-folder";
+        
+        // Start collapsed for very deep folders (level 4+) to improve initial load performance
+        // Levels 0-3 are expanded by default to show common folder structures
+        var isExpanded = depth < 4;
+        var expandedClass = isExpanded ? "" : " collapsed";
+        var ariaExpanded = isExpanded ? "true" : "false";
+        
+        html.AppendLine($@"
+            <div class=""folder {levelClass}{expandedClass}"" role=""treeitem"" aria-expanded=""{ariaExpanded}"" data-depth=""{depth}"">
+                <div class=""folder-header"" 
+                     onclick=""toggleFolder('{folderId}')""
+                     tabindex=""0""
+                     onkeydown=""handleFolderKeydown(event, '{folderId}')""
+                     role=""button""
+                     aria-label=""Folder: {System.Web.HttpUtility.HtmlEncode(folder.Name)}"">
+                    <i class=""fas {folderIcon} folder-icon""></i>
+                    <span class=""folder-name"">{System.Web.HttpUtility.HtmlEncode(folder.Name)}</span>
+                    <span class=""folder-count"">({totalCount})</span>
+                    <i class=""fas fa-chevron-down folder-chevron""></i>
+                </div>
+                <div class=""folder-content"" id=""{folderId}"">");
+        
+        // Generate features in this folder first
+        foreach (var feature in folder.Features)
+        {
+            html.AppendLine(GenerateFeatureItem(feature, depth + 1));
+        }
+        
+        // Generate nested subfolders recursively
+        foreach (var subFolder in folder.SubFolders.Values.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            html.AppendLine(GenerateFolderNode(subFolder, depth + 1));
+        }
+        
+        html.AppendLine(@"
+                </div>
+            </div>");
+        
+        return html.ToString();
+    }
+
+    /// <summary>
+    /// Generates HTML for a single feature item in the sidebar.
+    /// Shows filename in sidebar, with feature name as tooltip for context.
+    /// </summary>
+    private string GenerateFeatureItem(EnrichedFeature feature, int depth)
+    {
+        var statusClass = GetStatusClass(feature.OverallStatus);
+        var statusIcon = GetStatusIcon(feature.OverallStatus);
+        var featureId = $"feature-{_sidebarFeatureIndex}";
+        var isActive = _sidebarFeatureIndex == 0 ? " active" : "";
+        var levelClass = $"feature-level-{Math.Min(depth, 5)}";
+        
+        // Extract filename from path for sidebar display
+        var filePath = feature.Feature.FilePath ?? "";
+        var fileName = !string.IsNullOrEmpty(filePath) 
+            ? Path.GetFileName(filePath) 
+            : feature.Feature.Name; // Fallback to feature name if no path
+        
+        // Remove .feature extension for cleaner display
+        if (fileName.EndsWith(".feature", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName = fileName.Substring(0, fileName.Length - 8);
+        }
+        
+        // Use feature name for tooltip/accessibility
+        var featureName = feature.Feature.Name;
+        
+        _sidebarFeatureIndex++;
+        
+        return $@"
+                    <div class=""feature-item {levelClass}{isActive}"" 
+                         data-feature-id=""{featureId}"" 
+                         onclick=""selectFeature('{featureId}')""
+                         tabindex=""0""
+                         role=""treeitem""
+                         title=""{System.Web.HttpUtility.HtmlEncode(featureName)}""
+                         onkeydown=""handleFeatureKeydown(event, '{featureId}')""
+                         aria-label=""Feature: {System.Web.HttpUtility.HtmlEncode(featureName)}"">
+                        <span class=""feature-status status-{statusClass}"">{statusIcon}</span>
+                        <span class=""feature-name"">{System.Web.HttpUtility.HtmlEncode(fileName)}</span>
+                    </div>";
+    }
+
+    // Legacy methods kept for backwards compatibility (not used, can be removed in future version)
     private Dictionary<string, List<EnrichedFeature>> BuildFolderTree(List<EnrichedFeature> features)
     {
         var tree = new Dictionary<string, List<EnrichedFeature>>();
@@ -4502,6 +4889,9 @@ const visibleScenarios = document.querySelectorAll(
             if (activeItem) {
                 activeItem.classList.add('active');
                 
+                // Expand all parent folders to make the active item visible (nested folder support)
+                expandParentFolders(activeItem);
+                
                 // Scroll sidebar to show active item if needed
                 const sidebar = document.getElementById('sidebar');
                 const sidebarNav = sidebar?.querySelector('nav');
@@ -4579,12 +4969,102 @@ const visibleScenarios = document.querySelectorAll(
             }, { timeout: 50 });
         }
         
-        // Toggle Folder
+        // Toggle Folder - Enhanced for nested folder support
         function toggleFolder(folderId) {
-            const folder = document.getElementById(folderId).closest('.folder');
+            const folderContent = document.getElementById(folderId);
+            const folder = folderContent?.closest('.folder');
             if (folder) {
-                folder.classList.toggle('collapsed');
+                const isCollapsed = folder.classList.toggle('collapsed');
+                folder.setAttribute('aria-expanded', !isCollapsed);
             }
+        }
+        
+        // Expand all parent folders to make an element visible
+        function expandParentFolders(element) {
+            let parent = element.parentElement;
+            while (parent) {
+                if (parent.classList.contains('folder-content')) {
+                    const folder = parent.closest('.folder');
+                    if (folder && folder.classList.contains('collapsed')) {
+                        folder.classList.remove('collapsed');
+                        folder.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                parent = parent.parentElement;
+            }
+        }
+        
+        // Toggle all folders with dynamic icon and tooltip
+        function toggleAllFolders() {
+            const toggleBtn = document.getElementById('toggle-folders-btn');
+            const currentState = toggleBtn.getAttribute('data-state');
+            const icon = toggleBtn.querySelector('i');
+            
+            if (currentState === 'expanded') {
+                // Collapse all folders
+                document.querySelectorAll('.folder:not(.collapsed)').forEach(folder => {
+                    folder.classList.add('collapsed');
+                    folder.setAttribute('aria-expanded', 'false');
+                });
+                
+                // Update button state
+                toggleBtn.setAttribute('data-state', 'collapsed');
+                toggleBtn.setAttribute('title', 'Expand All Folders');
+                icon.className = 'fas fa-folder-closed';
+            } else {
+                // Expand all folders
+                document.querySelectorAll('.folder.collapsed').forEach(folder => {
+                    folder.classList.remove('collapsed');
+                    folder.setAttribute('aria-expanded', 'true');
+                });
+                
+                // Update button state
+                toggleBtn.setAttribute('data-state', 'expanded');
+                toggleBtn.setAttribute('title', 'Collapse All Folders');
+                icon.className = 'fas fa-folder-open';
+            }
+        }
+        
+        // Legacy functions kept for backward compatibility (can be called from other places)
+        function expandAllFolders() {
+            document.querySelectorAll('.folder.collapsed').forEach(folder => {
+                folder.classList.remove('collapsed');
+                folder.setAttribute('aria-expanded', 'true');
+            });
+            
+            // Update toggle button if exists
+            const toggleBtn = document.getElementById('toggle-folders-btn');
+            if (toggleBtn) {
+                toggleBtn.setAttribute('data-state', 'expanded');
+                toggleBtn.setAttribute('title', 'Collapse All Folders');
+                toggleBtn.querySelector('i').className = 'fas fa-folder-open';
+            }
+        }
+        
+        function collapseAllFolders() {
+            document.querySelectorAll('.folder:not(.collapsed)').forEach(folder => {
+                folder.classList.add('collapsed');
+                folder.setAttribute('aria-expanded', 'false');
+            });
+            
+            // Update toggle button if exists
+            const toggleBtn = document.getElementById('toggle-folders-btn');
+            if (toggleBtn) {
+                toggleBtn.setAttribute('data-state', 'collapsed');
+                toggleBtn.setAttribute('title', 'Expand All Folders');
+                toggleBtn.querySelector('i').className = 'fas fa-folder-closed';
+            }
+        }
+        
+        // Collapse folders at a specific depth level (for performance)
+        function collapseFoldersAtDepth(minDepth) {
+            document.querySelectorAll('.folder').forEach(folder => {
+                const depth = parseInt(folder.getAttribute('data-depth') || '0');
+                if (depth >= minDepth) {
+                    folder.classList.add('collapsed');
+                    folder.setAttribute('aria-expanded', 'false');
+                }
+            });
         }
         
         // Sidebar Toggle Function
