@@ -38,6 +38,9 @@ public record ThemeConfig
     // Depth & Code
     public string ShadowColor { get; init; } = string.Empty;
     public string CodeBg { get; init; } = string.Empty;
+    
+    // Status Colors
+    public string UntestedColor { get; init; } = "#6b7280"; // Default grey for untested status
 
     public string ToCssVariables()
     {
@@ -58,6 +61,7 @@ public record ThemeConfig
         sb.AppendLine($"    --focus-ring: {FocusRing};");
         sb.AppendLine($"    --shadow-color: {ShadowColor};");
         sb.AppendLine($"    --code-bg: {CodeBg};");
+        sb.AppendLine($"    --untested-color: {UntestedColor};");
         return sb.ToString().TrimEnd();
     }
 
@@ -81,7 +85,8 @@ public record ThemeConfig
             AccentColor = "#a78bfa",
             FocusRing = "#8b5cf6",
             ShadowColor = "rgba(124, 58, 237, 0.1)",
-            CodeBg = "#f5f3ff"
+            CodeBg = "#f5f3ff",
+            UntestedColor = "#6b7280"
         },
         ["blue"] = new ThemeConfig
         {
@@ -101,7 +106,8 @@ public record ThemeConfig
             AccentColor = "#0ea5e9",
             FocusRing = "#0369a1",
             ShadowColor = "rgba(3, 105, 161, 0.1)",
-            CodeBg = "#f0f9ff"
+            CodeBg = "#f0f9ff",
+            UntestedColor = "#64748b"
         },
         ["green"] = new ThemeConfig
         {
@@ -121,7 +127,8 @@ public record ThemeConfig
             AccentColor = "#10b981",
             FocusRing = "#047857",
             ShadowColor = "rgba(4, 120, 87, 0.1)",
-            CodeBg = "#f0fdf4"
+            CodeBg = "#f0fdf4",
+            UntestedColor = "#6b7280"
         },
         ["dark"] = new ThemeConfig
         {
@@ -141,7 +148,8 @@ public record ThemeConfig
             AccentColor = "#c4b5fd",
             FocusRing = "#a78bfa",
             ShadowColor = "rgba(0, 0, 0, 0.3)",
-            CodeBg = "#0f172a"
+            CodeBg = "#0f172a",
+            UntestedColor = "#94a3b8"
         },
         ["light"] = new ThemeConfig
         {
@@ -161,7 +169,8 @@ public record ThemeConfig
             AccentColor = "#6366f1",
             FocusRing = "#4338ca",
             ShadowColor = "rgba(15, 23, 42, 0.08)",
-            CodeBg = "#f8fafc"
+            CodeBg = "#f8fafc",
+            UntestedColor = "#64748b"
         },
         ["pickles"] = new ThemeConfig
         {
@@ -181,7 +190,8 @@ public record ThemeConfig
             AccentColor = "#f59e0b",
             FocusRing = "#d97706",
             ShadowColor = "rgba(217, 119, 6, 0.1)",
-            CodeBg = "#fffbeb"
+            CodeBg = "#fffbeb",
+            UntestedColor = "#92400e"
         }
     };
 

@@ -11,6 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.7] - 2026-02-11
+
+### Added
+
+- **Generator**: Full-width responsive layout for maximum content visibility
+  - Layout now utilizes full available width on larger screens (removed 1400px max-width)
+  - Ultra-wide support for 2560px+ screens with optimized padding
+  - Main content area expands when sidebar is collapsed for more reading space
+
+- **Generator**: Smart header auto-hide behavior on scroll
+  - Header automatically hides when scrolling down to maximize BDD scenario visibility
+  - Controls/filter bar remains fixed at top for easy access when header is hidden
+  - Header reappears when scrolling up significantly (150px+ scroll)
+  - Accumulated scroll delta prevents flickering from small scroll variations
+
 - **Generator**: Navigation arrows (▲▼) enabled for all filter types
   - Caret up/down buttons now work with status filters (Passed, Failed, Skipped, Untested)
   - Navigation also enabled for tag filtering - not just text search
@@ -29,6 +52,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Folder count badges show total features including nested items
 
 ### Changed
+
+- **Generator**: Enhanced BDD scenario styling for better prominence
+  - Increased scenario card shadow and border thickness (4px left border)
+  - Failed scenarios have subtle red glow effect and pulsing status icon
+  - Larger scenario titles (1.2rem) with improved font weight
+  - Scenario body has gradient background for visual separation
+  - More pronounced hover effect (4px transform instead of 2px)
+
+- **Generator**: Minimized footer to maximize content area
+  - Footer now fixed in bottom-right corner (doesn't take layout space)
+  - Very low opacity (0.3) until hovered
+  - Smaller text and padding for minimal footprint
 
 - **Generator**: Redesigned search UI layout for better usability
   - Changed from absolute positioning to flexbox layout to prevent element overlapping
@@ -606,7 +641,8 @@ First public release of LivingDocGen - Universal BDD Living Documentation Genera
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.6...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.7...HEAD
+[2.0.7]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.7
 [2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4

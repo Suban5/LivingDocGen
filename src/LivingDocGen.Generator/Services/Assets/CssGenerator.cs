@@ -88,6 +88,7 @@ public class CssGenerator : ICssGenerator
             /* Layout Variables */
             --header-height: 80px;
             --header-height-shrunk: 50px;
+            --header-height-hidden: 0px;
             --controls-height: 60px;
             --stats-height: auto;
         }
@@ -120,11 +121,17 @@ public class CssGenerator : ICssGenerator
             position: sticky;
             top: 0;
             z-index: 100;
-            transition: padding var(--transition-normal), height var(--transition-normal), box-shadow var(--transition-normal);
+            transition: padding 0.25s ease-out, height 0.25s ease-out, box-shadow 0.2s ease-out, transform 0.25s ease-out, opacity 0.2s ease-out;
             height: var(--header-height);
             display: flex;
             flex-direction: column;
             justify-content: center;
+            will-change: transform, height;
+        }
+        
+        /* Disable transitions during active scrolling to prevent flickering */
+        header.scrolling {
+            transition: none !important;
         }
         
         /* Shrunk header on scroll */
@@ -132,6 +139,16 @@ public class CssGenerator : ICssGenerator
             padding: 0.75rem 1.5rem;
             height: var(--header-height-shrunk);
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        /* Hidden header when scrolled down - maximizes content area */
+        header.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         header h1 {
@@ -243,11 +260,17 @@ public class CssGenerator : ICssGenerator
             position: sticky;
             top: var(--header-height);
             z-index: 99;
-            transition: top var(--transition-normal);
+            transition: top var(--transition-normal), box-shadow var(--transition-normal);
         }
         
         header.shrunk ~ #controls {
             top: var(--header-height-shrunk);
+        }
+        
+        /* Controls stick to top when header is hidden */
+        header.hidden ~ #controls {
+            top: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         /* Search Highlighting */
@@ -585,6 +608,11 @@ public class CssGenerator : ICssGenerator
         
         header.shrunk ~ #stats-container {
             top: calc(var(--header-height-shrunk) + var(--controls-height));
+        }
+        
+        /* Stats adjust when header is hidden */
+        header.hidden ~ #stats-container {
+            top: var(--controls-height);
         }
         
         #stats-toggle {
@@ -990,15 +1018,18 @@ public class CssGenerator : ICssGenerator
             font-weight: bold;
         }
 
-        /* Scenarios */
+        /* ============================================
+           BDD SCENARIOS - Enhanced Prominence
+           Primary content area - optimized for readability
+           ============================================ */
         .scenario {
-            background: var(--bg-color);
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            border-left: 3px solid var(--border-color);
+            background: var(--card-bg);
+            margin-bottom: 1.25rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--border-color);
             overflow: hidden;
-            box-shadow: 0 1px 4px var(--shadow-color);
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-left-color 0.2s ease;
             /* Performance: Use CSS containment for isolated rendering */
             contain: layout style;
             /* Performance: GPU acceleration hint */
@@ -1006,14 +1037,24 @@ public class CssGenerator : ICssGenerator
         }
 
         .scenario:hover {
-            box-shadow: 0 2px 8px var(--shadow-color);
+            box-shadow: 0 4px 16px var(--shadow-color);
             /* Performance: Use transform for GPU-accelerated animation */
-            transform: translateX(2px);
+            transform: translateX(4px);
         }
 
-        .scenario.status-passed { border-left-color: var(--success-color); }
-        .scenario.status-failed { border-left-color: var(--danger-color); }
-        .scenario.status-skipped { border-left-color: var(--warning-color); }
+        .scenario.status-passed { 
+            border-left-color: var(--success-color);
+            border-left-width: 5px;
+        }
+        .scenario.status-failed { 
+            border-left-color: var(--danger-color);
+            border-left-width: 5px;
+            box-shadow: 0 2px 12px rgba(239, 68, 68, 0.15);
+        }
+        .scenario.status-skipped { 
+            border-left-color: var(--warning-color);
+            border-left-width: 5px;
+        }
 
         .scenario-header {
             padding: 1rem;
@@ -1032,7 +1073,13 @@ public class CssGenerator : ICssGenerator
             align-items: center;
             gap: 0.75rem;
             flex: 1;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        .scenario-title strong {
+            color: var(--text-color);
+            letter-spacing: -0.01em;
         }
 
         .scenario-type {
@@ -1042,26 +1089,37 @@ public class CssGenerator : ICssGenerator
         }
 
         .status-icon {
-            font-size: 1.25rem;
+            font-size: 1.4rem;
+            flex-shrink: 0;
         }
 
         .status-icon.passed { color: var(--success-color); }
-        .status-icon.failed { color: var(--danger-color); }
+        .status-icon.failed { 
+            color: var(--danger-color);
+            animation: pulse-failed 2s ease-in-out infinite;
+        }
         .status-icon.skipped { color: var(--warning-color); }
-        .status-icon.untested { color: var(--text-secondary); }
+        .status-icon.untested { color: var(--text-secondary); opacity: 0.7; }
+        
+        @keyframes pulse-failed {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
 
         .scenario-body {
-            padding: 0 1rem 1rem 1rem;
+            padding: 0 1.25rem 1.25rem 1.25rem;
             /* Performance: Use max-height instead of display for smoother animations */
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.2s ease;
+            transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.2s ease;
             opacity: 0;
+            background: linear-gradient(to bottom, transparent, var(--hover-bg) 30%);
         }
 
         .scenario-body.expanded {
             max-height: 10000px; /* Large enough for any scenario */
             opacity: 1;
+            padding: 1rem 1.25rem 1.25rem 1.25rem;
         }
 
         .error-message {
@@ -1533,19 +1591,23 @@ public class CssGenerator : ICssGenerator
             opacity: 1;
         }
 
-        /* Footer */
+        /* Footer - Minimal design to maximize content area */
         footer {
             background: transparent;
-            padding: 0.75rem;
-            margin-top: 1.5rem;
+            padding: 0.25rem 0.5rem;
+            margin: 0;
             text-align: center;
             color: var(--text-secondary);
-            font-size: 0.8rem;
-            opacity: 0.6;
+            font-size: 0.7rem;
+            opacity: 0.3;
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            z-index: 50;
         }
 
         footer:hover {
-            opacity: 0.9;
+            opacity: 0.7;
         }
 
         /* Scroll to Top Button */
@@ -1738,18 +1800,26 @@ public class CssGenerator : ICssGenerator
 
         /* ============================================
            MASTER-DETAIL LAYOUT (VS Code Style)
+           Full-Width Design for Maximum Content Visibility
            ============================================ */
 
         .layout-container {
             display: flex;
-            height: calc(100vh - 400px);
-            min-height:500px;
-            max-width: 1400px;
-            margin: 0 auto 2rem;
+            height: calc(100vh - 350px);
+            min-height: 600px;
+            max-width: 100%;
+            margin: 0 1rem 2rem;
             position: relative;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 1px 3px var(--shadow-color);
+            transition: margin var(--transition-normal);
+        }
+        
+        /* Full width when header is hidden - more vertical space */
+        header.hidden ~ .layout-container,
+        header.hidden ~ * .layout-container {
+            height: calc(100vh - 250px);
         }
 
         .sidebar {
@@ -2054,10 +2124,6 @@ public class CssGenerator : ICssGenerator
             box-shadow: 0 2px 4px var(--shadow-color);
         }
 
-        .feature-item.active .feature-status {
-            color: white !important;
-        }
-
         .feature-status {
             font-size: 0.9rem;
         }
@@ -2075,7 +2141,7 @@ public class CssGenerator : ICssGenerator
         }
 
         .feature-status.status-untested {
-            color: var(--text-secondary);
+            color: var(--untested-color);
         }
 
         .feature-name {
@@ -2130,10 +2196,16 @@ public class CssGenerator : ICssGenerator
         .main-content {
             flex: 1;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 1.5rem 2rem;
             background: var(--bg-color);
             transition: all 0.3s ease;
             width: 100%;
+            min-width: 0; /* Prevent flex item from overflowing */
+        }
+        
+        /* Main content expands fully when sidebar is collapsed */
+        .sidebar.collapsed ~ .resizer ~ .main-content {
+            padding: 1.5rem 3rem;
         }
 
         .main-content::-webkit-scrollbar {
@@ -2216,22 +2288,58 @@ public class CssGenerator : ICssGenerator
             border-width: 0;
         }
 
-        /* Large Desktop Screens */
+        /* Large Desktop Screens - Full width utilization */
         @media (min-width: 1920px) {
             .layout-container {
-                max-width: 1800px;
-                height: calc(100vh - 350px);
+                max-width: calc(100% - 2rem);
+                height: calc(100vh - 300px);
+                margin: 0 1rem 2rem;
             }
             
             .sidebar {
+                width: 320px;
                 max-width: 450px;
+            }
+            
+            .main-content {
+                padding: 2rem 3rem;
+            }
+            
+            /* Enhanced BDD scenarios on large screens */
+            .scenario {
+                margin-bottom: 1.25rem;
+            }
+            
+            .feature-title h2 {
+                font-size: 1.75rem;
+            }
+        }
+        
+        /* Ultra-wide screens */
+        @media (min-width: 2560px) {
+            .layout-container {
+                max-width: calc(100% - 4rem);
+                margin: 0 2rem 2rem;
+            }
+            
+            .sidebar {
+                width: 380px;
+            }
+            
+            .main-content {
+                padding: 2rem 4rem;
             }
         }
 
-        /* Desktop Screens */
+        /* Desktop Screens - Full width */
         @media (min-width: 1440px) and (max-width: 1919px) {
             .layout-container {
-                max-width: 1600px;
+                max-width: calc(100% - 2rem);
+                margin: 0 1rem 2rem;
+            }
+            
+            .main-content {
+                padding: 1.5rem 2.5rem;
             }
         }
 

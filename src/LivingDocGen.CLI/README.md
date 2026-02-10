@@ -5,6 +5,44 @@
 
 The **LivingDocGen CLI** is a cross-platform .NET Global Tool that generates beautiful, interactive living documentation from your Gherkin feature files and test results.
 
+## ✨ What's New in v2.0.7 🎉
+
+**Release Date:** February 11, 2026
+
+### UI Layout Enhancements
+
+- ✅ **Full-Width Responsive Layout** - Maximum content visibility
+  - Layout utilizes full available width (removed 1400px max-width)
+  - Ultra-wide support for 2560px+ screens
+  - Main content expands when sidebar is collapsed
+
+- ✅ **Smart Header Auto-Hide** - Maximize BDD scenario visibility
+  - Header automatically hides when scrolling down
+  - Controls/filter bar remains fixed at top
+  - Header reappears when scrolling up (150px+ threshold)
+
+- ✅ **Enhanced BDD Scenario Styling** - Better visual prominence
+  - Increased scenario card shadow and border thickness (4px left border)
+  - Failed scenarios have red glow effect and pulsing status icon
+  - Larger scenario titles (1.2rem) with gradient backgrounds
+
+- ✅ **Minimized Footer** - Fixed bottom-right corner, near-invisible until hovered
+
+### Navigation Improvements
+
+- ✅ **Navigation Arrows for All Filters** - Works with status and tag filters
+- ✅ **Nested Folder Tree** - Full hierarchy support with expand/collapse toggle
+- ✅ **Fixed Search Navigation** - Scrolls directly to matching scenario
+
+### Bug Fixes
+
+- ✅ **Fixed Scroll Flickering** - CSS transition optimization for large documents
+- ✅ **Fixed Sidebar Path Display** - Shows "Features" as root correctly
+
+**Impact:** Significantly improved UI for better BDD scenario visibility and navigation experience.
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
+
 ## ✨ What's New in v2.0.6 🎉
 
 **Release Date:** February 10, 2026

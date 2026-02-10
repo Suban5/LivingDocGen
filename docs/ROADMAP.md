@@ -9,7 +9,44 @@
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
 | Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
 
-### Recent Completions (v2.0.6)
+### Recent Completions (v2.0.7)
+- ✅ **Full-Width Responsive Layout** - Maximum content visibility
+  - Layout now utilizes full available width on larger screens (removed 1400px max-width)
+  - Ultra-wide support for 2560px+ screens with optimized padding
+  - Main content area expands when sidebar is collapsed
+- ✅ **Smart Header Auto-Hide** - Maximize BDD scenario visibility
+  - Header automatically hides when scrolling down
+  - Controls/filter bar remains fixed at top when header hidden
+  - Header reappears when scrolling up significantly (150px+)
+  - Accumulated scroll delta prevents flickering from small variations
+- ✅ **Navigation Arrows for All Filters** - Improved search UX
+  - Caret up/down buttons work with status filters (Passed, Failed, Skipped, Untested)
+  - Navigation enabled for tag filtering - not just text search
+  - Shows scenario count when any filter is active
+- ✅ **Enhanced BDD Scenario Styling** - Better visual prominence
+  - Increased scenario card shadow and border thickness (4px left border)
+  - Failed scenarios have subtle red glow effect and pulsing status icon
+  - Larger scenario titles (1.2rem) with improved font weight
+- ✅ **Minimized Footer** - Maximum content area
+  - Footer now fixed in bottom-right corner (doesn't take layout space)
+  - Very low opacity (0.3) until hovered
+- ✅ **Nested Folder Tree Navigation** - Full hierarchy support
+  - Complete folder hierarchy from Features root
+  - Smart expand/collapse toggle with dynamic icon
+  - Visual depth indicators and folder count badges
+- ✅ **Major HTML Generator Refactoring** - Improved maintainability
+  - Reduced HtmlGeneratorService from 5,492 to 1,309 lines (76% reduction)
+  - Extracted CSS to `CssGenerator.cs` (~2,300 lines)
+  - Extracted JavaScript to `JavaScriptGenerator.cs` (~1,800 lines)
+- ✅ **Fixed Scroll-Induced Flickering** - Large document optimization
+  - CSS transition optimization with `scrolling` class
+  - Batched DOM operations and unified scroll handlers
+  - Throttled IntersectionObserver callbacks
+- ✅ **Fixed Project Root Detection** - Reqnroll.Integration
+  - Uses assembly location instead of current directory
+  - Works correctly when `dotnet test` runs from solution directory
+
+### Previous Completions (v2.0.6)
 - ✅ **⚠️ BREAKING CHANGE: .NET 8.0+ Requirement for Reqnroll.Integration**
   - Dropped support for .NET 6.0 and .NET 7.0
   - Worker process and all dependencies target net8.0
@@ -26,34 +63,9 @@
   - New `testResults.patterns` array for custom patterns
   - Auto-detection of test result format via parsers
   - Backward compatible with legacy `testResultFormat` config
-- ✅ **NUnit XML Support via runsettings**
-  - Example `test.runsettings` for NUnit XML output
-  - `OutputXmlFolderMode` configuration for proper folder structure
-  - Works without `--logger` command line flag
-- ✅ **Simplified Worker-Only Architecture**
-  - Removed InProcess mode (unreliable with dotnet test shutdown)
-  - Removed DeferredExternal mode (CLI dependency eliminated)
-  - Single execution path: Hooks → Worker process → Documentation
-  - Significantly reduced codebase complexity (~200 lines vs 650+)
-- ✅ **Enhanced Diagnostic Logging** - Comprehensive console output in LivingDocBootstrap.cs
-  - Full file paths and metadata
-  - Project root, test results path, test runner information
-  - Configuration values display
-  - File metadata (path, size, modification timestamp)
-  - Structured error messages with solutions
-  - Debug log file (LIVINGDOC_DEBUG.txt)
 - ✅ **Reqnroll 3.3.2 Upgrade**
-  - Updated from Reqnroll 2.4.1 to 3.3.2
   - Compatible with Gherkin 35.0.0
   - Improved test result parsing for Scenario Outlines
-  - Enhanced logging and error diagnostics
-- ✅ **Fixed NUnit Test Result Parsing**
-  - Changed from `.Elements()` to `.Descendants()` to recursively find all test-case elements
-  - Resolves missing test results for Scenario Outlines (parameterized tests)
-- ✅ **Removed .NET 6/7 Integration Tests**
-  - Removed IntegrationTest.Net6 project
-  - Removed IntegrationTest.Net7 project
-  - Cleaned up InProcess execution mode files
 
 ### Previous Completions (v2.0.5)
 - ✅ **Tag Filtering Functionality** - Complete tag-based scenario filtering

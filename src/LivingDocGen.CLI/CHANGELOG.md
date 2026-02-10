@@ -11,6 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [2.0.7] - 2026-02-11
+
+### Added
+
+- Full-width responsive layout for maximum content visibility (inherited from Generator)
+  - Layout utilizes full available width on larger screens
+  - Main content expands when sidebar is collapsed
+
+- Smart header auto-hide on scroll (inherited from Generator)
+  - Header hides when scrolling down to maximize BDD scenario visibility
+  - Controls bar remains visible for easy filter access
+  - Header reappears when scrolling up significantly
+
 - Navigation arrows (▲▼) enabled for all filter types (inherited from Generator)
   - Works with status filters (Passed, Failed, Skipped, Untested) and tag filtering
   - Shows scenario count when any filter is active
@@ -22,6 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Visual depth indicators and folder count badges
 
 ### Changed
+
+- Enhanced BDD scenario styling for better prominence (inherited from Generator)
+  - Increased visual weight with thicker borders and shadows
+  - Failed scenarios have red glow and animated status icon
+  - Larger titles and gradient backgrounds
+
+- Minimized footer to fixed bottom-right position (inherited from Generator)
+  - Near-invisible until hovered, doesn't take layout space
 
 - Redesigned search UI layout for better usability (inherited from Generator)
   - Flexbox layout prevents element overlapping
@@ -453,7 +482,8 @@ First public release of LivingDocGen CLI - Universal BDD Living Documentation Ge
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.6...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.7...HEAD
+[2.0.7]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.7
 [2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5
 [2.0.4]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.4

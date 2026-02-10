@@ -132,21 +132,74 @@ public class JavaScriptGenerator : IJavaScriptGenerator
         // PHASE 1: ADAPTIVE HEADER & STATISTICS
         // ============================================
         
-        // Adaptive Header: Shrink on scroll
+        // Adaptive Header: Shrink on scroll, hide when scrolling down (past threshold)
+        // Shows controls bar at top when header is hidden for easy access to filters
         let lastScrollTop = 0;
         const header = document.querySelector('header');
-        const scrollThreshold = 100;
+        const scrollThreshold = 80;
+        const hideThreshold = 250; // Hide header when scrolled past this point
+        let headerState = 'visible'; // 'visible', 'shrunk', 'hidden'
+        let accumulatedDelta = 0; // Accumulate scroll delta for smoother transitions
+        let headerUpdateTimer = null;
+        
+        function updateHeaderState(newState) {
+            if (headerState === newState) return;
+            
+            // Clear any pending updates
+            if (headerUpdateTimer) {
+                clearTimeout(headerUpdateTimer);
+                headerUpdateTimer = null;
+            }
+            
+            // Debounce state changes to prevent flickering
+            headerUpdateTimer = setTimeout(() => {
+                header.classList.remove('visible', 'shrunk', 'hidden');
+                header.classList.add(newState);
+                
+                // Also update aria for accessibility
+                if (newState === 'hidden') {
+                    header.setAttribute('aria-hidden', 'true');
+                } else {
+                    header.removeAttribute('aria-hidden');
+                }
+                
+                headerState = newState;
+                accumulatedDelta = 0; // Reset accumulator after state change
+            }, 50); // Small delay to batch rapid changes
+        }
         
         function handleHeaderScroll() {
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollDelta = scrollTop - lastScrollTop;
             
-            if (scrollTop > scrollThreshold) {
-                header.classList.add('shrunk');
-            } else {
-                header.classList.remove('shrunk');
+            // Accumulate scroll delta for smoother direction detection
+            accumulatedDelta += scrollDelta;
+            
+            // When at the very top, always show full header
+            if (scrollTop <= scrollThreshold) {
+                updateHeaderState('visible');
+                accumulatedDelta = 0;
+            }
+            // When scrolled a bit but not too far, show shrunk header
+            else if (scrollTop > scrollThreshold && scrollTop <= hideThreshold) {
+                updateHeaderState('shrunk');
+                accumulatedDelta = 0;
+            }
+            // When scrolled past hide threshold - use accumulated delta for stable detection
+            else if (scrollTop > hideThreshold) {
+                // Need significant accumulated scroll (100px) to trigger state change
+                // This prevents flickering from small scroll variations
+                if (accumulatedDelta > 100) {
+                    // Scrolling down significantly - hide header
+                    updateHeaderState('hidden');
+                } else if (accumulatedDelta < -150) {
+                    // Scrolling up significantly - show shrunk header
+                    updateHeaderState('shrunk');
+                }
+                // Small movements don't change state (prevents flickering)
             }
             
-            lastScrollTop = scrollTop;
+            lastScrollTop = Math.max(0, scrollTop);
         }
         
         // Throttle scroll events for performance
@@ -160,15 +213,20 @@ public class JavaScriptGenerator : IJavaScriptGenerator
             // Add scrolling class to disable CSS transitions during scroll (prevents flickering)
             if (sidebar) {
                 sidebar.classList.add('scrolling');
-                
-                // Clear existing timer
-                if (scrollEndTimer) clearTimeout(scrollEndTimer);
-                
-                // Remove scrolling class after scroll ends (150ms debounce)
-                scrollEndTimer = setTimeout(() => {
-                    sidebar.classList.remove('scrolling');
-                }, 150);
             }
+            if (header) {
+                header.classList.add('scrolling');
+            }
+            
+            // Clear existing timer
+            if (scrollEndTimer) clearTimeout(scrollEndTimer);
+            
+            // Remove scrolling class after scroll ends (200ms debounce)
+            scrollEndTimer = setTimeout(() => {
+                if (sidebar) sidebar.classList.remove('scrolling');
+                if (header) header.classList.remove('scrolling');
+                accumulatedDelta = 0; // Reset accumulated delta when scroll ends
+            }, 200);
             
             if (!ticking) {
                 window.requestAnimationFrame(function() {

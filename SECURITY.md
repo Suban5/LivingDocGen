@@ -6,17 +6,17 @@ We actively support the following versions of LivingDocGen with security updates
 
 | Version | Supported          | .NET Support |
 | ------- | ------------------ | ------------ |
+| 2.0.7   | :white_check_mark: | CLI: .NET 6.0+, Reqnroll: .NET 8.0+ |
 | 2.0.6   | :white_check_mark: | CLI: .NET 6.0+, Reqnroll: .NET 8.0+ |
 | 2.0.5   | :white_check_mark: | .NET 6.0+ |
 | 2.0.4   | :white_check_mark: | .NET 6.0+ |
-| 2.0.3   | :white_check_mark: | .NET 6.0+ |
+| 2.0.3   | :x:                | .NET 6.0+ |
 | 2.0.2   | :x:                | .NET 6.0+ |
-| 2.0.1   | :x:                | .NET 6.0+ |
 | 2.0.0   | :x:                | .NET 6.0+ |
 | 1.0.4   | :x:                | .NET Standard 2.0/2.1, .NET 6+ |
 | < 1.0.4 | :x:                | Not supported |
 
-**Recommendation:** Always use the latest version (2.0.6) for the best security, performance, and features.
+**Recommendation:** Always use the latest version (2.0.7) for the best security, performance, and features.
 
 ---
 
