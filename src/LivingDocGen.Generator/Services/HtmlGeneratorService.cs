@@ -2139,7 +2139,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
 
         .folder-content {
             padding-left: 0.5rem;
-            max-height: 2000px;
+            max-height: 10000px;  /* Increased to handle large feature counts */
             overflow: hidden;
             transition: max-height 0.3s ease;
         }
@@ -2211,11 +2211,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             opacity: 0.9;
         }
 
-        /* Performance optimization: limit max-height for deeply nested folders */
-        .folder-level-3 > .folder-content,
-        .folder-level-4 > .folder-content,
-        .folder-level-5 > .folder-content {
-            max-height: 1500px;
+        /* Note: Removed max-height limit for deeply nested folders as it was clipping content */
+
+        /* SCROLL OPTIMIZATION: Disable transitions during scroll to prevent flickering */
+        .scrolling .feature-item,
+        .scrolling .feature-item.active {
+            transition: none !important;
         }
 
         .feature-item {
@@ -2227,7 +2228,12 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             cursor: pointer;
             border-radius: 6px;
             font-size: 0.825rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            /* OPTIMIZED: Only transition specific properties instead of 'all' */
+            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-left-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             color: var(--text-color);
             border-left: 3px solid transparent;
         }
@@ -3615,6 +3621,100 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         // Feature Navigation State
         let currentFeatureId = 'feature-0';
         
+        // ============================================
+        // EARLY FUNCTION DECLARATIONS (must be available for onclick handlers)
+        // ============================================
+        
+        // Pre-declare these functions so they're available for inline onclick handlers
+        // Full implementations are below, but these stubs prevent 'undefined' errors
+        
+        // Select Feature - stub that will be enhanced later
+        function selectFeature(featureId) {
+            // Show loader for large reports
+            if (FEATURE_COUNT > 100 && typeof showLoader === 'function') {
+                showLoader('Loading feature...', 30);
+            }
+            
+            // Immediate visual feedback - hide all features
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.feature[data-feature-id]').forEach(feature => {
+                    feature.classList.add('feature-hidden');
+                });
+            });
+            
+            // Defer heavy operations to idle time
+            const idleCallback = typeof requestIdleCallback !== 'undefined' ? requestIdleCallback : setTimeout;
+            idleCallback(() => {
+                // Show selected feature
+                let selectedFeature = document.getElementById(featureId);
+                if (selectedFeature) {
+                    // Render lazy-loaded feature content if needed
+                    if (USE_LAZY_RENDERING && selectedFeature.hasAttribute('data-lazy') && typeof renderFeatureContent === 'function') {
+                        renderFeatureContent(selectedFeature);
+                        // Get the element again after rendering (it was replaced)
+                        selectedFeature = document.getElementById(featureId);
+                    }
+                    
+                    // Show the feature with smooth animation
+                    requestAnimationFrame(() => {
+                        if (selectedFeature) {
+                            selectedFeature.classList.remove('feature-hidden');
+                            currentFeatureId = featureId;
+                        }
+                        
+                        // Update active state in sidebar
+                        document.querySelectorAll('.feature-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
+                        if (activeItem) {
+                            activeItem.classList.add('active');
+                        }
+                        
+                        // Scroll to top of content
+                        const mainContent = document.getElementById('main-content');
+                        if (mainContent) {
+                            mainContent.scrollTop = 0;
+                        }
+                        
+                        // Save last viewed feature
+                        localStorage.setItem('bdd-last-feature', featureId);
+                        
+                        // Hide loader
+                        if (typeof hideLoader === 'function') hideLoader();
+                    });
+                } else {
+                    if (typeof hideLoader === 'function') hideLoader();
+                }
+            }, { timeout: 50 });
+        }
+        
+        // Toggle Folder - Early declaration
+        function toggleFolder(folderId) {
+            const folderContent = document.getElementById(folderId);
+            const folder = folderContent?.closest('.folder');
+            if (folder) {
+                const isCollapsed = folder.classList.toggle('collapsed');
+                folder.setAttribute('aria-expanded', !isCollapsed);
+            }
+        }
+        
+        // Handle Feature Keydown - Early declaration
+        function handleFeatureKeydown(event, featureId) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectFeature(featureId);
+            }
+        }
+        
+        // Handle Folder Keydown - Early declaration
+        function handleFolderKeydown(event, folderId) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleFolder(folderId);
+            }
+        }
+        
         // Performance: Use event delegation for toggle operations in large reports
         if (PERF_LARGE_REPORT) {
             console.log('⚡ Performance mode enabled for ' + FEATURE_COUNT + ' features');
@@ -3646,8 +3746,26 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         }
         
         // Throttle scroll events for performance
+        // OPTIMIZED: Added { passive: true } for better scroll performance
+        // FIX: Added scrolling class management to disable CSS transitions during scroll
         let ticking = false;
+        let scrollEndTimer = null;
+        const sidebar = document.getElementById('sidebar');
+        
         window.addEventListener('scroll', function() {
+            // Add scrolling class to disable CSS transitions during scroll (prevents flickering)
+            if (sidebar) {
+                sidebar.classList.add('scrolling');
+                
+                // Clear existing timer
+                if (scrollEndTimer) clearTimeout(scrollEndTimer);
+                
+                // Remove scrolling class after scroll ends (150ms debounce)
+                scrollEndTimer = setTimeout(() => {
+                    sidebar.classList.remove('scrolling');
+                }, 150);
+            }
+            
             if (!ticking) {
                 window.requestAnimationFrame(function() {
                     handleHeaderScroll();
@@ -3655,7 +3773,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
                 });
                 ticking = true;
             }
-        });
+        }, { passive: true });
         
         // Statistics Toggle Function
         function toggleStats() {
@@ -4672,7 +4790,10 @@ const visibleScenarios = document.querySelectorAll(
             if (renderedFeatures.has(featureIndex)) return;
             
             const data = loadFeatureData();
-            if (!data || !data.features[featureIndex]) return;
+            if (!data || !data.features[featureIndex]) {
+                console.error('Failed to load feature data for index:', featureIndex);
+                return;
+            }
             
             const featureHtml = data.features[featureIndex].html;
             
@@ -4683,9 +4804,20 @@ const visibleScenarios = document.querySelectorAll(
             
             // Replace the placeholder with the actual feature content
             if (newFeatureElement && featureElement.parentNode) {
-                // Remove feature-hidden class to make the feature visible
-                newFeatureElement.classList.remove('feature-hidden');
+                // Preserve original hidden state if any
+                const wasHidden = featureElement.classList.contains('feature-hidden');
+                if (wasHidden) {
+                    newFeatureElement.classList.add('feature-hidden');
+                } else {
+                    newFeatureElement.classList.remove('feature-hidden');
+                }
+                
+                // Ensure the new element doesn't have lazy-loading classes/attributes
+                newFeatureElement.classList.remove('lazy-feature');
+                newFeatureElement.removeAttribute('data-lazy');
+                
                 featureElement.parentNode.replaceChild(newFeatureElement, featureElement);
+                console.log('✓ Rendered feature:', featureIndex);
             }
             
             renderedFeatures.add(featureIndex);
@@ -4793,6 +4925,7 @@ const visibleScenarios = document.querySelectorAll(
             });
             
             // Scroll to top button
+            // OPTIMIZED: Use passive listener for better scroll performance
             const scrollToTopBtn = document.getElementById('scroll-to-top');
             
             window.addEventListener('scroll', function() {
@@ -4801,7 +4934,7 @@ const visibleScenarios = document.querySelectorAll(
                 } else {
                     scrollToTopBtn.classList.remove('visible');
                 }
-            });
+            }, { passive: true });
             
             scrollToTopBtn.addEventListener('click', function() {
                 window.scrollTo({
@@ -4824,24 +4957,47 @@ const visibleScenarios = document.querySelectorAll(
         // SIDEBAR NAVIGATION & MASTER-DETAIL
         // ============================================
         
-        // Optimized observer for lazy-rendered reports (feature-level only)
+        // OPTIMIZED: Throttled observer for lazy-rendered reports (feature-level only)
+        // FIX: Prevents flickering by throttling updates and batching DOM operations
         function setupFeatureLevelObserver() {
+            let updateScheduled = false;
+            let lastFeatureId = null;
+            
             const options = {
                 root: null,
                 rootMargin: '-20% 0px -60% 0px',
-                threshold: 0
+                threshold: [0, 0.25, 0.5]  // Multiple thresholds for better accuracy
             };
             
             const observer = new IntersectionObserver(function(entries) {
+                // Find the most visible feature (highest intersection ratio)
+                let mostVisibleFeature = null;
+                let maxRatio = 0;
+                
                 entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const feature = entry.target;
-                        const featureId = feature.getAttribute('data-feature-id');
-                        
-                        if (featureId) {
-                            updateSidebarActive(featureId);
-                        }
+                    if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+                        maxRatio = entry.intersectionRatio;
+                        mostVisibleFeature = entry.target;
                     }
+                });
+                
+                if (!mostVisibleFeature) return;
+                
+                const featureId = mostVisibleFeature.getAttribute('data-feature-id');
+                
+                // Skip if same feature or update already scheduled (throttling)
+                if (featureId === lastFeatureId || updateScheduled) return;
+                
+                lastFeatureId = featureId;
+                updateScheduled = true;
+                
+                // Throttle: Maximum once per animation frame
+                requestAnimationFrame(() => {
+                    updateSidebarActive(featureId);
+                    // Allow next update after short delay (debounce effect)
+                    setTimeout(() => {
+                        updateScheduled = false;
+                    }, 100);
                 });
             }, options);
             
@@ -4851,24 +5007,43 @@ const visibleScenarios = document.querySelectorAll(
             });
         }
         
-        // Original scenario-level observer for smaller reports
+        // OPTIMIZED: Throttled scenario-level observer for smaller reports
         function setupScenarioObserver() {
+            let updateScheduled = false;
+            let lastFeatureId = null;
+            
             const options = {
                 root: null,
                 rootMargin: '-20% 0px -60% 0px',
-                threshold: 0
+                threshold: [0, 0.25, 0.5]
             };
             
             const observer = new IntersectionObserver(function(entries) {
+                let mostVisibleScenario = null;
+                let maxRatio = 0;
+                
                 entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const scenario = entry.target;
-                        const featureId = scenario.getAttribute('data-feature-id');
-                        
-                        if (featureId) {
-                            updateSidebarActive(featureId);
-                        }
+                    if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+                        maxRatio = entry.intersectionRatio;
+                        mostVisibleScenario = entry.target;
                     }
+                });
+                
+                if (!mostVisibleScenario) return;
+                
+                const featureId = mostVisibleScenario.getAttribute('data-feature-id');
+                
+                // Skip if same feature or update already scheduled
+                if (featureId === lastFeatureId || updateScheduled) return;
+                
+                lastFeatureId = featureId;
+                updateScheduled = true;
+                
+                requestAnimationFrame(() => {
+                    updateSidebarActive(featureId);
+                    setTimeout(() => {
+                        updateScheduled = false;
+                    }, 100);
                 });
             }, options);
             
@@ -4878,106 +5053,72 @@ const visibleScenarios = document.querySelectorAll(
             });
         }
         
-        // Shared function to update sidebar active state
+        // OPTIMIZED: Batched DOM operations to prevent layout thrashing
+        // FIX: This is the main fix for flickering - separates DOM reads and writes
         function updateSidebarActive(featureId) {
-            // Update sidebar active state without hiding other features
-            document.querySelectorAll('.feature-item').forEach(item => {
-                item.classList.remove('active');
+            // PHASE 1: Batch all DOM reads (no forced layouts)
+            const itemsToUpdate = [];
+            const allItems = document.querySelectorAll('.feature-item');
+            
+            allItems.forEach(item => {
+                const itemFeatureId = item.getAttribute('data-feature-id');
+                const shouldBeActive = itemFeatureId === featureId;
+                const isCurrentlyActive = item.classList.contains('active');
+                
+                // Only track items that need changes
+                if (shouldBeActive !== isCurrentlyActive) {
+                    itemsToUpdate.push({ item, shouldBeActive });
+                }
             });
             
-            const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
-            if (activeItem) {
-                activeItem.classList.add('active');
-                
-                // Expand all parent folders to make the active item visible (nested folder support)
-                expandParentFolders(activeItem);
-                
-                // Scroll sidebar to show active item if needed
-                const sidebar = document.getElementById('sidebar');
-                const sidebarNav = sidebar?.querySelector('nav');
-                if (sidebarNav && activeItem) {
-                    const itemTop = activeItem.offsetTop;
-                    const itemBottom = itemTop + activeItem.offsetHeight;
-                    const sidebarTop = sidebarNav.scrollTop;
-                    const sidebarBottom = sidebarTop + sidebarNav.clientHeight;
-                    
-                    if (itemTop < sidebarTop || itemBottom > sidebarBottom) {
-                        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            }
-        }
-        
-        // Select Feature
-        // Phase 3: Enhanced with requestIdleCallback for non-blocking sidebar navigation
-        function selectFeature(featureId) {
-            // Show loader for large reports
-            if (FEATURE_COUNT > 100) {
-                showLoader('Loading feature...', 30);
-            }
+            // Early exit if no changes needed (common case during scroll)
+            if (itemsToUpdate.length === 0) return;
             
-            // Immediate visual feedback - hide all features
+            // PHASE 2: Batch all DOM writes in requestAnimationFrame
             requestAnimationFrame(() => {
-                document.querySelectorAll('.feature[data-feature-id]').forEach(feature => {
-                    feature.classList.add('feature-hidden');
-                });
-            });
-            
-            // Defer heavy operations to idle time
-            requestIdleCallback(() => {
-                // Show selected feature
-                let selectedFeature = document.getElementById(featureId);
-                if (selectedFeature) {
-                    // Render lazy-loaded feature content if needed
-                    if (USE_LAZY_RENDERING && selectedFeature.hasAttribute('data-lazy')) {
-                        renderFeatureContent(selectedFeature);
-                        // Get the element again after rendering (it was replaced)
-                        selectedFeature = document.getElementById(featureId);
+                // Update all classes in one batch
+                itemsToUpdate.forEach(({ item, shouldBeActive }) => {
+                    if (shouldBeActive) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
                     }
+                });
+                
+                // Handle sidebar scrolling separately
+                const activeItem = itemsToUpdate.find(x => x.shouldBeActive)?.item;
+                if (activeItem) {
+                    // Expand parent folders
+                    expandParentFolders(activeItem);
                     
-                    // Show the feature with smooth animation
+                    // Defer scrolling to next frame to avoid layout in this frame
                     requestAnimationFrame(() => {
-                        if (selectedFeature) {
-                            selectedFeature.classList.remove('feature-hidden');
-                            currentFeatureId = featureId;
-                        }
-                        
-                        // Update active state in sidebar
-                        document.querySelectorAll('.feature-item').forEach(item => {
-                            item.classList.remove('active');
-                        });
-                        const activeItem = document.querySelector('.feature-item[data-feature-id=""' + featureId + '""]');
-                        if (activeItem) {
-                            activeItem.classList.add('active');
-                        }
-                        
-                        // Scroll to top of content
-                        const mainContent = document.getElementById('main-content');
-                        if (mainContent) {
-                            mainContent.scrollTop = 0;
-                        }
-                        
-                        // Save last viewed feature
-                        localStorage.setItem('bdd-last-feature', featureId);
-                        
-                        // Hide loader
-                        hideLoader();
+                        scrollSidebarToItem(activeItem);
                     });
-                } else {
-                    hideLoader();
                 }
-            }, { timeout: 50 });
+            });
         }
         
-        // Toggle Folder - Enhanced for nested folder support
-        function toggleFolder(folderId) {
-            const folderContent = document.getElementById(folderId);
-            const folder = folderContent?.closest('.folder');
-            if (folder) {
-                const isCollapsed = folder.classList.toggle('collapsed');
-                folder.setAttribute('aria-expanded', !isCollapsed);
+        // HELPER: Separate function for sidebar scrolling (prevents layout thrashing)
+        function scrollSidebarToItem(activeItem) {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarNav = sidebar?.querySelector('nav');
+            if (!sidebarNav || !activeItem) return;
+            
+            // Batch all reads first
+            const itemTop = activeItem.offsetTop;
+            const itemBottom = itemTop + activeItem.offsetHeight;
+            const sidebarTop = sidebarNav.scrollTop;
+            const sidebarBottom = sidebarTop + sidebarNav.clientHeight;
+            
+            // Single write operation
+            if (itemTop < sidebarTop || itemBottom > sidebarBottom) {
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
+        
+        // Note: selectFeature and toggleFolder are defined at the top of the script
+        // to ensure they're available for inline onclick handlers
         
         // Expand all parent folders to make an element visible
         function expandParentFolders(element) {
@@ -5113,10 +5254,10 @@ const visibleScenarios = document.querySelectorAll(
         
         // Sidebar Resize
         const resizer = document.querySelector('.resizer');
-        const sidebar = document.getElementById('sidebar');
+        const sidebarElement = document.getElementById('sidebar');
         let isResizing = false;
         
-        if (resizer && sidebar) {
+        if (resizer && sidebarElement) {
             resizer.addEventListener('mousedown', function(e) {
                 isResizing = true;
                 resizer.classList.add('resizing');
@@ -5139,7 +5280,7 @@ const visibleScenarios = document.querySelectorAll(
                 const maxWidth = Math.min(500, containerRect.width * 0.4);
                 
                 if (newWidth >= minWidth && newWidth <= maxWidth) {
-                    sidebar.style.width = newWidth + 'px';
+                    sidebarElement.style.width = newWidth + 'px';
                 }
             });
             
@@ -5151,7 +5292,7 @@ const visibleScenarios = document.querySelectorAll(
                     document.body.style.userSelect = '';
                     
                     // Save width
-                    localStorage.setItem('bdd-sidebar-width', sidebar.style.width);
+                    localStorage.setItem('bdd-sidebar-width', sidebarElement.style.width);
                 }
             });
         }

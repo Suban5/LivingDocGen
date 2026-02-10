@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed scroll-induced flickering in HTML reports for large documents (inherited from Generator)
+  - CSS transition optimization during scroll
+  - Batched DOM operations and unified scroll handlers
+  - Throttled IntersectionObserver callbacks
+
+- Fixed sidebar navigation not showing feature file names (inherited from Generator)
+  - CSS max-height limits removed for deeply nested folders
+
+- Fixed main content showing "Loading..." indefinitely (inherited from Generator)
+  - Lazy rendering now properly removes loading state
+
+- Fixed JavaScript runtime errors in HTML reports (inherited from Generator)
+  - Resolved duplicate variable declarations and function ordering issues
+
 ### Removed
 
 ---

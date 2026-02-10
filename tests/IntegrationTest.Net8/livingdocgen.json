@@ -2,7 +2,7 @@
   "paths": {
     "features": "Features",
     "testResults": "TestResults",
-    "output": "living-documentation.html"
+    "output": "TestResults/living-documentation.html"
   },
   "documentation": {
     "title": "IntegrationTest .NET 8 - Living Documentation",

@@ -32,6 +32,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Generator**: Fixed scroll-induced flickering in HTML reports for large documents
+  - Added CSS transition optimization with `scrolling` class to disable transitions during scroll
+  - Batched DOM operations in `updateSidebarActive` using DocumentFragment
+  - Unified scroll handlers with passive event listeners and `requestAnimationFrame`
+  - Throttled IntersectionObserver callbacks to prevent excessive updates
+
+- **Generator**: Fixed sidebar navigation not showing feature file names
+  - Removed CSS `max-height` limits that clipped deeply nested folder content
+  - Increased base max-height to accommodate large folder hierarchies
+
+- **Generator**: Fixed main content showing "Loading..." indefinitely
+  - `renderFeatureContent` now properly removes `lazy-feature` class and `data-lazy` attribute
+  - Preserves `hidden` class state during lazy rendering
+
+- **Generator**: Fixed JavaScript runtime errors in HTML reports
+  - Resolved "Identifier 'sidebar' has already been declared" duplicate declaration
+  - Fixed "selectFeature is not defined" by moving function declarations before onclick handlers
+  - Moved `selectFeature`, `toggleFolder`, `handleFeatureKeydown`, `handleFolderKeydown` to script start
+
 ### Removed
 
 ---

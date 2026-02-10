@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Performance Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #6366f1;
+        }
+        .metric-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        .metric-unit {
+            font-size: 16px;
+            color: #666;
+        }
+        .status-good {
+            border-left-color: #10b981;
+        }
+        .status-warning {
+            border-left-color: #f59e0b;
+        }
+        .status-bad {
+            border-left-color: #ef4444;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        #results {
+            margin-top: 30px;
+        }
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ BDD Living Doc Performance Tester</h1>
+        
+        <div class="info">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Click "Start Test" below</li>
+                <li>Wait 5 seconds for initialization</li>
+                <li>The system will automatically scroll through the report</li>
+                <li>Performance metrics will be collected and displayed</li>
+                <li>Review results to validate no flickering occurs</li>
+            </ol>
+        </div>
+
+        <div>
+            <button id="startBtn" onclick="startTest()">Start Performance Test</button>
+            <button id="stopBtn" onclick="stopTest()" disabled>Stop Test</button>
+            <button onclick="resetTest()">Reset</button>
+        </div>
+
+        <div id="results" style="display: none;">
+            <h2>Real-time Performance Metrics</h2>
+            <div class="metrics">
+                <div class="metric-card" id="fps-card">
+                    <div class="metric-label">Frame Rate</div>
+                    <div class="metric-value"><span id="fps">--</span> <span class="metric-unit">fps</span></div>
+                </div>
+                <div class="metric-card" id="cls-card">
+                    <div class="metric-label">Layout Shifts (CLS)</div>
+                    <div class="metric-value" id="cls">--</div>
+                </div>
+                <div class="metric-card" id="tasks-card">
+                    <div class="metric-label">Long Tasks</div>
+                    <div class="metric-value"><span id="longTasks">--</span> <span class="metric-unit">tasks</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Test Duration</div>
+                    <div class="metric-value"><span id="duration">--</span> <span class="metric-unit">s</span></div>
+                </div>
+            </div>
+            
+            <div id="verdict" style="padding: 20px; margin-top: 20px; border-radius: 8px; font-size: 18px; font-weight: bold;">
+            </div>
+        </div>
+
+        <iframe id="reportFrame" src="perf-test-report.html" style="display: none;"></iframe>
+    </div>
+
+    <script>
+        let testRunning = false;
+        let startTime = 0;
+        let frameCount = 0;
+        let fps = 0;
+        let lastFrameTime = performance.now();
+        let fpsReadings = [];
+        let cumulativeLayoutShift = 0;
+        let longTaskCount = 0;
+        let animationId = null;
+        let durationInterval = null;
+
+        function updateFPS() {
+            if (!testRunning) return;
+            
+            frameCount++;
+            const now = performance.now();
+            const delta = now - lastFrameTime;
+            
+            if (delta >= 1000) {
+                fps = Math.round((frameCount * 1000) / delta);
+                fpsReadings.push(fps);
+                
+                document.getElementById('fps').textContent = fps;
+                
+                // Update card color
+                const fpsCard = document.getElementById('fps-card');
+                fpsCard.className = 'metric-card ' + 
+                    (fps >= 55 ? 'status-good' : fps >= 45 ? 'status-warning' : 'status-bad');
+                
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+            
+            animationId = requestAnimationFrame(updateFPS);
+        }
+
+        function startTest() {
+            testRunning = true;
+            startTime = Date.now();
+            frameCount = 0;
+            fpsReadings = [];
+            cumulativeLayoutShift = 0;
+            longTaskCount = 0;
+            lastFrameTime = performance.now();
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('reportFrame').style.display = 'block';
+            document.getElementById('verdict').style.display = 'none';
+            
+            // Monitor CLS
+            const clsObserver = new PerformanceObserver((list) => {
+                for (const entry of list.getEntries()) {
+                    if (!entry.hadRecentInput) {
+                        cumulativeLayoutShift += entry.value;
+                        document.getElementById('cls').textContent = cumulativeLayoutShift.toFixed(4);
+                        
+                        const clsCard = document.getElementById('cls-card');
+                        clsCard.className = 'metric-card ' +
+                            (cumulativeLayoutShift < 0.1 ? 'status-good' : 
+                             cumulativeLayoutShift < 0.25 ? 'status-warning' : 'status-bad');
+                    }
+                }
+            });
+            
+            if (PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
+                clsObserver.observe({ entryTypes: ['layout-shift'] });
+            }
+            
+            // Monitor long tasks
+            const taskObserver = new PerformanceObserver((list) => {
+                longTaskCount += list.getEntries().length;
+                document.getElementById('longTasks').textContent = longTaskCount;
+                
+                const tasksCard = document.getElementById('tasks-card');
+                tasksCard.className = 'metric-card ' +
+                    (longTaskCount < 5 ? 'status-good' : 
+                     longTaskCount < 15 ? 'status-warning' : 'status-bad');
+            });
+            
+            if (PerformanceObserver.supportedEntryTypes.includes('longtask')) {
+                taskObserver.observe({ entryTypes: ['longtask'] });
+            }
+            
+            // Start FPS monitoring
+            updateFPS();
+            
+            // Update duration
+            durationInterval = setInterval(() => {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                document.getElementById('duration').textContent = duration;
+            }, 100);
+            
+            // Auto-scroll the iframe
+            setTimeout(() => {
+                autoScrollReport();
+            }, 2000);
+        }
+
+        function autoScrollReport() {
+            const iframe = document.getElementById('reportFrame');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const mainContent = iframeDoc.getElementById('main-content');
+            
+            if (!mainContent || !testRunning) return;
+            
+            let scrollPos = 0;
+            const maxScroll = mainContent.scrollHeight - mainContent.clientHeight;
+            const scrollStep = 2; // pixels per frame
+            
+            function scrollFrame() {
+                if (!testRunning || scrollPos >= maxScroll) {
+                    if (scrollPos >= maxScroll) {
+                        // Scroll back to top and repeat
+                        scrollPos = 0;
+                        mainContent.scrollTop = 0;
+                        setTimeout(scrollFrame, 1000);
+                    }
+                    return;
+                }
+                
+                scrollPos += scrollStep;
+                mainContent.scrollTop = scrollPos;
+                requestAnimationFrame(scrollFrame);
+            }
+            
+            scrollFrame();
+        }
+
+        function stopTest() {
+            testRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            if (durationInterval) {
+                clearInterval(durationInterval);
+            }
+            
+            showVerdict();
+        }
+
+        function showVerdict() {
+            const avgFps = fpsReadings.reduce((a, b) => a + b, 0) / fpsReadings.length;
+            const minFps = Math.min(...fpsReadings);
+            
+            const verdict = document.getElementById('verdict');
+            verdict.style.display = 'block';
+            
+            let passed = true;
+            let message = '<h3>Test Results:</h3><ul style="text-align: left;">';
+            
+            // FPS check
+            if (avgFps >= 55) {
+                message += '<li>✅ Average FPS: ' + avgFps.toFixed(1) + ' (Target: 55+)</li>';
+            } else {
+                message += '<li>❌ Average FPS: ' + avgFps.toFixed(1) + ' (Target: 55+)</li>';
+                passed = false;
+            }
+            
+            if (minFps >= 45) {
+                message += '<li>✅ Minimum FPS: ' + minFps + ' (Target: 45+)</li>';
+            } else {
+                message += '<li>❌ Minimum FPS: ' + minFps + ' (Target: 45+)</li>';
+                passed = false;
+            }
+            
+            // CLS check
+            if (cumulativeLayoutShift < 0.1) {
+                message += '<li>✅ CLS: ' + cumulativeLayoutShift.toFixed(4) + ' (Target: <0.1)</li>';
+            } else if (cumulativeLayoutShift < 0.25) {
+                message += '<li>⚠️ CLS: ' + cumulativeLayoutShift.toFixed(4) + ' (Target: <0.1, Acceptable: <0.25)</li>';
+            } else {
+                message += '<li>❌ CLS: ' + cumulativeLayoutShift.toFixed(4) + ' (Target: <0.1)</li>';
+                passed = false;
+            }
+            
+            // Long tasks check
+            if (longTaskCount < 5) {
+                message += '<li>✅ Long Tasks: ' + longTaskCount + ' (Target: <5)</li>';
+            } else if (longTaskCount < 15) {
+                message += '<li>⚠️ Long Tasks: ' + longTaskCount + ' (Target: <5, Acceptable: <15)</li>';
+            } else {
+                message += '<li>❌ Long Tasks: ' + longTaskCount + ' (Target: <5)</li>';
+            }
+            
+            message += '</ul>';
+            
+            if (passed) {
+                message += '<div style="margin-top: 15px; color: #10b981;">🎉 ALL TESTS PASSED - No flickering detected!</div>';
+                verdict.style.background = '#d1fae5';
+                verdict.style.border = '2px solid #10b981';
+            } else {
+                message += '<div style="margin-top: 15px; color: #ef4444;">⚠️ PERFORMANCE ISSUES DETECTED</div>';
+                verdict.style.background = '#fee2e2';
+                verdict.style.border = '2px solid #ef4444';
+            }
+            
+            verdict.innerHTML = message;
+        }
+
+        function resetTest() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
