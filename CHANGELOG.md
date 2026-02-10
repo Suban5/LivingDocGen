@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Generator**: Major refactoring of HtmlGeneratorService for improved maintainability
+  - Reduced from 5,492 lines to 1,309 lines (76% reduction)
+  - Extracted CSS generation to `CssGenerator.cs` (~2,300 lines) with interface `ICssGenerator`
+  - Extracted JavaScript generation to `JavaScriptGenerator.cs` (~1,800 lines) with interface `IJavaScriptGenerator`
+  - Added dependency injection support for extracted services
+  - Removed legacy flat folder tree methods (`BuildFolderTree`, `GenerateFolderTree`)
+  - Improved code organization following Single Responsibility Principle
+  - No functional changes - all existing behavior preserved
+
 - **Sidebar Navigation**: Filenames now displayed instead of feature names
   - Sidebar shows file names (e.g., "Test_login" from "Test_login.feature")
   - Feature names shown in tooltip and main content for context

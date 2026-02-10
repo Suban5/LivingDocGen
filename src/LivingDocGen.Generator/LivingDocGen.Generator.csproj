@@ -1,6 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- Exclude backup files from compilation -->
+    <Compile Remove="**/*_bk.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LivingDocGen.Parser\LivingDocGen.Parser.csproj" />
     <ProjectReference Include="..\LivingDocGen.TestReporter\LivingDocGen.TestReporter.csproj" />
     <ProjectReference Include="..\LivingDocGen.Core\LivingDocGen.Core.csproj" />

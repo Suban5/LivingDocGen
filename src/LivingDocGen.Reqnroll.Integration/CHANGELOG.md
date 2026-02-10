@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Major refactoring of HTML generation for improved maintainability (inherited from Generator)
+  - CSS and JavaScript generation extracted to dedicated services
+  - Improved code organization with dependency injection support
+  - No functional changes - all existing behavior preserved
+
 - Sidebar displays filenames instead of feature names for easier file navigation (inherited from Generator)
   - Feature names shown in tooltips and main content
   - Root folder name extracted from base path
