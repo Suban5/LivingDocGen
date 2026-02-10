@@ -51,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed "selectFeature is not defined" by moving function declarations before onclick handlers
   - Moved `selectFeature`, `toggleFolder`, `handleFeatureKeydown`, `handleFolderKeydown` to script start
 
+- **Generator**: Fixed sidebar showing full system path instead of relative path
+  - `FindCommonBasePath` now preserves leading slash for Unix absolute paths
+  - Sidebar correctly shows "Features" as root instead of `/Users/.../Features`
+
+- **Reqnroll.Integration**: Fixed project root detection during test execution
+  - Now uses assembly location instead of current directory
+  - Correctly finds project root when `dotnet test` is run from solution directory
+
 ### Removed
 
 ---

@@ -102,22 +102,51 @@ namespace LivingDocGen.Reqnroll.Integration.Bootstrap
 
         private static string FindProjectRoot()
         {
+            // First, try to find project root from the test assembly location
+            // This is more reliable than current directory during test execution
+            var assemblyLocation = typeof(LivingDocBootstrap).Assembly.Location;
+            if (!string.IsNullOrEmpty(assemblyLocation))
+            {
+                // Assembly is typically in: ProjectRoot/bin/Debug/net8.0/
+                var assemblyDir = Path.GetDirectoryName(assemblyLocation);
+                if (!string.IsNullOrEmpty(assemblyDir))
+                {
+                    // Walk up from assembly directory looking for .csproj
+                    var checkDir = assemblyDir;
+                    while (!string.IsNullOrEmpty(checkDir))
+                    {
+                        if (Directory.GetFiles(checkDir, "*.csproj").Length > 0)
+                        {
+                            // Verify livingdocgen.json exists here (confirms it's the right project)
+                            if (File.Exists(Path.Combine(checkDir, "livingdocgen.json")))
+                            {
+                                return checkDir;
+                            }
+                        }
+                        var parent = Directory.GetParent(checkDir);
+                        if (parent == null) break;
+                        checkDir = parent.FullName;
+                    }
+                }
+            }
+            
+            // Fallback: try from current directory
             var currentDir = Directory.GetCurrentDirectory();
             
             // Walk up until we find a .csproj file
-            var checkDir = currentDir;
-            while (!string.IsNullOrEmpty(checkDir))
+            var fallbackDir = currentDir;
+            while (!string.IsNullOrEmpty(fallbackDir))
             {
-                if (Directory.GetFiles(checkDir, "*.csproj").Length > 0)
+                if (Directory.GetFiles(fallbackDir, "*.csproj").Length > 0)
                 {
-                    return checkDir;
+                    return fallbackDir;
                 }
-                var parent = Directory.GetParent(checkDir);
+                var parent = Directory.GetParent(fallbackDir);
                 if (parent == null) break;
-                checkDir = parent.FullName;
+                fallbackDir = parent.FullName;
             }
             
-            // Fallback to current directory
+            // Last resort fallback to current directory
             return currentDir;
         }
     }

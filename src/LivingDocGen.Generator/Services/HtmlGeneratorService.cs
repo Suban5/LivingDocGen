@@ -2908,7 +2908,11 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             }
         }
         
-        return commonSegments.Any() ? string.Join("/", commonSegments) : "";
+        // Preserve leading slash if original paths had one (Unix-style absolute paths)
+        var hasLeadingSlash = paths.Any(p => p.StartsWith("/"));
+        var result = commonSegments.Any() ? string.Join("/", commonSegments) : "";
+        
+        return hasLeadingSlash && !string.IsNullOrEmpty(result) ? "/" + result : result;
     }
 
     /// <summary>

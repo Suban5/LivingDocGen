@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed JavaScript runtime errors in HTML reports (inherited from Generator)
   - Resolved duplicate variable declarations and function ordering issues
 
+- Fixed sidebar showing full system path instead of relative path (inherited from Generator)
+  - Sidebar correctly shows "Features" as root folder
+
 ### Removed
 
 ---
