@@ -108,6 +108,43 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             return encoded;
         }
     }
+
+    private static string NormalizeSearchText(params string[] parts)
+    {
+        if (parts == null)
+        {
+            return string.Empty;
+        }
+
+        var text = string.Join(" ", parts.Where(part => !string.IsNullOrWhiteSpace(part))).Trim();
+        return text.Length == 0 ? string.Empty : text.ToLowerInvariant();
+    }
+
+    private static string NormalizeTagData(IEnumerable<string> tags)
+    {
+        if (tags == null)
+        {
+            return string.Empty;
+        }
+
+        var uniqueTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var tag in tags)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                continue;
+            }
+
+            uniqueTags.Add(tag.Trim());
+        }
+
+        if (uniqueTags.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Join("|", uniqueTags.Select(tag => tag.ToLowerInvariant()));
+    }
     
     public string GenerateHtml(LivingDocumentation documentation, HtmlGenerationOptions options = null)
     {
@@ -765,12 +802,14 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         var statusIcon = GetStatusIcon(feature.OverallStatus);
         var featureId = $"feature-{index}";
         var isFirstFeature = index == 0;
+        var featureSearch = NormalizeSearchText(feature.Feature.Name);
+        var featureTags = feature.Feature.Tags ?? new List<string>();
         
         var html = new StringBuilder();
         // When generating for lazy loading, dont include feature-hidden (JavaScript will handle visibility)
         var hiddenClass = forLazyLoading ? "" : (isFirstFeature ? "" : " feature-hidden");
         html.AppendLine($@"
-    <div class=""feature{hiddenClass}"" data-status=""{statusClass}"" id=""{featureId}"" data-feature-id=""{featureId}"">
+    <div class=""feature{hiddenClass}"" data-status=""{statusClass}"" id=""{featureId}"" data-feature-id=""{featureId}"" data-search=""{System.Web.HttpUtility.HtmlEncode(featureSearch)}"">
         <div class=""feature-header status-{statusClass}"">
             <div class=""feature-title"">
                 <span class=""status-icon {statusClass}"">{statusIcon}</span>
@@ -821,7 +860,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         {
             foreach (var rule in feature.Feature.Rules)
             {
-                html.AppendLine(GenerateRule(rule, feature.Scenarios, featureId));
+                html.AppendLine(GenerateRule(rule, feature.Scenarios, featureId, feature.Feature.Name, featureTags));
             }
         }
         else
@@ -829,7 +868,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             // Generate scenarios directly (no rules)
             foreach (var scenario in feature.Scenarios)
             {
-                html.AppendLine(GenerateScenario(scenario, featureId));
+                html.AppendLine(GenerateScenario(scenario, featureId, feature.Feature.Name, featureTags, null));
             }
         }
 
@@ -926,7 +965,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         return html.ToString();
     }
 
-    private string GenerateRule(UniversalRule rule, List<EnrichedScenario> allScenarios, string featureId = "")
+    private string GenerateRule(UniversalRule rule, List<EnrichedScenario> allScenarios, string featureId, string featureName, IEnumerable<string> featureTags)
     {
         var html = new StringBuilder();
         
@@ -972,7 +1011,7 @@ public class HtmlGeneratorService : IHtmlGeneratorService
             
             if (enrichedScenario != null)
             {
-                html.AppendLine(GenerateScenario(enrichedScenario, featureId));
+                html.AppendLine(GenerateScenario(enrichedScenario, featureId, featureName, featureTags, rule.Tags));
             }
         }
 
@@ -982,17 +1021,49 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         return html.ToString();
     }
 
-    private string GenerateScenario(EnrichedScenario scenario, string featureId = "")
+    private string GenerateScenario(
+        EnrichedScenario scenario,
+        string featureId,
+        string featureName,
+        IEnumerable<string> featureTags,
+        IEnumerable<string> ruleTags)
     {
         var statusClass = GetStatusClass(scenario.Status);
         var statusIcon = GetStatusIcon(scenario.Status);
         var scenarioId = $"scenario-{_scenarioCounter++}";
+        var searchData = NormalizeSearchText(featureName, scenario.Scenario.Name);
+
+        var combinedTags = new List<string>();
+        if (featureTags != null)
+        {
+            combinedTags.AddRange(featureTags);
+        }
+        if (ruleTags != null)
+        {
+            combinedTags.AddRange(ruleTags);
+        }
+        if (scenario.Scenario.Tags != null)
+        {
+            combinedTags.AddRange(scenario.Scenario.Tags);
+        }
+        if (scenario.Scenario.Examples != null)
+        {
+            foreach (var example in scenario.Scenario.Examples)
+            {
+                if (example.Tags != null)
+                {
+                    combinedTags.AddRange(example.Tags);
+                }
+            }
+        }
+
+        var tagData = NormalizeTagData(combinedTags);
         
         var html = new StringBuilder();
         var isOutline = scenario.Scenario.Type == LivingDocGen.Parser.Models.ScenarioType.ScenarioOutline;
         
         html.AppendLine($@"
-            <div class=""scenario status-{statusClass}"" data-status=""{statusClass}"" id=""{scenarioId}"" data-feature-id=""{featureId}"">
+            <div class=""scenario status-{statusClass}"" data-status=""{statusClass}"" id=""{scenarioId}"" data-feature-id=""{featureId}"" data-tags=""{System.Web.HttpUtility.HtmlEncode(tagData)}"" data-search=""{System.Web.HttpUtility.HtmlEncode(searchData)}"">
                 <div class=""scenario-header"" data-toggle-scenario>
                     <div class=""scenario-title"">
                         <span class=""status-icon {statusClass}"">{statusIcon}</span>

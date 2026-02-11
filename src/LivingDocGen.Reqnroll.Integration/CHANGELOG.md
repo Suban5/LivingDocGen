@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reduced search/filter overhead for large reports with heavy data tables (inherited from Generator)
+  - Precomputed scenario tag/search metadata to avoid DOM scans and table text reads
+  - Chunked lazy rendering during search/filter to keep the UI responsive
+  - Added `content-visibility` hints for scenario bodies and data tables
+
 ### Fixed
 
 ### Removed

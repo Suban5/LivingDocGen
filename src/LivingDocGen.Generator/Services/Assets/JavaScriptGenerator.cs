@@ -21,6 +21,12 @@ public class JavaScriptGenerator : IJavaScriptGenerator
         const PERF_LARGE_REPORT = " + hasLargeReport.ToString().ToLower() + @";
         const FEATURE_COUNT = " + featureCount + @";
         const USE_LAZY_RENDERING = " + useLazyRendering.ToString().ToLower() + @";
+        const idleCallback = typeof requestIdleCallback !== 'undefined'
+            ? requestIdleCallback
+            : function(cb, opts) {
+                const timeout = opts && opts.timeout ? opts.timeout : 0;
+                return setTimeout(() => cb({ timeRemaining: () => 0, didTimeout: true }), timeout);
+            };
         
         // Feature Navigation State
         let currentFeatureId = 'feature-0';
@@ -596,6 +602,30 @@ public class JavaScriptGenerator : IJavaScriptGenerator
                 element.appendChild(document.createTextNode(afterMatch));
             }
         }
+
+        function renderLazyFeaturesInChunks(onComplete) {
+            const lazyFeatures = Array.from(document.querySelectorAll('.feature[data-lazy]'));
+            if (lazyFeatures.length === 0) {
+                if (typeof onComplete === 'function') onComplete();
+                return;
+            }
+
+            let index = 0;
+            function renderChunk(deadline) {
+                while (index < lazyFeatures.length && (deadline.timeRemaining() > 8 || deadline.didTimeout)) {
+                    renderFeatureContent(lazyFeatures[index]);
+                    index++;
+                }
+
+                if (index < lazyFeatures.length) {
+                    idleCallback(renderChunk, { timeout: 50 });
+                } else if (typeof onComplete === 'function') {
+                    onComplete();
+                }
+            }
+
+            idleCallback(renderChunk, { timeout: 100 });
+        }
         
         function performSearch() {
             const searchTerm = searchBox.value.toLowerCase().trim();
@@ -611,15 +641,59 @@ public class JavaScriptGenerator : IJavaScriptGenerator
             // Update global filter state
             activeFilters.searchTerm = searchTerm;
             
-            // Render all lazy features if searching
+            // Render lazy features in chunks for search to avoid blocking the UI
             if (searchTerm && USE_LAZY_RENDERING) {
-                document.querySelectorAll('.feature[data-lazy]').forEach(feature => {
-                    renderFeatureContent(feature);
+                renderLazyFeaturesInChunks(() => {
+                    idleCallback(() => {
+                        // Apply all filters (includes search)
+                        applyAllFilters();
+                        
+                        // Highlight search matches
+                        if (searchTerm) {
+                            const features = document.querySelectorAll('.feature[data-feature-id]');
+                            features.forEach(feature => {
+                                if (feature.style.display !== 'none') {
+                                    // Highlight in feature title
+                                    const title = feature.querySelector('.feature-title h2');
+                                    if (title) highlightText(title, searchTerm);
+                                    
+                                    // Highlight in scenario names
+                                    feature.querySelectorAll('.scenario-title strong').forEach(el => {
+                                        highlightText(el, searchTerm);
+                                    });
+                                    
+                                    // SMART PROGRESSIVE DISCLOSURE: Auto-expand matched scenarios
+                                    const scenarios = feature.querySelectorAll('.scenario');
+                                    scenarios.forEach(scenario => {
+                                        if (scenario.style.display !== 'none') {
+                                            const scenarioTitle = scenario.querySelector('.scenario-title strong');
+                                            if (scenarioTitle && scenarioTitle.textContent.toLowerCase().includes(searchTerm)) {
+                                                const scenarioHeader = scenario.querySelector('.scenario-header');
+                                                if (scenarioHeader) {
+                                                    const scenarioBody = scenarioHeader.nextElementSibling;
+                                                    if (scenarioBody && scenarioBody.classList.contains('scenario-body')) {
+                                                        scenarioBody.classList.add('expanded');
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        
+                        // Update search UI (counts, navigation buttons)
+                        updateSearchNavigationUI();
+                        
+                        // Hide loader
+                        hideLoader();
+                    }, { timeout: 200 });
                 });
+                return;
             }
             
             // Defer heavy operations
-            requestIdleCallback(() => {
+            idleCallback(() => {
                 // Apply all filters (includes search)
                 applyAllFilters();
                 
@@ -676,26 +750,28 @@ public class JavaScriptGenerator : IJavaScriptGenerator
             // Collect visible scenarios when any filter is active
             searchResults = [];
             if (hasActiveFilter) {
+                const searchLower = searchTerm.toLowerCase();
                 // Get all visible scenarios (not hidden by filters)
                 const allScenarios = document.querySelectorAll('.scenario');
                 allScenarios.forEach(scenario => {
-                    // Check if scenario is visible (not display: none)
-                    const style = window.getComputedStyle(scenario);
-                    if (style.display !== 'none') {
-                        // Also check parent feature is visible
-                        const parentFeature = scenario.closest('.feature[data-feature-id]');
-                        if (parentFeature && !parentFeature.classList.contains('feature-hidden')) {
-                            // If search term exists, also filter by text match
-                            if (searchTerm) {
-                                const scenarioText = scenario.textContent.toLowerCase();
-                                if (scenarioText.includes(searchTerm.toLowerCase())) {
-                                    searchResults.push(scenario);
-                                }
-                            } else {
-                                // No search term - include all visible scenarios
-                                searchResults.push(scenario);
-                            }
+                    if (scenario.style.display === 'none') return;
+
+                    // Also check parent feature is visible
+                    const parentFeature = scenario.closest('.feature[data-feature-id]');
+                    if (!parentFeature || parentFeature.classList.contains('feature-hidden') || parentFeature.style.display === 'none') {
+                        return;
+                    }
+
+                    // If search term exists, also filter by text match
+                    if (searchTerm) {
+                        const scenarioSearch = scenario.dataset.search || '';
+                        const featureSearch = parentFeature.dataset.search || '';
+                        if (scenarioSearch.includes(searchLower) || featureSearch.includes(searchLower)) {
+                            searchResults.push(scenario);
                         }
+                    } else {
+                        // No search term - include all visible scenarios
+                        searchResults.push(scenario);
                     }
                 });
             }
@@ -1012,17 +1088,15 @@ public class JavaScriptGenerator : IJavaScriptGenerator
             // Render all lazy features if filtering by specific status
             // This ensures scenarios are available for filtering
             if (filter !== 'all' && USE_LAZY_RENDERING) {
-                const lazyFeatures = document.querySelectorAll('.feature[data-lazy]');
-                lazyFeatures.forEach(feature => {
-                    renderFeatureContent(feature);
-                });
-                // Use double requestAnimationFrame to ensure DOM is fully updated
-                requestAnimationFrame(() => {
+                renderLazyFeaturesInChunks(() => {
+                    // Use double requestAnimationFrame to ensure DOM is fully updated
                     requestAnimationFrame(() => {
-                        applyAllFilters();
-                        // Auto-select first visible feature if any
-                        selectFirstVisibleFeature();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        requestAnimationFrame(() => {
+                            applyAllFilters();
+                            // Auto-select first visible feature if any
+                            selectFirstVisibleFeature();
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        });
                     });
                 });
                 return;
@@ -1110,77 +1184,21 @@ public class JavaScriptGenerator : IJavaScriptGenerator
                     const matchesStatus = activeFilters.status === 'all' || status === activeFilters.status;
                     
                     // Check tag filters (AND logic: scenario must have ALL selected tags)
-                    // Get scenario-level tags (from scenario body's tags div)
-                    const scenarioBody = scenario.querySelector('.scenario-body');
-                    const scenarioTagsDiv = scenarioBody ? scenarioBody.querySelector(':scope > .tags') : null;
-                    const scenarioTags = scenarioTagsDiv ? Array.from(scenarioTagsDiv.querySelectorAll('.tag'))
-                        .map(t => {
-                            const clone = t.cloneNode(true);
-                            const icon = clone.querySelector('i');
-                            if (icon) icon.remove();
-                            return clone.textContent.trim();
-                        }) : [];
-                    
-                    // Get rule-level tags if scenario is inside a rule
-                    const parentRule = scenario.closest('.rule');
-                    const ruleBody = parentRule ? parentRule.querySelector('.rule-body') : null;
-                    const ruleTagsDiv = ruleBody ? ruleBody.querySelector(':scope > .tags') : null;
-                    const ruleTags = ruleTagsDiv ? Array.from(ruleTagsDiv.querySelectorAll('.tag'))
-                        .map(t => {
-                            const clone = t.cloneNode(true);
-                            const icon = clone.querySelector('i');
-                            if (icon) icon.remove();
-                            return clone.textContent.trim();
-                        }) : [];
-                    
-                    // Get feature-level tags (from feature body's tags div, not from scenarios)
-                    const featureBody = feature.querySelector('.feature-body');
-                    const featureTagsDiv = featureBody ? featureBody.querySelector(':scope > .tags') : null;
-                    const featureHeaderTags = featureTagsDiv ? Array.from(featureTagsDiv.querySelectorAll('.tag'))
-                        .map(t => {
-                            const clone = t.cloneNode(true);
-                            const icon = clone.querySelector('i');
-                            if (icon) icon.remove();
-                            return clone.textContent.trim();
-                        }) : [];
-                    
-                    // Get Example-level tags (tags on Examples tables within Scenario Outlines)
-                    const examplesTags = [];
-                    const examplesTagsDivs = scenario.querySelectorAll('.examples-tags');
-                    examplesTagsDivs.forEach(examplesTagsDiv => {
-                        Array.from(examplesTagsDiv.querySelectorAll('.tag')).forEach(t => {
-                            const clone = t.cloneNode(true);
-                            const icon = clone.querySelector('i');
-                            if (icon) icon.remove();
-                            examplesTags.push(clone.textContent.trim());
-                        });
-                    });
-                    
-                    // Combine all tags: scenario + rule + feature + examples level
-                    const allTags = [...new Set([...scenarioTags, ...ruleTags, ...featureHeaderTags, ...examplesTags])];
-                    
+                    const tagsData = scenario.dataset.tags || '';
+                    const tagList = tagsData ? tagsData.split('|') : [];
                     const matchesTags = activeFilters.tags.length === 0 || 
                         activeFilters.tags.every(filterTag => 
-                            allTags.some(scenarioTag => 
-                                scenarioTag.toLowerCase().includes(filterTag.toLowerCase())
-                            )
+                            tagList.some(scenarioTag => scenarioTag.includes(filterTag))
                         );
                     
                     // Check search term (search in feature title and scenario names only)
                     let matchesSearch = !activeFilters.searchTerm;
                     if (activeFilters.searchTerm && !matchesSearch) {
                         const searchLower = activeFilters.searchTerm.toLowerCase();
-                        // Check feature title
-                        const featureTitle = feature.querySelector('.feature-title h2');
-                        if (featureTitle && featureTitle.textContent.toLowerCase().includes(searchLower)) {
+                        const featureSearch = feature.dataset.search || '';
+                        const scenarioSearch = scenario.dataset.search || '';
+                        if (featureSearch.includes(searchLower) || scenarioSearch.includes(searchLower)) {
                             matchesSearch = true;
-                        }
-                        // Check scenario name
-                        if (!matchesSearch) {
-                            const scenarioTitle = scenario.querySelector('.scenario-title strong');
-                            if (scenarioTitle && scenarioTitle.textContent.toLowerCase().includes(searchLower)) {
-                                matchesSearch = true;
-                            }
                         }
                     }
                     
@@ -1238,25 +1256,21 @@ public class JavaScriptGenerator : IJavaScriptGenerator
             if (tag === 'all') {
                 activeFilters.tags = [];
             } else {
-                activeFilters.tags = [tag];
+                activeFilters.tags = [tag.toLowerCase()];
             }
             
             // Render all lazy features if filtering by tag
             if (tag !== 'all' && USE_LAZY_RENDERING) {
-                // Get all lazy features and render them
-                const lazyFeatures = document.querySelectorAll('.feature[data-lazy]');
-                lazyFeatures.forEach(feature => {
-                    renderFeatureContent(feature);
-                });
-                
-                // Use double requestAnimationFrame to ensure DOM is fully updated
-                // First rAF waits for current frame, second ensures all DOM updates are processed
-                requestAnimationFrame(() => {
+                renderLazyFeaturesInChunks(() => {
+                    // Use double requestAnimationFrame to ensure DOM is fully updated
+                    // First rAF waits for current frame, second ensures all DOM updates are processed
                     requestAnimationFrame(() => {
-                        applyAllFilters();
-                        // Auto-select first visible feature if any
-                        selectFirstVisibleFeature();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        requestAnimationFrame(() => {
+                            applyAllFilters();
+                            // Auto-select first visible feature if any
+                            selectFirstVisibleFeature();
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        });
                     });
                 });
                 return;

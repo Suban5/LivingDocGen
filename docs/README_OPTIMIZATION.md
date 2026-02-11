@@ -614,7 +614,47 @@ Tested and working in:
 
 ---
 
-**Last Updated:** January 26, 2026
+---
+
+## Performance Optimizations (Phase 3.1 - v2.2.x)
+
+### Generator Performance Improvements for Large Tables
+
+**Date:** February 11, 2026
+
+**Problem:** Reports with wide data tables and hundreds of scenarios still stuttered during search, filter, and scroll operations.
+
+**Solution:** Implemented targeted performance optimizations for large tables and heavy tag sets:
+
+#### 1. Precomputed Search and Tag Metadata
+- Added `data-search` and `data-tags` attributes to scenarios and features
+- Avoids repeated DOM traversal and full-text scans across large tables
+- **Benefit:** Faster filter checks with minimal layout thrashing
+
+#### 2. Chunked Lazy Rendering for Search and Filters
+- Renders lazy features in idle-time chunks instead of one large batch
+- Keeps the main thread responsive during tag/status filtering
+- **Benefit:** Reduced UI stalls when filtering 150+ features
+
+#### 3. content-visibility for Heavy Content Blocks
+- Added `content-visibility: auto` to `.scenario-body`, `.data-table-container`, and `.examples-table-container`
+- Uses `contain-intrinsic-size` to stabilize layout while skipping off-screen rendering
+- **Benefit:** Smoother scrolling on wide tables with 60+ columns
+
+### Code Changes (Phase 3.1)
+
+**Files:**
+- `src/LivingDocGen.Generator/Services/HtmlGeneratorService.cs`
+- `src/LivingDocGen.Generator/Services/Assets/JavaScriptGenerator.cs`
+- `src/LivingDocGen.Generator/Services/Assets/CssGenerator.cs`
+
+**Changes:**
+1. Added normalized tag/search attributes to scenario and feature elements
+2. Updated filter/search logic to use precomputed metadata
+3. Introduced chunked lazy rendering for search and filter operations
+4. Added `content-visibility` hints for scenario bodies and data tables
+
+**Last Updated:** February 11, 2026
 
 ## Reqnroll Integration Performance Optimizations
 

@@ -1114,6 +1114,8 @@ public class CssGenerator : ICssGenerator
             transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.2s ease;
             opacity: 0;
             background: linear-gradient(to bottom, transparent, var(--hover-bg) 30%);
+            content-visibility: auto;
+            contain-intrinsic-size: 800px 400px;
         }
 
         .scenario-body.expanded {
@@ -1194,6 +1196,8 @@ public class CssGenerator : ICssGenerator
             border: 1px solid var(--border-color);
             border-radius: 6px;
             overflow: hidden;
+            content-visibility: auto;
+            contain-intrinsic-size: 600px 320px;
         }
 
         .data-table-header {
@@ -1437,6 +1441,8 @@ public class CssGenerator : ICssGenerator
 
         .examples-table-container {
             margin: 1rem 0;
+            content-visibility: auto;
+            contain-intrinsic-size: 600px 320px;
         }
 
         .examples-table-header {

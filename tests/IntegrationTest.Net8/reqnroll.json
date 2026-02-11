@@ -10,5 +10,6 @@
     "traceSuccessfulSteps": true,
     "traceTimings": true,
     "minTracedDuration": "0:0:0.1"
-  }
+  },
+  "ReqnrollDeleteObsoleteCodeBehindFilesOnClean": true
 }

@@ -277,6 +277,7 @@ We're actively seeking feedback on:
 
 | Version | Target Date | Focus |
 |---------|-------------|-------|
+| v2.0.7 | ✅ Feb 11, 2026 | Full-width UI layout, auto-hide header, enhanced BDD styling |
 | v2.0.6 | ✅ Feb 10, 2026 | Worker architecture, .NET 8+ requirement (breaking change) |
 | v2.0.5 | ✅ Jan 26, 2026 | Tag filtering and UX improvements |
 | v2.0.4 | ✅ Jan 22, 2026 | Critical lazy rendering bug fixes |
@@ -318,6 +319,6 @@ See [CHANGELOG.md](../CHANGELOG.md) for detailed release notes.
 
 ---
 
-**Last Updated:** February 10, 2026
+**Last Updated:** February 11, 2026
 
 **Have suggestions for the roadmap?** [Open a discussion](https://github.com/Suban5/LivingDocGen/discussions)!

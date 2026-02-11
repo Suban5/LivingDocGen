@@ -14,6 +14,8 @@ This library takes the structured data from `LivingDocGen.Parser` (features) and
     *   Uses `StringBuilder` pre-allocation and batched operations.
     *   Implements thread-safe caching for HTML encoding and CSS generation (with auto-eviction after 20 themes).
     *   Parallel feature parsing with `Task.WhenAll` for improved throughput.
+    *   Precomputed tag/search metadata and chunked lazy rendering for large tables.
+    *   `content-visibility` hints reduce off-screen rendering cost.
     *   Optimized for large reports (tested with 500+ features).
 *   **Modern Architecture**:
     *   Dependency injection support with `ILogger<T>` integration.
