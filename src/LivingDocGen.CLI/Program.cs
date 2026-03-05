@@ -9,6 +9,10 @@ using LivingDocGen.TestReporter.Services;
 using LivingDocGen.TestReporter.Core;
 using LivingDocGen.TestReporter.Parsers;
 using LivingDocGen.Generator.Services;
+using LivingDocGen.Generator.Services.Chunked;
+using LivingDocGen.Generator.Services.Rendering;
+using LivingDocGen.Generator.Services.Telemetry;
+using LivingDocGen.Generator.Models;
 using LivingDocGen.CLI.Services;
 using LivingDocGen.CLI.Models;
 using Newtonsoft.Json;
@@ -63,6 +67,15 @@ class Program
         // Generator services
         services.AddSingleton<IDocumentEnrichmentService, DocumentEnrichmentService>();
         services.AddSingleton<IHtmlGeneratorService, HtmlGeneratorService>();
+
+        // Chunked output services
+        services.AddSingleton<ITokenizerService, TokenizerService>();
+        services.AddSingleton<IFeatureRenderer, FeatureRenderer>();
+        services.AddSingleton<IIndexBuilderService, IndexBuilderService>();
+        services.AddSingleton<IManifestBuilderService, ManifestBuilderService>();
+        services.AddSingleton<IChunkEmitterService, ChunkEmitterService>();
+        services.AddSingleton<IChunkedOutputPipeline, ChunkedOutputPipeline>();
+
         services.AddSingleton<ILivingDocumentationGenerator, LivingDocumentationGenerator>();
 
         return services;
@@ -167,6 +180,10 @@ class Program
             aliases: new[] { "--theme", "-th" },
             description: "Theme (purple, blue, green, dark, light, pickles)");
         
+        var outputModeOption = new Option<string?>(
+            aliases: new[] { "--output-mode" },
+            description: "Output mode: 'chunked' (manifest + index + per-feature JSON, default) or 'legacy' (single HTML, deprecated)");
+
         var verboseOption = new Option<bool>(
             aliases: new[] { "--verbose", "-v" },
             description: "Show detailed output");
@@ -178,14 +195,25 @@ class Program
         generateCommand.AddOption(titleOption);
         generateCommand.AddOption(colorOption);
         generateCommand.AddOption(themeOption);
+        generateCommand.AddOption(outputModeOption);
         generateCommand.AddOption(verboseOption);
 
-        generateCommand.SetHandler(async (features, testResults, configPath, output, title, color, theme, verbose) =>
+        generateCommand.SetHandler(async (context) =>
         {
+            var features = context.ParseResult.GetValueForArgument(featuresArgument);
+            var testResults = context.ParseResult.GetValueForArgument(testResultsArgument);
+            var configPath = context.ParseResult.GetValueForOption(configOption);
+            var output = context.ParseResult.GetValueForOption(generateOutputOption);
+            var title = context.ParseResult.GetValueForOption(titleOption);
+            var color = context.ParseResult.GetValueForOption(colorOption);
+            var theme = context.ParseResult.GetValueForOption(themeOption);
+            var outputMode = context.ParseResult.GetValueForOption(outputModeOption);
+            var verbose = context.ParseResult.GetValueForOption(verboseOption);
+
             var generator = serviceProvider.GetRequiredService<ILivingDocumentationGenerator>();
-            var exitCode = await GenerateHandler(generator, features, testResults, configPath, output, title, color, theme, verbose);
+            var exitCode = await GenerateHandler(generator, features, testResults, configPath, output, title, color, theme, outputMode, verbose);
             Environment.ExitCode = exitCode;
-        }, featuresArgument, testResultsArgument, configOption, generateOutputOption, titleOption, colorOption, themeOption, verboseOption);
+        });
 
         return generateCommand;
     }
@@ -420,7 +448,7 @@ class Program
         }
     }
 
-    static async Task<int> GenerateHandler(ILivingDocumentationGenerator generator, string? featuresPath, string? testResultsPath, string? configPath, string? output, string? title, string? color, string? theme, bool verbose)
+    static async Task<int> GenerateHandler(ILivingDocumentationGenerator generator, string? featuresPath, string? testResultsPath, string? configPath, string? output, string? title, string? color, string? theme, string? outputMode, bool verbose)
     {
         try
         {
@@ -539,25 +567,128 @@ class Program
                 Theme = resolvedTheme
             };
 
-            Console.WriteLine($"🎨 Using theme: {resolvedTheme}");
+            // Determine output mode (default: chunked since v2.1.0)
+            var configOutputMode = config?.Advanced?.OutputMode;
+            var effectiveOutputMode = outputMode ?? configOutputMode;
 
-            var html = await generator.GenerateAsync(
-                featureFiles,
-                testResultFiles,
-                resolvedTitle,
-                options);
-
-            // Ensure output directory exists
-            var outputDir = Path.GetDirectoryName(resolvedOutput);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            var resolvedOutputMode = OutputMode.Chunked; // default is now chunked
+            if (!string.IsNullOrWhiteSpace(effectiveOutputMode))
             {
-                Directory.CreateDirectory(outputDir);
+                if (string.Equals(effectiveOutputMode, "legacy", StringComparison.OrdinalIgnoreCase))
+                {
+                    resolvedOutputMode = OutputMode.Legacy;
+                    Console.WriteLine("⚠️  Legacy output mode is deprecated and will be removed in a future major release.");
+                    Console.WriteLine("   Consider migrating to 'chunked' mode for better performance with large reports.");
+                }
+                else if (!string.Equals(effectiveOutputMode, "chunked", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"⚠️  Unknown output mode '{effectiveOutputMode}', using default 'chunked'");
+                }
+            }
+            options.OutputMode = resolvedOutputMode;
+
+            Console.WriteLine($"🎨 Using theme: {resolvedTheme}");
+            Console.WriteLine($"📦 Output mode: {resolvedOutputMode.ToString().ToLowerInvariant()}");
+
+            // Enable telemetry in verbose mode
+            GenerationTelemetry? telemetry = null;
+            if (resolvedVerbose && generator is LivingDocumentationGenerator concreteGenerator)
+            {
+                telemetry = new GenerationTelemetry();
+                concreteGenerator.Telemetry = telemetry;
+                Console.WriteLine("📊 Performance telemetry enabled");
             }
 
-            await File.WriteAllTextAsync(resolvedOutput, html);
+            if (resolvedOutputMode == OutputMode.Chunked)
+            {
+                // Chunked mode: emit manifest + index + per-feature JSON chunks
+                if (generator is not LivingDocumentationGenerator concreteGen)
+                {
+                    Console.WriteLine("❌ Chunked output mode requires the concrete LivingDocumentationGenerator");
+                    return 1;
+                }
 
-            Console.WriteLine($"\n🎉 Success! Open in browser:");
-            Console.WriteLine($"   file://{Path.GetFullPath(resolvedOutput)}");
+                // Use the output path's directory for chunked artifacts, or create a subdirectory
+                var chunkedOutputDir = Path.GetDirectoryName(Path.GetFullPath(resolvedOutput));
+                if (string.IsNullOrEmpty(chunkedOutputDir))
+                    chunkedOutputDir = Directory.GetCurrentDirectory();
+
+                // Use a dedicated subdirectory named after the output file (without extension)
+                var outputBaseName = Path.GetFileNameWithoutExtension(resolvedOutput);
+                chunkedOutputDir = Path.Combine(chunkedOutputDir, $"{outputBaseName}-chunked");
+
+                var result = await concreteGen.GenerateChunkedAsync(
+                    featureFiles,
+                    testResultFiles,
+                    chunkedOutputDir,
+                    resolvedTitle,
+                    options);
+
+                // Finalize and display telemetry
+                if (telemetry != null)
+                {
+                    telemetry.MarkPhaseEnd("FileWrite");
+                    // Estimate total output size
+                    long totalSize = 0;
+                    if (File.Exists(result.ManifestPath))
+                        totalSize += new FileInfo(result.ManifestPath).Length;
+                    if (File.Exists(result.IndexPath))
+                        totalSize += new FileInfo(result.IndexPath).Length;
+                    foreach (var chunkPath in result.ChunkPaths)
+                    {
+                        if (File.Exists(chunkPath))
+                            totalSize += new FileInfo(chunkPath).Length;
+                    }
+                    telemetry.Complete(totalSize);
+                    MetricsReportWriter.WriteConsoleReport(telemetry.Metrics);
+
+                    var metricsPath = Path.Combine(chunkedOutputDir, "generation.metrics.json");
+                    MetricsReportWriter.WriteJsonReport(telemetry.Metrics, metricsPath);
+                    Console.WriteLine($"📊 Metrics saved to: {metricsPath}");
+                }
+
+                Console.WriteLine($"\n🎉 Chunked output generated successfully!");
+                Console.WriteLine($"   📁 Output directory: {chunkedOutputDir}");
+                Console.WriteLine($"   📄 Manifest: {result.ManifestPath}");
+                Console.WriteLine($"   📄 Index: {result.IndexPath}");
+                Console.WriteLine($"   📄 Chunks: {result.ChunkPaths.Count} feature files");
+                Console.WriteLine($"   📊 Features: {result.TotalFeatures}, Scenarios: {result.TotalScenarios}");
+            }
+            else
+            {
+                // Legacy mode: single self-contained HTML file
+                var html = await generator.GenerateAsync(
+                    featureFiles,
+                    testResultFiles,
+                    resolvedTitle,
+                    options);
+
+                // Ensure output directory exists
+                var outputDir = Path.GetDirectoryName(resolvedOutput);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                await File.WriteAllTextAsync(resolvedOutput, html);
+
+                // Finalize and display telemetry
+                if (telemetry != null)
+                {
+                    var outputFileSize = new FileInfo(resolvedOutput).Length;
+                    telemetry.MarkPhaseEnd("FileWrite");
+                    telemetry.Complete(outputFileSize);
+                    MetricsReportWriter.WriteConsoleReport(telemetry.Metrics);
+
+                    // Write metrics JSON alongside output
+                    var metricsPath = Path.ChangeExtension(resolvedOutput, ".metrics.json");
+                    MetricsReportWriter.WriteJsonReport(telemetry.Metrics, metricsPath);
+                    Console.WriteLine($"📊 Metrics saved to: {metricsPath}");
+                }
+
+                Console.WriteLine($"\n🎉 Success! Open in browser:");
+                Console.WriteLine($"   file://{Path.GetFullPath(resolvedOutput)}");
+            }
             return 0; // Success
         }
         catch (Core.Exceptions.ConfigurationException ex)

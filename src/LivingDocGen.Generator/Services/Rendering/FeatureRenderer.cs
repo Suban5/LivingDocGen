@@ -11,9 +11,30 @@ namespace LivingDocGen.Generator.Services.Rendering;
 /// <summary>
 /// Renders feature content including scenarios, steps, backgrounds, and rules
 /// for HTML living documentation.
+/// 
+/// PR-5 VIRTUALIZATION:
+/// - Scenario list windowing for features with >200 scenarios (render visible window only)
+/// - Row chunk rendering for data tables/examples above threshold (render first window, append in chunks)
+/// - Preserves horizontal scrolling behavior and sticky header UX
 /// </summary>
 public class FeatureRenderer : IFeatureRenderer
 {
+    // PR-5: Virtualization thresholds
+    /// <summary>Features with more than this many scenarios get virtualized scenario rendering</summary>
+    public const int ScenarioVirtualizationThreshold = 200;
+    
+    /// <summary>Tables/examples with more than this many rows get chunked row rendering</summary>
+    public const int TableRowChunkThreshold = 200;
+    
+    /// <summary>Number of rows to render in the initial visible window for chunked tables</summary>
+    public const int TableRowInitialWindow = 50;
+    
+    /// <summary>Number of rows to append per chunk when scrolling/requesting more rows</summary>
+    public const int TableRowChunkSize = 50;
+    
+    /// <summary>Number of scenarios to render in the initial visible window for virtualized features</summary>
+    public const int ScenarioInitialWindow = 30;
+    
     /// <inheritdoc/>
     public bool IncludeComments { get; set; } = true;
 
@@ -92,6 +113,16 @@ public class FeatureRenderer : IFeatureRenderer
             html.AppendLine(GenerateBackground(feature.Feature.Background));
         }
 
+        // PR-5: Determine if this feature needs scenario virtualization
+        var totalScenarios = feature.Scenarios.Count;
+        var needsVirtualization = totalScenarios > ScenarioVirtualizationThreshold;
+        
+        if (needsVirtualization)
+        {
+            // Add virtualization container with metadata
+            html.AppendLine($@"            <div class=""scenario-virtualizer"" data-total-scenarios=""{totalScenarios}"" data-initial-window=""{ScenarioInitialWindow}"" data-feature-id=""{featureId}"">");
+        }
+
         // Generate Rules if present
         if (feature.Feature.Rules != null && feature.Feature.Rules.Any())
         {
@@ -103,10 +134,35 @@ public class FeatureRenderer : IFeatureRenderer
         else
         {
             // Generate scenarios directly (no rules)
+            var scenarioIndex = 0;
             foreach (var scenario in feature.Scenarios)
             {
-                html.AppendLine(GenerateScenario(scenario, featureId));
+                var scenarioHtml = GenerateScenario(scenario, featureId);
+                
+                // PR-5: Mark scenarios beyond the initial window as virtualized (hidden)
+                if (needsVirtualization && scenarioIndex >= ScenarioInitialWindow)
+                {
+                    scenarioHtml = scenarioHtml.Replace(
+                        "class=\"scenario ",
+                        "class=\"scenario scenario-virtualized ");
+                }
+                
+                html.AppendLine(scenarioHtml);
+                scenarioIndex++;
             }
+        }
+
+        if (needsVirtualization)
+        {
+            // Add sentinel element for IntersectionObserver and "Show More" button
+            var remainingCount = totalScenarios - ScenarioInitialWindow;
+            html.AppendLine($@"                <div class=""virtualization-sentinel"" data-feature-id=""{featureId}"" data-remaining=""{remainingCount}"">");
+            html.AppendLine($@"                    <button class=""virtualization-show-more"" onclick=""showMoreScenarios('{featureId}')"">");
+            html.AppendLine($@"                        <i class=""fas fa-chevron-down""></i> Show more scenarios ({remainingCount} remaining)");
+            html.AppendLine($@"                    </button>");
+            html.AppendLine($@"                    <div class=""virtualization-progress""><span class=""virtualization-rendered"">{ScenarioInitialWindow}</span> / {totalScenarios} scenarios rendered</div>");
+            html.AppendLine($@"                </div>");
+            html.AppendLine(@"            </div>"); // Close scenario-virtualizer
         }
 
         html.AppendLine(@"        </div>
@@ -369,13 +425,24 @@ public class FeatureRenderer : IFeatureRenderer
         var rowCount = dataTable.Rows.Count > 1 ? dataTable.Rows.Count - 1 : 0;
         var colCount = dataTable.Rows.Any() ? dataTable.Rows[0].Count : 0;
         
-        html.AppendLine(@"                                <div class=""data-table-container"">");
+        // PR-5: Determine if table needs row chunking
+        var needsChunking = rowCount > TableRowChunkThreshold;
+        var initialRows = needsChunking ? TableRowInitialWindow : rowCount;
+        
+        var containerClass = needsChunking 
+            ? $"data-table-container chunked-table" 
+            : "data-table-container";
+        var chunkAttrs = needsChunking 
+            ? $" data-total-rows=\"{rowCount}\" data-chunk-size=\"{TableRowChunkSize}\" data-rendered-rows=\"{initialRows}\"" 
+            : "";
+        
+        html.AppendLine($@"                                <div class=""{containerClass}""{chunkAttrs}>");
         html.AppendLine(@"                                    <div class=""data-table-wrapper"">");
         html.AppendLine(@"                                        <table class=""data-table"">");
         
         if (dataTable.Rows.Any())
         {
-            // First row as headers
+            // First row as headers (sticky)
             html.AppendLine(@"                                            <thead onclick=""toggleDataTable(this)""><tr>");
             foreach (var cell in dataTable.Rows[0])
             {
@@ -387,16 +454,52 @@ public class FeatureRenderer : IFeatureRenderer
             if (dataTable.Rows.Count > 1)
             {
                 html.AppendLine(@"                                            <tbody>");
-                foreach (var row in dataTable.Rows.Skip(1))
+                var dataRows = dataTable.Rows.Skip(1).ToList();
+                var renderCount = needsChunking ? Math.Min(initialRows, dataRows.Count) : dataRows.Count;
+                
+                for (int i = 0; i < renderCount; i++)
                 {
                     html.AppendLine(@"                                                <tr>");
-                    foreach (var cell in row)
+                    foreach (var cell in dataRows[i])
                     {
                         html.AppendLine($@"                                                    <td>{System.Web.HttpUtility.HtmlEncode(cell)}</td>");
                     }
                     html.AppendLine(@"                                                </tr>");
                 }
+                
+                // PR-5: Store remaining rows as JSON for chunked loading
+                if (needsChunking && dataRows.Count > renderCount)
+                {
+                    var remainingRows = dataRows.Skip(renderCount).ToList();
+                    html.AppendLine($@"                                                <tr class=""chunk-sentinel"" data-remaining=""{remainingRows.Count}"">");
+                    html.AppendLine($@"                                                    <td colspan=""{colCount}"" class=""chunk-load-more"">");
+                    html.AppendLine($@"                                                        <button class=""chunk-load-btn"" onclick=""loadMoreTableRows(this)"">Show more rows ({remainingRows.Count} remaining)</button>");
+                    html.AppendLine($@"                                                    </td>");
+                    html.AppendLine(@"                                                </tr>");
+                }
+                
                 html.AppendLine(@"                                            </tbody>");
+                
+                // PR-5: Store remaining row data as hidden JSON script for chunked rendering
+                if (needsChunking && dataRows.Count > renderCount)
+                {
+                    var remainingRows = dataRows.Skip(renderCount).ToList();
+                    html.AppendLine(@"                                            <script type=""application/json"" class=""chunk-data"">");
+                    html.AppendLine("[");
+                    for (int i = 0; i < remainingRows.Count; i++)
+                    {
+                        html.Append("[");
+                        for (int j = 0; j < remainingRows[i].Count; j++)
+                        {
+                            html.Append($"\"{System.Web.HttpUtility.JavaScriptStringEncode(remainingRows[i][j])}\"");
+                            if (j < remainingRows[i].Count - 1) html.Append(",");
+                        }
+                        html.Append("]");
+                        if (i < remainingRows.Count - 1) html.AppendLine(",");
+                    }
+                    html.AppendLine("]");
+                    html.AppendLine(@"                                            </script>");
+                }
             }
         }
         
@@ -436,13 +539,24 @@ public class FeatureRenderer : IFeatureRenderer
         if (example.Headers != null && example.Headers.Any())
         {
             var rowCount = example.Rows?.Count ?? 0;
-            var colCount = example.Headers.Count;
+            var colCount = example.Headers.Count + 1; // +1 for Status column
             
-            html.AppendLine(@"                            <div class=""examples-table-container"">");
+            // PR-5: Determine if examples table needs row chunking
+            var needsChunking = rowCount > TableRowChunkThreshold;
+            var initialRows = needsChunking ? TableRowInitialWindow : rowCount;
+            
+            var containerClass = needsChunking 
+                ? "examples-table-container chunked-table" 
+                : "examples-table-container";
+            var chunkAttrs = needsChunking 
+                ? $" data-total-rows=\"{rowCount}\" data-chunk-size=\"{TableRowChunkSize}\" data-rendered-rows=\"{initialRows}\"" 
+                : "";
+            
+            html.AppendLine($@"                            <div class=""{containerClass}""{chunkAttrs}>");
             html.AppendLine(@"                                <div class=""table-wrapper"">");
             html.AppendLine(@"                                    <table class=""examples-table"">");
             
-            // Headers - Add Status column at the beginning
+            // Headers - Add Status column at the beginning (sticky)
             html.AppendLine(@"                                        <thead onclick=""toggleExamplesTable(this)""><tr>");
             html.AppendLine(@"                                            <th style=""width: 80px; text-align: center;""><i class=""fas fa-vial""></i> Status</th>");
             foreach (var header in example.Headers)
@@ -455,33 +569,50 @@ public class FeatureRenderer : IFeatureRenderer
             if (example.Rows != null && example.Rows.Any())
             {
                 html.AppendLine(@"                                <tbody>");
-                for (int rowIndex = 0; rowIndex < example.Rows.Count; rowIndex++)
+                var renderCount = needsChunking ? Math.Min(initialRows, example.Rows.Count) : example.Rows.Count;
+                
+                for (int rowIndex = 0; rowIndex < renderCount; rowIndex++)
                 {
-                    var row = example.Rows[rowIndex];
-                    
-                    // Get test result for this example row
-                    var rowStatus = enrichedScenario.ExampleResults.ContainsKey(rowIndex) 
-                        ? enrichedScenario.ExampleResults[rowIndex].Status 
-                        : ExecutionStatus.NotExecuted;
-                    
-                    var statusClass = rowStatus.ToString().ToLower();
-                    var statusIcon = rowStatus switch
-                    {
-                        ExecutionStatus.Passed => @"<i class=""fas fa-check-circle status-icon passed"" title=""Passed""></i>",
-                        ExecutionStatus.Failed => @"<i class=""fas fa-times-circle status-icon failed"" title=""Failed""></i>",
-                        ExecutionStatus.Skipped => @"<i class=""fas fa-minus-circle status-icon skipped"" title=""Skipped""></i>",
-                        _ => @"<i class=""fas fa-circle status-icon untested"" title=""Not Executed""></i>"
-                    };
-                    
-                    html.AppendLine($@"                                            <tr class=""example-row {statusClass}"">");
-                    html.AppendLine($@"                                                <td style=""text-align: center;"">{statusIcon}</td>");
-                    foreach (var cell in row)
-                    {
-                        html.AppendLine($@"                                                <td>{System.Web.HttpUtility.HtmlEncode(cell)}</td>");
-                    }
+                    html.AppendLine(GenerateExampleRow(example.Rows[rowIndex], rowIndex, enrichedScenario));
+                }
+                
+                // PR-5: Add load-more sentinel row for chunked tables
+                if (needsChunking && example.Rows.Count > renderCount)
+                {
+                    var remaining = example.Rows.Count - renderCount;
+                    html.AppendLine($@"                                            <tr class=""chunk-sentinel"" data-remaining=""{remaining}"">");
+                    html.AppendLine($@"                                                <td colspan=""{colCount}"" class=""chunk-load-more"">");
+                    html.AppendLine($@"                                                    <button class=""chunk-load-btn"" onclick=""loadMoreExampleRows(this)"">Show more rows ({remaining} remaining)</button>");
+                    html.AppendLine($@"                                                </td>");
                     html.AppendLine(@"                                            </tr>");
                 }
+                
                 html.AppendLine(@"                                        </tbody>");
+                
+                // PR-5: Store remaining row data as hidden JSON for chunked rendering
+                if (needsChunking && example.Rows.Count > renderCount)
+                {
+                    html.AppendLine(@"                                            <script type=""application/json"" class=""chunk-data-examples"">");
+                    html.AppendLine("[");
+                    for (int rowIndex = renderCount; rowIndex < example.Rows.Count; rowIndex++)
+                    {
+                        var row = example.Rows[rowIndex];
+                        var rowStatus = enrichedScenario.ExampleResults.ContainsKey(rowIndex)
+                            ? enrichedScenario.ExampleResults[rowIndex].Status
+                            : ExecutionStatus.NotExecuted;
+                        
+                        html.Append($"{{\"status\":\"{rowStatus.ToString().ToLower()}\",\"cells\":[");
+                        for (int j = 0; j < row.Count; j++)
+                        {
+                            html.Append($"\"{System.Web.HttpUtility.JavaScriptStringEncode(row[j])}\"");
+                            if (j < row.Count - 1) html.Append(",");
+                        }
+                        html.Append("]}");
+                        if (rowIndex < example.Rows.Count - 1) html.AppendLine(",");
+                    }
+                    html.AppendLine("]");
+                    html.AppendLine(@"                                            </script>");
+                }
             }
 
             html.AppendLine(@"                                    </table>");
@@ -491,6 +622,38 @@ public class FeatureRenderer : IFeatureRenderer
         
         html.AppendLine(@"                        </div>"); // End examples-content
         html.AppendLine(@"                    </div>");
+        return html.ToString();
+    }
+
+    /// <summary>
+    /// Generates a single example row with status icon (extracted for PR-5 chunked rendering)
+    /// </summary>
+    private string GenerateExampleRow(List<string> row, int rowIndex, EnrichedScenario enrichedScenario)
+    {
+        var html = new StringBuilder();
+        
+        // Get test result for this example row
+        var rowStatus = enrichedScenario.ExampleResults.ContainsKey(rowIndex) 
+            ? enrichedScenario.ExampleResults[rowIndex].Status 
+            : ExecutionStatus.NotExecuted;
+        
+        var statusClass = rowStatus.ToString().ToLower();
+        var statusIcon = rowStatus switch
+        {
+            ExecutionStatus.Passed => @"<i class=""fas fa-check-circle status-icon passed"" title=""Passed""></i>",
+            ExecutionStatus.Failed => @"<i class=""fas fa-times-circle status-icon failed"" title=""Failed""></i>",
+            ExecutionStatus.Skipped => @"<i class=""fas fa-minus-circle status-icon skipped"" title=""Skipped""></i>",
+            _ => @"<i class=""fas fa-circle status-icon untested"" title=""Not Executed""></i>"
+        };
+        
+        html.AppendLine($@"                                            <tr class=""example-row {statusClass}"">");
+        html.AppendLine($@"                                                <td style=""text-align: center;"">{statusIcon}</td>");
+        foreach (var cell in row)
+        {
+            html.AppendLine($@"                                                <td>{System.Web.HttpUtility.HtmlEncode(cell)}</td>");
+        }
+        html.AppendLine(@"                                            </tr>");
+        
         return html.ToString();
     }
 

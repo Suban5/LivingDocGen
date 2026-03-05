@@ -274,6 +274,136 @@ public class HtmlGeneratorService : IHtmlGeneratorService
         return html.ToString();
     }
 
+    /// <inheritdoc/>
+    public string GenerateShellHtml(LivingDocumentation documentation, HtmlGenerationOptions options = null)
+    {
+        if (documentation == null)
+            throw new ArgumentNullException(nameof(documentation));
+        
+        options ??= new HtmlGenerationOptions();
+        _currentOptions = options;
+        
+        // Validate theme
+        if (!string.IsNullOrEmpty(options.Theme) && ThemeConfig.GetTheme(options.Theme) == null)
+        {
+            throw new ArgumentException($"Theme '{options.Theme}' not found. Use one of: purple, blue, green, red, dark, light", nameof(options));
+        }
+        
+        // Reset state
+        _scenarioCounter = 0;
+        lock (_encodingCacheLock) { _encodingCache.Clear(); }
+        
+        var html = new StringBuilder(BaseHtmlCapacity + HeadSectionCapacity);
+        
+        // HTML Header
+        html.AppendLine("<!DOCTYPE html>");
+        html.AppendLine("<html lang=\"en\">");
+        html.AppendLine(GenerateHead(documentation, options));
+        html.AppendLine("<body>");
+        
+        // Skip to content link for accessibility
+        html.AppendLine(@"
+    <a href=""#main-content"" class=""skip-to-content"">Skip to main content</a>");
+        
+        // Global loading spinner
+        html.AppendLine(@"
+    <div id=""global-loader"" class=""global-loader"">
+        <div class=""spinner""></div>
+        <p class=""loader-text"">Loading...</p>
+    </div>");
+        
+        // Header
+        html.AppendLine(GenerateHeader(documentation));
+        
+        // Controls (Search, Filters)
+        html.AppendLine(GenerateControls());
+        
+        // Statistics Dashboard
+        html.AppendLine(GenerateStatistics(documentation));
+        
+        // Master-Detail Layout Container
+        html.AppendLine("<div class=\"layout-container\">");
+        
+        // Empty sidebar shell — content will be built from manifest by runtime JS
+        html.AppendLine(@"
+    <aside id=""sidebar"" class=""sidebar"" role=""navigation"" aria-label=""Feature navigation"">
+        <div class=""sidebar-header"">
+            <h3><i class=""fas fa-folder-tree"" aria-hidden=""true""></i> Features <span class=""feature-total"">(…)</span></h3>
+            <div class=""sidebar-actions"">
+                <button id=""toggle-folders-btn"" 
+                        class=""sidebar-action-btn""
+                        title=""Collapse All Folders""
+                        onclick=""toggleAllFolders()""
+                        data-state=""expanded"">
+                    <i class=""fas fa-folder-open""></i>
+                </button>
+                <button id=""sidebar-toggle"" 
+                        class=""sidebar-toggle"" 
+                        title=""Toggle Sidebar (⌘B)""
+                        aria-label=""Toggle sidebar navigation""
+                        aria-expanded=""true"">
+                    <i class=""fas fa-angles-left""></i>
+                </button>
+            </div>
+        </div>
+        
+        <nav class=""sidebar-nav"" id=""sidebar-nav"" role=""tree"" aria-label=""Features tree"">
+            <div class=""lazy-placeholder""><i class=""fas fa-spinner fa-spin""></i> Loading features...</div>
+        </nav>
+    </aside>");
+        
+        // Floating Toggle Button
+        html.AppendLine(@"
+    <button id=""floating-sidebar-toggle"" title=""Show Sidebar (⌘B)"">
+        <i class=""fas fa-bars""></i>
+    </button>");
+        
+        // Resizer Handle
+        html.AppendLine("<div class=\"resizer\"></div>");
+        
+        // Empty main content area — feature chunks loaded on demand
+        html.AppendLine(@"
+    <main id=""main-content"" class=""main-content"" role=""main"" aria-label=""Feature documentation"">
+        <div class=""lazy-placeholder"" style=""padding: 60px 20px; text-align: center;"">
+            <i class=""fas fa-spinner fa-spin"" style=""font-size: 24px; margin-bottom: 12px;""></i>
+            <p>Loading documentation...</p>
+        </div>
+    </main>");
+        
+        html.AppendLine("</div>"); // End layout-container
+        
+        // Scroll to Top Button
+        html.AppendLine(@"
+    <button id=""scroll-to-top"" title=""Back to top"" aria-label=""Scroll to top"">
+        <i class=""fas fa-arrow-up""></i>
+    </button>");
+        
+        // No embedded feature-data in chunked mode — everything is fetched
+        
+        // Footer
+        html.AppendLine(GenerateFooter(documentation));
+        
+        // Shared JavaScript (legacy mode JS with UI infrastructure: header, theme, sidebar toggle, etc.)
+        html.AppendLine(_jsGenerator.Generate(documentation, /* useLazyRendering */ false));
+        
+        // PR-2.5: Contract Loader JavaScript (schema version guards, hash integrity,
+        // buildId consistency, retry-with-backoff — must load BEFORE ChunkedRuntime)
+        html.AppendLine(LivingDocGen.Generator.Services.Assets.ContractLoaderJavaScript.Generate());
+        
+        // Chunked runtime JavaScript (manifest loader, chunk fetcher, LRU cache, sidebar builder)
+        html.AppendLine(LivingDocGen.Generator.Services.Assets.ChunkedRuntimeJavaScript.Generate());
+        
+        // Search bridge JavaScript (PR-4: Web Worker search/filter + main-thread fallback)
+        // The worker source is inlined as a Blob URL inside the bridge script.
+        var workerSource = LivingDocGen.Generator.Services.Assets.SearchWorkerJavaScript.Generate();
+        html.AppendLine(LivingDocGen.Generator.Services.Assets.SearchBridgeJavaScript.Generate(workerSource));
+        
+        html.AppendLine("</body>");
+        html.AppendLine("</html>");
+        
+        return html.ToString();
+    }
+
     private string GenerateHead(LivingDocumentation documentation, HtmlGenerationOptions options)
     {
         var head = new StringBuilder(HeadSectionCapacity); // CSS is large, allocate enough space
@@ -1488,4 +1618,17 @@ public class HtmlGenerationOptions
     public string Theme { get; set; } = "purple";
     public bool IncludeComments { get; set; } = true;
     public bool SyntaxHighlighting { get; set; } = true;
+
+    /// <summary>
+    /// Output mode: Chunked (manifest + index + per-feature JSON) or Legacy (single HTML, deprecated).
+    /// Default is Chunked since v2.1.0 for optimal performance with large reports.
+    /// </summary>
+    public OutputMode OutputMode { get; set; } = OutputMode.Chunked;
+
+    /// <summary>
+    /// Output directory for chunked mode artifacts (manifest, index, features/*.json).
+    /// When null, artifacts are written alongside the HTML output file.
+    /// Only used when OutputMode is Chunked.
+    /// </summary>
+    public string ChunkedOutputDirectory { get; set; }
 }

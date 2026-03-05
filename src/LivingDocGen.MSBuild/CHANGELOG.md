@@ -8,12 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Chunked output contract models for scalable report architecture (inherited from Generator)
+  - Manifest, index, and chunk data contracts with schema versioning and hash validation
+
+- Chunked output pipeline with dual-mode generation (inherited from Generator)
+  - Tokenizer, index builder, manifest builder, chunk emitter, and orchestrating pipeline
+  - Emits scalable multi-file format with manifest, index, and per-feature chunk artifacts
+
+- Runtime loader and chunk rendering for chunked output mode (inherited from Generator)
+  - LRU cache with bounded capacity and DOM unmounting on eviction
+  - Manifest-driven on-demand chunk fetching with in-flight deduplication
+  - Sidebar built from manifest metadata instead of inline HTML
+  - Lightweight shell HTML (`index.html`) emitted alongside JSON artifacts
+
+- Web Worker search/filter with set-intersection filtering (inherited from Generator, PR-4)
+  - Off-main-thread query evaluation via dedicated Web Worker
+  - Compact inverted index with galloping intersection for large datasets
+  - Three-tier fallback: Worker → synchronous local index → manifest-only filter
+  - Delta DOM updates for efficient sidebar visibility toggling
+
+- Virtualization for scenarios and large tables (inherited from Generator, PR-5)
+  - Scenario list windowing: features with >200 scenarios render only the first 30; remaining revealed on scroll or click
+  - Data table and examples table row chunking: tables with >200 rows render initial 50 rows; remaining loaded on demand
+  - Sticky headers and horizontal scrolling preserved on chunked tables
+
 - MSBuild task integration
 - Automatic living documentation generation during build process
 - Configuration through MSBuild properties
 - Multi-targeting support for different .NET versions
 
 ### Changed
+
+- Default output mode switched from `legacy` to `chunked` (inherited from Generator, PR-6)
+  - Chunked mode is now the default; legacy mode is deprecated
 
 - Reduced search/filter overhead for large reports with heavy data tables (inherited from Generator)
   - Precomputed scenario tag/search metadata to avoid DOM scans and table text reads
@@ -32,6 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Smooth animations with no UI freezing
 
 ### Fixed
+
+- Feature descriptions now included in inverted token index for chunked search (inherited from Generator)
 
 ### Removed
 

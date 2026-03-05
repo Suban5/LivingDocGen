@@ -57,4 +57,11 @@ public class AdvancedConfiguration
 
     [JsonPropertyName("includePending")]
     public bool IncludePending { get; set; } = true;
+
+    /// <summary>
+    /// Output mode: 'chunked' (default) or 'legacy' (deprecated).
+    /// CLI --output-mode flag takes precedence over this setting.
+    /// </summary>
+    [JsonPropertyName("outputMode")]
+    public string? OutputMode { get; set; }
 }

@@ -212,6 +212,7 @@ tests/cli-test-output/*
 
 COMMIT_MESSAGE.txt
 RELEASE_v*_CHECKLIST.md
+NUGET_PUBLISH.md
 
 .github/tasks
 copilot-instructions.md

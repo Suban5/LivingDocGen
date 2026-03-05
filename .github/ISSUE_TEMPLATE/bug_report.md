@@ -29,7 +29,7 @@ Paste error messages here
 ```
 
 ## Environment
-- **LivingDocGen Version:** [e.g., 1.0.3]
+- **LivingDocGen Version:** [e.g., 2.0.7]
 - **Package:** [e.g., LivingDocGen.Tool, LivingDocGen.MSBuild, LivingDocGen.Reqnroll.Integration]
 - **OS:** [e.g., Windows 11, macOS 14, Ubuntu 22.04]
 - **.NET Version:** [e.g., .NET 6.0, .NET 8.0]
@@ -51,7 +51,7 @@ Feature: Example
 - **Format:** [e.g., NUnit 3 XML, xUnit XML, TRX, SpecFlow JSON]
 
 ## Configuration
-<!-- If using bdd-livingdoc.json, paste the content here -->
+<!-- If using livingdocgen.json, paste the content here -->
 
 ```json
 {

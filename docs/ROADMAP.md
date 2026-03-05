@@ -9,7 +9,28 @@
 | Phase 3 | 🚧 **In Progress** | MSBuild integration, advanced features |
 | Phase 4 | 📋 **Planned** | AI/NLP analysis, user study |
 
-### Recent Completions (v2.0.7)
+### Recent Completions (v3.0.0)
+- ✅ **⚠️ BREAKING: Default Output Mode Changed to Chunked**
+  - Legacy single-HTML mode deprecated (still available via `--output-mode legacy`)
+- ✅ **Chunked Output Architecture** — Scalable multi-file report format
+  - Manifest, index, and per-feature chunk JSON artifacts with schema versioning
+  - Dual-mode generation: `chunked` (new default) and `legacy` (deprecated)
+  - Tokenizer, index builder, manifest builder, chunk emitter, and orchestrating pipeline
+- ✅ **Web Worker Search/Filter** — Off-main-thread query evaluation
+  - Compact `Int32Array` inverted index with galloping set-intersection
+  - Three-tier fallback: Worker → synchronous local index → manifest-only filter
+  - Delta DOM updates and debounced queries with cancellation
+- ✅ **Scenario and Table Virtualization** — Large report windowing
+  - Features with >200 scenarios render first 30 visible; remaining on scroll
+  - Tables with >200 rows render in 50-row chunks on demand
+- ✅ **Runtime Contract Validation** — Schema version guards and hash integrity
+  - Fetch-with-retry with exponential backoff for network resilience
+  - BuildId consistency checking across all artifacts
+- ✅ **New `--output-mode` CLI Option** — Switch between chunked and legacy
+- ✅ **81 Query Correctness Golden Tests** — Deterministic search/filter validation
+- ✅ **39 End-to-End Integration Tests** — Full chunked pipeline coverage
+
+### Previous Completions (v2.0.7)
 - ✅ **Full-Width Responsive Layout** - Maximum content visibility
   - Layout now utilizes full available width on larger screens (removed 1400px max-width)
   - Ultra-wide support for 2560px+ screens with optimized padding
@@ -277,6 +298,7 @@ We're actively seeking feedback on:
 
 | Version | Target Date | Focus |
 |---------|-------------|-------|
+| v3.0.0 | ✅ Mar 05, 2026 | Chunked output architecture, Web Worker search, virtualization |
 | v2.0.7 | ✅ Feb 11, 2026 | Full-width UI layout, auto-hide header, enhanced BDD styling |
 | v2.0.6 | ✅ Feb 10, 2026 | Worker architecture, .NET 8+ requirement (breaking change) |
 | v2.0.5 | ✅ Jan 26, 2026 | Tag filtering and UX improvements |
@@ -319,6 +341,6 @@ See [CHANGELOG.md](../CHANGELOG.md) for detailed release notes.
 
 ---
 
-**Last Updated:** February 11, 2026
+**Last Updated:** March 5, 2026
 
 **Have suggestions for the roadmap?** [Open a discussion](https://github.com/Suban5/LivingDocGen/discussions)!

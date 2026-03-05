@@ -77,6 +77,12 @@
           "type": "boolean",
           "description": "Include pending tests in documentation",
           "default": true
+        },
+        "outputMode": {
+          "type": "string",
+          "description": "Output mode: 'chunked' (default, scalable multi-file format) or 'legacy' (single HTML, deprecated)",
+          "enum": ["chunked", "legacy"],
+          "default": "chunked"
         }
       }
     },

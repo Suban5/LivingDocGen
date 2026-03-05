@@ -35,7 +35,34 @@
   - Default initializations
   - Example results storage
 
-**Status:** 14/14 tests passing ✅
+- **Chunked Pipeline Unit Tests** (362 tests)
+  - ContractHashValidatorTests — SHA-256 hash computation and feature ID generation
+  - ContractSerializerTests — JSON serialization/deserialization round trips
+  - ContractValidatorTests — structural validation for manifest, index, chunk
+  - ContractVersionTests — schema version constants and compatibility
+  - ChunkedOutputPipelineTests — pipeline orchestration with mocks
+  - ChunkedOutputPipelineShellHtmlTests — shell HTML generation
+  - ChunkEmitterServiceTests — per-feature chunk building
+  - IndexBuilderServiceTests — inverted index construction
+  - ManifestBuilderServiceTests — manifest construction
+  - TokenizerServiceTests — NFC text tokenization
+  - FeatureRendererVirtualizationTests — scenario/table virtualization
+  - HtmlGenerationOptionsTests — option defaults and modes
+  - QueryCorrectnessGoldenTests — 81 golden tests for search/filter correctness
+  - ContractLoaderJavaScriptTests — 68 tests for runtime compatibility layer
+
+- **Chunked Pipeline E2E Integration Tests** (39 tests)
+  - ChunkedPipelineEndToEndTests — full pipeline with all real services (no mocks)
+  - File artifact validation (manifest, index, chunks, shell HTML)
+  - Manifest correctness (feature map, scenario ranges, capabilities, hash integrity)
+  - Index correctness (status distributions, token index, tag index)
+  - Chunk correctness (scenario summaries, HTML content, render hints)
+  - Cross-artifact consistency (BuildId, IDs, hashes match across artifacts)
+  - Shell HTML validation (HTML structure, runtime JS, search bridge, worker)
+  - Determinism and reproducibility across pipeline instances
+  - Edge cases and scale testing (50 features × 10 scenarios)
+
+**Status:** 569/569 tests passing ✅
 
 ---
 
@@ -97,9 +124,9 @@
 
 ### Summary Statistics
 - **Total Test Projects:** 5
-- **Total Tests Created:** 61
-- **Tests Passing:** 53 (87%)
-- **Tests Needing Fixes:** 8 (13%)
+- **Total Tests Created:** 621
+- **Tests Passing:** 621 (100%)
+- **Tests Needing Fixes:** 0 (0%)
 
 ### Test Categories
 1. **Unit Tests:** Comprehensive coverage of core functionality

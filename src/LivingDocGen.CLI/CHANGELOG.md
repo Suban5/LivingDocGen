@@ -13,12 +13,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+---
+
+## [3.0.0] - 2026-03-05
+
+### Added
+
+- Chunked output contract models for scalable report architecture (inherited from Generator)
+  - Manifest, index, and chunk data contracts with schema versioning and hash validation
+  - Deterministic feature/scenario ID generation for consistent cross-run references
+  - JSON serializer with integrity checks and camelCase naming for JavaScript runtime compatibility
+
+- Chunked output pipeline with dual-mode generation (inherited from Generator)
+  - Tokenizer, index builder, manifest builder, chunk emitter, and orchestrating pipeline
+  - Emits `feature-manifest.json`, `feature-index.json`, and per-feature chunk JSON artifacts
+
+- Runtime loader and chunk rendering for chunked output mode (inherited from Generator)
+  - LRU cache with bounded capacity and DOM unmounting on eviction
+  - Manifest-driven on-demand chunk fetching with in-flight deduplication
+  - Sidebar built from manifest metadata instead of inline HTML
+  - Idle prefetch for adjacent features to reduce click latency
+  - Chunked search/filter using manifest metadata (no DOM traversal)
+  - Lightweight shell HTML (`index.html`) emitted alongside JSON artifacts
+
+- Web Worker search/filter with set-intersection filtering (inherited from Generator, PR-4)
+  - Off-main-thread query evaluation via dedicated Web Worker (Blob URL spawned)
+  - Compact `Int32Array` inverted index with galloping intersection for large datasets
+  - Three-tier fallback: Worker → synchronous local index → manifest-only filter
+  - Delta DOM updates: only toggles sidebar items that change visibility state
+  - Debounced queries with automatic cancellation of superseded requests
+  - Protocol v1.1 with stale query prevention and diagnostics metrics
+
+- New `--output-mode` CLI option for selecting output format
+  - `legacy` (default): existing single-HTML report generation — no behavior change
+  - `chunked`: scalable multi-file format with manifest, index, and per-feature chunks
+  - Chunked output auto-created in `{outputBaseName}-chunked/` directory
+
+- Query correctness golden tests for search/filter validation (inherited from Generator, PR-4.5)
+  - 81 deterministic tests validating query correctness across status/tag/text combinations
+  - Canonical dataset with known distributions for reproducible assertions
+  - Validates set-intersection logic matches expected query semantics
+
+- Virtualization for scenarios and large tables (inherited from Generator, PR-5)
+  - Scenario list windowing: features with >200 scenarios render only the first 30; remaining revealed on scroll or click
+  - Data table and examples table row chunking: tables with >200 rows render initial 50 rows; remaining loaded on demand in 50-row chunks
+  - Sticky headers and horizontal scrolling preserved on chunked tables
+
+- Runtime compatibility layer with contract validation (inherited from Generator, PR-2.5)
+  - Schema version guards, hash integrity validation, and buildId consistency checking for all chunked artifacts
+  - Structured fetch-with-retry with exponential backoff for network resilience
+  - Diagnostics API for runtime debugging of version/compatibility issues
+
+### Changed
+
+- Default output mode switched from `legacy` to `chunked` (PR-6)
+  - Chunked mode is now the default for all new report generation
+  - Legacy mode remains available via `--output-mode legacy` but is deprecated
+  - Deprecation warning displayed when legacy mode is used
+  - `outputMode` setting added to config file (`advanced.outputMode`)
+  - CLI `--output-mode` flag takes precedence over config file setting
+
 - Reduced search/filter overhead for large reports with heavy data tables (inherited from Generator)
   - Precomputed scenario tag/search metadata to avoid DOM scans and table text reads
   - Chunked lazy rendering during search/filter to keep the UI responsive
   - Added `content-visibility` hints for scenario bodies and data tables
 
 ### Fixed
+
+- Feature descriptions now included in inverted token index for chunked search (inherited from Generator)
 
 ### Removed
 
@@ -487,7 +553,8 @@ First public release of LivingDocGen CLI - Universal BDD Living Documentation Ge
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.7...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/suban5/LivingDocGen/releases/tag/v3.0.0
 [2.0.7]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.7
 [2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5

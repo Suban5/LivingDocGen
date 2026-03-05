@@ -21,6 +21,7 @@
   "advanced": {
     "verbose": false,
     "includeSkipped": true,
-    "includePending": true
+    "includePending": true,
+    "outputMode": "chunked"
   }
 }

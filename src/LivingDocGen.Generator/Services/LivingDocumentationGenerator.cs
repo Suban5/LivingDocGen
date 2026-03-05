@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace LivingDocGen.Generator.Services;
 
 using LivingDocGen.Generator.Models;
+using LivingDocGen.Generator.Services.Chunked;
+using LivingDocGen.Generator.Services.Telemetry;
 using LivingDocGen.Parser.Services;
 using LivingDocGen.TestReporter.Services;
 
@@ -21,7 +23,14 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
     private readonly ITestReportService _testReporter;
     private readonly IDocumentEnrichmentService _enrichmentService;
     private readonly IHtmlGeneratorService _htmlGenerator;
+    private readonly IChunkedOutputPipeline _chunkedPipeline;
     private readonly ILogger<LivingDocumentationGenerator> _logger;
+
+    /// <summary>
+    /// When non-null, phase timings and memory snapshots are recorded during generation.
+    /// Set before calling GenerateAsync to enable telemetry collection.
+    /// </summary>
+    public GenerationTelemetry Telemetry { get; set; }
 
     /// <summary>
     /// Initializes a new instance with dependency injection
@@ -31,12 +40,14 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         ITestReportService testReporter,
         IDocumentEnrichmentService enrichmentService,
         IHtmlGeneratorService htmlGenerator,
+        IChunkedOutputPipeline chunkedPipeline = null,
         ILogger<LivingDocumentationGenerator> logger = null)
     {
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _testReporter = testReporter ?? throw new ArgumentNullException(nameof(testReporter));
         _enrichmentService = enrichmentService ?? throw new ArgumentNullException(nameof(enrichmentService));
         _htmlGenerator = htmlGenerator ?? throw new ArgumentNullException(nameof(htmlGenerator));
+        _chunkedPipeline = chunkedPipeline;
         _logger = logger;
     }
 
@@ -49,6 +60,7 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
             new TestReportService(),
             new DocumentEnrichmentService(),
             new HtmlGeneratorService(),
+            null,
             null)
     {
     }
@@ -107,6 +119,10 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         _logger?.LogInformation("Processing {FeatureCount} feature files and {TestCount} test result files",
             existingFeatureFiles.Count, existingTestFiles.Count);
         
+        // --- Telemetry: start ---
+        Telemetry?.Start(existingFeatureFiles.Count, existingTestFiles.Count);
+        Telemetry?.MarkPhaseEnd("FileDiscovery");
+
         // Step 1: Parse all feature files in parallel
         var parseFeatureTasks = existingFeatureFiles.Select(async featurePath =>
         {
@@ -118,6 +134,9 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         var parsedFeatures = (await Task.WhenAll(parseFeatureTasks).ConfigureAwait(false)).ToList();
         
         cancellationToken.ThrowIfCancellationRequested();
+
+        // --- Telemetry: parsing complete ---
+        Telemetry?.MarkPhaseEnd("Parsing");
         
         // Step 2 & 3: Parse and merge test results (fixed bug - avoid redundant parsing)
         var mergedTestResults = existingTestFiles.Any()
@@ -127,6 +146,9 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
             : new LivingDocGen.TestReporter.Models.TestExecutionReport();
         
         cancellationToken.ThrowIfCancellationRequested();
+
+        // --- Telemetry: test result parsing complete ---
+        Telemetry?.MarkPhaseEnd("TestResultParsing");
         
         // Step 4: Enrich documentation with test results
         var enrichedDoc = await Task.Run(() => 
@@ -137,11 +159,25 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         enrichedDoc.GeneratedAt = DateTime.Now;
         
         cancellationToken.ThrowIfCancellationRequested();
+
+        // --- Telemetry: enrichment complete ---
+        Telemetry?.MarkPhaseEnd("Enrichment");
         
         // Step 5: Generate HTML
         var html = await Task.Run(() => 
             _htmlGenerator.GenerateHtml(enrichedDoc, options),
             cancellationToken).ConfigureAwait(false);
+
+        // --- Telemetry: HTML generation complete ---
+        Telemetry?.MarkPhaseEnd("HtmlGeneration");
+
+        var totalScenarios = enrichedDoc.Features.Sum(f => f.Scenarios.Count);
+        var totalSteps = enrichedDoc.Features.Sum(f => f.Scenarios.Sum(s => s.Steps.Count));
+        Telemetry?.RecordOutputDimensions(
+            enrichedDoc.Features.Count,
+            totalScenarios,
+            totalSteps,
+            (long)(html.Length * sizeof(char)));
         
         _logger?.LogInformation("Successfully generated living documentation with {FeatureCount} features", 
             enrichedDoc.Features.Count);
@@ -181,10 +217,14 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
         }
 
         await File.WriteAllTextAsync(outputPath, html, cancellationToken).ConfigureAwait(false);
+
+        // --- Telemetry: file write complete ---
+        var fileSize = new FileInfo(outputPath).Length;
+        Telemetry?.MarkPhaseEnd("FileWrite");
+        Telemetry?.Complete(fileSize);
         
-        var fileSize = new FileInfo(outputPath).Length / 1024.0;
         _logger?.LogInformation("Generated living documentation: {OutputPath} ({FileSize:F2} KB)", 
-            outputPath, fileSize);
+            outputPath, fileSize / 1024.0);
     }
 
     /// <summary>
@@ -232,5 +272,112 @@ public class LivingDocumentationGenerator : ILivingDocumentationGenerator
 
         await GenerateToFileAsync(featureFiles, testResultFiles, outputPath, title, options, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Generates chunked output artifacts (manifest, index, per-feature JSON chunks) to a directory.
+    /// This is the dual-mode alternative to single HTML generation.
+    /// </summary>
+    /// <param name="featureFiles">Collection of absolute paths to feature files.</param>
+    /// <param name="testResultFiles">Collection of absolute paths to test result files.</param>
+    /// <param name="outputDirectory">Directory where chunked artifacts will be written.</param>
+    /// <param name="title">Title for the documentation.</param>
+    /// <param name="options">HTML generation options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Result containing paths to all emitted artifacts.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when chunked pipeline is not configured.</exception>
+    public async Task<ChunkedOutputResult> GenerateChunkedAsync(
+        IEnumerable<string> featureFiles,
+        IEnumerable<string> testResultFiles,
+        string outputDirectory,
+        string title = null,
+        HtmlGenerationOptions options = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (_chunkedPipeline == null)
+            throw new InvalidOperationException(
+                "Chunked output pipeline is not configured. Register IChunkedOutputPipeline in dependency injection.");
+
+        if (featureFiles == null)
+            throw new ArgumentNullException(nameof(featureFiles));
+        if (testResultFiles == null)
+            throw new ArgumentNullException(nameof(testResultFiles));
+        if (string.IsNullOrWhiteSpace(outputDirectory))
+            throw new ArgumentException("Output directory cannot be null or empty.", nameof(outputDirectory));
+
+        var featureFilesList = featureFiles.ToList();
+        var testResultFilesList = testResultFiles.ToList();
+
+        if (!featureFilesList.Any())
+            throw new ArgumentException("At least one feature file path must be provided", nameof(featureFiles));
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Filter to existing files
+        var existingFeatureFiles = featureFilesList.Where(File.Exists).ToList();
+        var existingTestFiles = testResultFilesList.Where(File.Exists).ToList();
+
+        if (!existingFeatureFiles.Any())
+        {
+            _logger?.LogError("None of the {Count} provided feature files exist", featureFilesList.Count);
+            throw new ArgumentException(
+                $"None of the {featureFilesList.Count} provided feature files exist", nameof(featureFiles));
+        }
+
+        _logger?.LogInformation(
+            "Generating chunked output for {FeatureCount} feature files and {TestCount} test result files",
+            existingFeatureFiles.Count, existingTestFiles.Count);
+
+        Telemetry?.Start(existingFeatureFiles.Count, existingTestFiles.Count);
+        Telemetry?.MarkPhaseEnd("FileDiscovery");
+
+        // Step 1: Parse feature files
+        var parseFeatureTasks = existingFeatureFiles.Select(async featurePath =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Task.Run(() => _parser.ParseFeature(featurePath), cancellationToken)
+                .ConfigureAwait(false);
+        });
+
+        var parsedFeatures = (await Task.WhenAll(parseFeatureTasks).ConfigureAwait(false)).ToList();
+        Telemetry?.MarkPhaseEnd("Parsing");
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Step 2: Parse test results
+        var mergedTestResults = existingTestFiles.Any()
+            ? await Task.Run(() =>
+                _testReporter.ParseMultipleTestResults(existingTestFiles.ToArray()),
+                cancellationToken).ConfigureAwait(false)
+            : new LivingDocGen.TestReporter.Models.TestExecutionReport();
+
+        Telemetry?.MarkPhaseEnd("TestResultParsing");
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Step 3: Enrich
+        var enrichedDoc = await Task.Run(() =>
+            _enrichmentService.EnrichDocumentation(parsedFeatures, mergedTestResults, cancellationToken),
+            cancellationToken).ConfigureAwait(false);
+
+        enrichedDoc.Title = title ?? "BDD Living Documentation";
+        enrichedDoc.GeneratedAt = DateTime.Now;
+
+        Telemetry?.MarkPhaseEnd("Enrichment");
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Step 4: Execute chunked output pipeline
+        options ??= new HtmlGenerationOptions();
+        var result = await _chunkedPipeline.ExecuteAsync(enrichedDoc, outputDirectory, options, cancellationToken)
+            .ConfigureAwait(false);
+
+        Telemetry?.MarkPhaseEnd("ChunkedGeneration");
+
+        _logger?.LogInformation(
+            "Successfully generated chunked output: {FeatureCount} features, {ScenarioCount} scenarios, {ChunkCount} chunks",
+            result.TotalFeatures, result.TotalScenarios, result.ChunkPaths.Count);
+
+        return result;
     }
 }

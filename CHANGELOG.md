@@ -13,12 +13,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+---
+
+## [3.0.0] - 2026-03-05
+
+### Added
+
+- **Generator**: Chunked output contract models for scalable report architecture (PR-1)
+  - `FeatureManifest` — report-level metadata with chunk map, capability flags, and index hash
+  - `FeatureIndex` — normalized search/filter index using integer ordinals and inverted token indexes
+  - `FeatureChunk` — individual feature payload with scenario summary, content stats, and render hints
+  - `WorkerMessage` — typed worker protocol with query cancellation, metrics, and sequence tracking
+  - `ContractBase` — shared versioning fields (`schemaVersion`, `generatorVersion`, `compatibilityMinVersion`, `extensions`)
+  - `ContractVersion` — schema version constants with compatibility validation
+  - `ContractHashValidator` — SHA-256 hash computation, content integrity validation, and deterministic ID generation
+  - `ContractValidator` — structural validation for manifest, index, and chunk contracts
+  - `ContractSerializer` — JSON serialization with camelCase naming, hash computation, and round-trip support
+
+- **Generator**: Chunked output pipeline with dual-mode generation (PR-2)
+  - `TokenizerService` — NFC-normalized, case-folded token extraction with configurable delimiters
+  - `IndexBuilderService` — builds `FeatureIndex` with inverted token, status, and tag indexes
+  - `ManifestBuilderService` — constructs `FeatureManifest` mapping features to chunk files with deterministic IDs
+  - `ChunkEmitterService` — renders per-feature HTML and computes content stats for virtualization hints
+  - `ChunkedOutputPipeline` — orchestrates chunk → index → manifest → disk writes with cancellation support
+  - Emits `feature-manifest.json`, `feature-index.json`, and `features/{featureId}.json` artifacts
+
+- **Generator**: Runtime loader and chunk rendering for chunked output mode (PR-3)
+  - `ChunkedRuntimeJavaScript` — generates runtime JavaScript for manifest-driven on-demand chunk loading
+  - `LRUCache` — bounded in-memory cache with configurable capacity and DOM unmounting on eviction
+  - Manifest loader — async fetch and parse of `feature-manifest.json` with error handling and degraded mode banner
+  - Chunk fetcher — lazy-fetch of `features/{featureId}.json` with in-flight request deduplication
+  - Chunk renderer — mounts fetched HTML into main content area, hides inactive features
+  - Sidebar builder — constructs folder-tree sidebar navigation from manifest `featureMap` entries
+  - Idle prefetch — prefetches adjacent features via `requestIdleCallback` for reduced click latency
+  - Chunked search/filter — filters sidebar using manifest metadata (status, tags, name) without DOM traversal
+  - Tag population from manifest for filter dropdown
+  - Legacy function overrides (`selectFeature`, `applyAllFilters`) to intercept existing UI calls
+  - `GenerateShellHtml` — lightweight HTML shell with empty sidebar/content placeholders for chunked mode
+  - `ChunkedOutputPipeline` now emits `index.html` shell alongside JSON artifacts
+
+- **Generator**: Web Worker search/filter with set-intersection filtering (PR-4)
+  - `SearchWorkerJavaScript` — generates Web Worker JavaScript for off-main-thread query evaluation
+    - Builds in-memory inverted index from `feature-index.json` using compact `Int32Array` postings
+    - Set-intersection filtering: status + tags + text tokens combined via sorted integer intersection
+    - Galloping (exponential) search for large size-ratio intersections
+    - Stale query prevention via monotonic `querySeq` and `cancelledQueries` tracking
+    - Protocol v1.1: `INIT_INDEX`, `READY`, `QUERY`, `QUERY_CANCEL`, `RESULT`, `ERROR`, `METRICS`
+  - `SearchBridgeJavaScript` — main-thread bridge for worker lifecycle and delta DOM updates
+    - Spawns Web Worker via Blob URL (inline source, no separate file hosting required)
+    - Debounced query dispatch with cancellation of superseded queries
+    - Delta DOM updates: tracks previous visible state, only toggles changed sidebar items
+    - Three-tier fallback: Worker → synchronous local index → manifest-only feature-level filter
+    - Overrides `applyChunkedFilters()` and `applyAllFilters()` for seamless integration
+    - Exposes `window.getSearchMetrics()` for diagnostics
+  - Search/filter logic removed from `ChunkedRuntimeJavaScript` (delegated to SearchBridge)
+  - `HtmlGeneratorService` emits SearchBridge JS in shell HTML after ChunkedRuntime JS
+
+- **CLI**: New `--output-mode` flag for selecting output format
+  - Supports `legacy` (default, existing single-HTML behavior) and `chunked` (new scalable format)
+  - Chunked output directory auto-created as `{outputBaseName}-chunked/`
+  - No behavior change for existing users — legacy mode is the default
+
+- **Generator**: Query correctness golden tests for search/filter validation (PR-4.5)
+  - `QueryCorrectnessGoldenTests` — 81 deterministic tests with canonical 4-feature, 12-scenario dataset
+  - Covers all query dimensions: status-only, tag-only, text-only, and all pairwise/triple combinations
+  - Validates set-intersection query logic, feature ordinal derivation, and edge cases
+  - Determinism and reproducibility verification across multiple index rebuilds
+  - Exhaustive combinatorial coverage: 4 statuses × 5 tag sets = 20 combinations
+
+- **Generator**: Virtualization for scenarios and large tables (PR-5)
+  - Scenario list windowing: features with >200 scenarios render only the first 30 visible; remaining revealed on scroll via IntersectionObserver or "Show More" button
+  - Data table row chunking: tables with >200 rows render initial window of 50 rows; remaining stored as JSON and appended in 50-row chunks on demand
+  - Examples table row chunking: same windowing for Scenario Outline examples tables with status preservation
+  - Preserves sticky table headers and horizontal scrolling UX on chunked tables
+  - Uses `DocumentFragment` for batch DOM insertion to minimize reflows
+
+- **Generator**: End-to-end integration tests for full chunked pipeline (PR-7)
+  - `ChunkedPipelineEndToEndTests` — 39 tests exercising all real services (no mocks)
+  - Wires up complete pipeline: FeatureRenderer → ChunkEmitterService → IndexBuilderService → ManifestBuilderService → HtmlGeneratorService → ChunkedOutputPipeline
+  - Canonical dataset: 4 features, 12 scenarios with mixed statuses, tags, and text
+  - File artifact validation: manifest, index, chunks, and shell HTML existence and structure
+  - Manifest correctness: feature map entries, scenario ranges, capabilities, schema version, index hash
+  - Index correctness: status distributions, inverted token index, tag index, hash integrity
+  - Chunk correctness: scenario summaries, rendered HTML content, render hints
+  - Cross-artifact consistency: BuildId, feature IDs, chunk hashes, and names match across all artifacts
+  - Shell HTML validation: valid HTML document, chunked runtime JS, search bridge, worker inline
+  - Determinism: separate pipeline instances produce identical index content and chunk HTML
+  - Edge cases: empty documentation, single feature/scenario, cancellation, custom options
+  - Scale test: 50 features × 10 scenarios (500 total) validates pipeline at scale
+
+- **Generator**: Runtime compatibility layer with contract validation (PR-2.5)
+  - `ContractLoaderJavaScript` — new JS module providing runtime contract validation for all chunked artifacts
+  - Schema version guards mirroring C# `ContractVersion.IsCompatible()` (major-must-match, minor-gte-minimum)
+  - BuildId consistency guards detecting partial deploys and stale CDN artifacts
+  - SHA-256 hash integrity validation via Web Crypto API for chunks and feature index
+  - Structured fetch-with-retry with configurable exponential backoff (default: 2 retries, 500ms base delay)
+  - Error classification: `NETWORK_ERROR`, `VERSION_INCOMPATIBLE`, `HASH_MISMATCH`, `BUILD_MISMATCH`, `PARSE_ERROR`, `NOT_FOUND`
+  - Runtime state machine (`LOADING` → `READY` | `DEGRADED`) with structured error log and timestamps
+  - Warning banner for non-fatal issues (minor version mismatch, hash mismatch, buildId mismatch)
+  - Diagnostics API (`window.getContractDiagnostics()`) exposing runtime state, version info, and error history
+  - Version constants injected from C# `ContractVersion` at build time to guarantee parity
+
+### Changed
+
+- **Generator**: `ChunkedRuntimeJavaScript` now delegates manifest/chunk loading to `ContractLoader` (PR-2.5)
+  - `loadManifest()` uses `ContractLoader.loadManifest()` for schema validation, retry, and buildId tracking
+  - `fetchChunk()` uses `ContractLoader.loadChunk(entry)` for hash integrity and buildId consistency checks
+- **Generator**: `SearchBridgeJavaScript.initSearchSystem()` delegates index loading to `ContractLoader` (PR-2.5)
+  - Uses `ContractLoader.loadIndex(manifest)` for hash validation against `manifest.indexHash`
+  - Retains raw-fetch fallback when ContractLoader is unavailable (non-chunked mode)
+- **Generator**: `HtmlGeneratorService.GenerateShellHtml()` updated script loading order (PR-2.5)
+  - ContractLoader JS loaded between shared JS and ChunkedRuntime JS
+  - Chunked mode is now the default for all new report generation
+  - Legacy mode remains available via `--output-mode legacy` but is deprecated
+  - Deprecation warning displayed when legacy mode is used
+  - `outputMode` setting added to config file (`advanced.outputMode`)
+
+- **Generator**: `HtmlGenerationOptions.OutputMode` default changed from `Legacy` to `Chunked`
+  - `OutputMode.Legacy` marked with `[Obsolete]` attribute
+  - Consuming code using `Legacy` will see compiler deprecation warning
+
 - **Generator**: Reduced search/filter overhead for large reports with heavy data tables
   - Precomputed scenario tag/search metadata to avoid DOM scans and table text reads
   - Chunked lazy rendering during search/filter to keep the UI responsive
   - Added `content-visibility` hints for scenario bodies and data tables
 
 ### Fixed
+
+- **Generator**: Feature descriptions now included in inverted token index for chunked search
+  - Previously, only feature and scenario names were tokenized; descriptions were computed but not indexed
 
 ### Removed
 
@@ -646,7 +773,8 @@ First public release of LivingDocGen - Universal BDD Living Documentation Genera
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.7...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/suban5/LivingDocGen/releases/tag/v3.0.0
 [2.0.7]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.7
 [2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5

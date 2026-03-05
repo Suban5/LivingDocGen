@@ -4,7 +4,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-6.0%2B-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-v2.0.7-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
+[![NuGet](https://img.shields.io/badge/NuGet-v3.0.0-blue)](https://www.nuget.org/packages/LivingDocGen.Tool/)
 
 ---
 
@@ -348,8 +348,8 @@ This is a **Master's thesis project**, but contributions are welcome!
 
 ## 📜 Version History
 
-**Latest Version: v2.0.7** (February 11, 2026)  
-**Previous Version: v2.0.6** (February 10, 2026)
+**Latest Version: v3.0.0** (March 5, 2026)  
+**Previous Version: v2.0.7** (February 11, 2026)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
@@ -377,6 +377,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 Made with ❤️ for the BDD community
 
-**[Documentation](docs/) • [FAQ](docs/FAQ.md) • [Bridge Setup](docs/BRIDGE_SETUP.md) • [Changelog](CHANGELOG.md)**
+**[Documentation](docs/) • [Architecture](docs/ARCHITECTURE.md) • [Performance Design](docs/BDD_LivingDoc_Performance_Improvement_Design.md) • [FAQ](docs/FAQ.md) • [Bridge Setup](docs/BRIDGE_SETUP.md) • [Changelog](CHANGELOG.md)**
 
 </div>

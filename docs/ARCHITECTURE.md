@@ -13,6 +13,7 @@ This document describes the architecture, design decisions, and internal structu
 - [Data Flow](#data-flow)
 - [Design Decisions](#design-decisions)
 - [Extension Points](#extension-points)
+- [Related Design Documents](#related-design-documents)
 
 ---
 
@@ -27,6 +28,14 @@ LivingDocGen is a modular, framework-agnostic BDD living documentation generator
 3. **Pluggable Design:** Easy to add new parsers, generators, or formatters
 4. **Single Responsibility:** Each class focuses on one specific task
 5. **Dependency Injection Ready:** Services designed for DI container usage
+
+---
+
+## Related Design Documents
+
+- [BDD LivingDoc Performance Improvement Design](BDD_LivingDoc_Performance_Improvement_Design.md) — Scalability design for 3000+ features (chunked loading, indexing, worker-based search/filtering)
+- [Worker Architecture](WORKER_ARCHITECTURE.md) — Detached worker process for Reqnroll integration
+- [Flickering Analysis and Fix](FLICKERING_ANALYSIS_AND_FIX.md) — Scroll-induced flickering root-cause analysis and resolution
 
 ---
 
@@ -633,6 +642,15 @@ public static ThemeConfig OrangeTheme => new ThemeConfig
 
 ---
 
-**Last Updated:** January 1, 2026
-**Version:** 1.0.4
+## Related Documentation
+
+- [API Reference](API_REFERENCE.md) — Complete public API surface
+- [Worker Architecture](WORKER_ARCHITECTURE.md) — Detached worker process design
+- [Performance Design](BDD_LivingDoc_Performance_Improvement_Design.md) — Scalability architecture for 3000+ features
+- [Performance Optimization History](PERFORMANCE_OPTIMIZATION.md) — Phase 1–3 optimization details
+
+---
+
+**Last Updated:** March 5, 2026
+**Version:** 2.0.7
 

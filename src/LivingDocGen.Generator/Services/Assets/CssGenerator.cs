@@ -1597,6 +1597,123 @@ public class CssGenerator : ICssGenerator
             opacity: 1;
         }
 
+        /* ============================================
+           PR-5: VIRTUALIZATION STYLES
+           Scenario windowing & table row chunking
+           ============================================ */
+
+        /* Virtualized scenarios are hidden until revealed */
+        .scenario-virtualized {
+            display: none !important;
+        }
+
+        /* Scenario virtualizer container */
+        .scenario-virtualizer {
+            position: relative;
+        }
+
+        /* Virtualization sentinel / show-more area */
+        .virtualization-sentinel {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            background: linear-gradient(to bottom, transparent, var(--hover-bg));
+            border-top: 1px dashed var(--border-color);
+            margin-top: 1rem;
+        }
+
+        .virtualization-show-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .virtualization-show-more:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .virtualization-show-more:active {
+            transform: translateY(0);
+        }
+
+        .virtualization-progress {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .virtualization-rendered {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* Chunked table load-more row */
+        .chunk-sentinel {
+            background: var(--hover-bg);
+        }
+
+        .chunk-load-more {
+            text-align: center;
+            padding: 0.75rem;
+        }
+
+        .chunk-load-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .chunk-load-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .chunk-load-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Chunked table JSON data scripts are hidden by default */
+        .chunked-table script {
+            display: none;
+        }
+
+        /* Preserve sticky headers in chunked tables */
+        .chunked-table .data-table th,
+        .chunked-table .examples-table th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Ensure horizontal scrolling works on chunked tables */
+        .chunked-table .data-table-wrapper,
+        .chunked-table .table-wrapper {
+            overflow-x: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: 600px;
+        }
+
         /* Footer - Minimal design to maximize content area */
         footer {
             background: transparent;

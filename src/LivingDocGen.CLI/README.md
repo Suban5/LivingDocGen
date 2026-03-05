@@ -5,6 +5,43 @@
 
 The **LivingDocGen CLI** is a cross-platform .NET Global Tool that generates beautiful, interactive living documentation from your Gherkin feature files and test results.
 
+## ✨ What's New in v3.0.0 🎉
+
+**Release Date:** March 5, 2026
+
+### ⚠️ Breaking Changes
+
+- **Default output mode changed to `chunked`** — The new multi-file scalable format is now the default. Legacy single-HTML mode remains available via `--output-mode legacy` but is deprecated.
+
+### Chunked Output Architecture
+
+- ✅ **Scalable Multi-File Reports** — Manifest, index, and per-feature JSON chunks
+  - Reports with 3000+ features load in under 2 seconds
+  - On-demand chunk loading with LRU cache and idle prefetch
+  - Lightweight `index.html` shell with JSON artifacts alongside
+
+- ✅ **Web Worker Search/Filter** — Off-main-thread query evaluation
+  - Compact inverted index with galloping set-intersection
+  - Three-tier fallback: Worker → local index → manifest-only filter
+  - Delta DOM updates for sidebar filtering
+
+- ✅ **Scenario and Table Virtualization** — Windowed rendering
+  - Features with >200 scenarios render first 30; remaining on scroll
+  - Tables with >200 rows load in 50-row chunks on demand
+
+- ✅ **Runtime Contract Validation** — Integrity protection
+  - Schema version guards, SHA-256 hash verification, buildId consistency
+  - Fetch-with-retry with exponential backoff
+
+### New CLI Options
+
+- `--output-mode chunked|legacy` — Choose output format (default: `chunked`)
+- Chunked output auto-created in `{outputBaseName}-chunked/` directory
+
+**Impact:** Major architectural upgrade enabling scalable reports for very large BDD test suites (3000+ features).
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
+
 ## ✨ What's New in v2.0.7 🎉
 
 **Release Date:** February 11, 2026
@@ -149,6 +186,7 @@ Generates the HTML living documentation.
 - `-t, --title <text>`: Documentation title.
 - `-th, --theme <name>`: Theme name (`purple`, `blue`, `green`, `dark`, `light`, `pickles`).
 - `-c, --color <hex>`: Primary color (e.g., `#FF0000`).
+- `--output-mode <mode>`: Output mode — `chunked` (default, scalable multi-file format) or `legacy` (single HTML, deprecated).
 - `--config <path>`: Path to `livingdocgen.json` configuration file.
 - `-v, --verbose`: Show detailed output.
 

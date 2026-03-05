@@ -153,4 +153,71 @@ public class BddConfigurationTests
         Assert.Null(config.Paths.Output);
         Assert.Null(config.Documentation);
     }
+
+    [Fact]
+    public void AdvancedConfiguration_OutputMode_DefaultsToNull()
+    {
+        // Act
+        var advanced = new AdvancedConfiguration();
+
+        // Assert
+        Assert.Null(advanced.OutputMode);
+    }
+
+    [Fact]
+    public void BddConfiguration_Deserializes_OutputMode_Chunked()
+    {
+        // Arrange
+        var json = @"{
+            ""advanced"": {
+                ""outputMode"": ""chunked""
+            }
+        }";
+
+        // Act
+        var config = JsonSerializer.Deserialize<BddConfiguration>(json);
+
+        // Assert
+        Assert.NotNull(config);
+        Assert.NotNull(config.Advanced);
+        Assert.Equal("chunked", config.Advanced.OutputMode);
+    }
+
+    [Fact]
+    public void BddConfiguration_Deserializes_OutputMode_Legacy()
+    {
+        // Arrange
+        var json = @"{
+            ""advanced"": {
+                ""outputMode"": ""legacy""
+            }
+        }";
+
+        // Act
+        var config = JsonSerializer.Deserialize<BddConfiguration>(json);
+
+        // Assert
+        Assert.NotNull(config);
+        Assert.NotNull(config.Advanced);
+        Assert.Equal("legacy", config.Advanced.OutputMode);
+    }
+
+    [Fact]
+    public void BddConfiguration_Serializes_OutputMode()
+    {
+        // Arrange
+        var config = new BddConfiguration
+        {
+            Advanced = new AdvancedConfiguration
+            {
+                OutputMode = "chunked"
+            }
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+
+        // Assert
+        Assert.Contains("\"outputMode\": \"chunked\"", json);
+    }
 }

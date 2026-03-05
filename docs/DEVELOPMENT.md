@@ -720,6 +720,15 @@ Planned workflow:
 
 ---
 
-**Last Updated:** January 1, 2026
-**Version:** 1.0.4
+## Related Documentation
+
+- [Architecture](ARCHITECTURE.md) — System design and component relationships
+- [API Reference](API_REFERENCE.md) — Public API surface
+- [NuGet Publishing](NUGET_PUBLISH.md) — Package publishing guide
+- [Contributing](../CONTRIBUTING.md) — Contribution guidelines
+
+---
+
+**Last Updated:** March 5, 2026
+**Version:** 2.0.7
 

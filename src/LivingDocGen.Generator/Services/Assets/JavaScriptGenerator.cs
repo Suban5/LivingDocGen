@@ -1496,10 +1496,261 @@ public class JavaScriptGenerator : IJavaScriptGenerator
             }
         }
         
+        // ============================================
+        // PR-5: VIRTUALIZATION ENGINE
+        // Scenario list windowing & table row chunking
+        // ============================================
+        
+        // --- Scenario Virtualization ---
+        // For features with >200 scenarios, only the first window is visible.
+        // An IntersectionObserver on the sentinel reveals more scenarios in chunks.
+        
+        const SCENARIO_CHUNK_SIZE = 30; // Scenarios to reveal per chunk
+        
+        function initScenarioVirtualization() {
+            const virtualizers = document.querySelectorAll('.scenario-virtualizer');
+            if (virtualizers.length === 0) return;
+            
+            console.log('⚡ PR-5: Initializing scenario virtualization for ' + virtualizers.length + ' features');
+            
+            virtualizers.forEach(container => {
+                const sentinel = container.querySelector('.virtualization-sentinel');
+                if (!sentinel) return;
+                
+                // Use IntersectionObserver to auto-load more scenarios as user scrolls
+                const observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const featureId = container.dataset.featureId;
+                            revealMoreScenarios(featureId, SCENARIO_CHUNK_SIZE);
+                        }
+                    });
+                }, {
+                    root: document.getElementById('main-content'),
+                    rootMargin: '200px 0px', // Preload 200px before reaching sentinel
+                    threshold: 0
+                });
+                
+                observer.observe(sentinel);
+            });
+        }
+        
+        function revealMoreScenarios(featureId, count) {
+            const container = document.querySelector('.scenario-virtualizer[data-feature-id=""' + featureId + '""]');
+            if (!container) return;
+            
+            const hidden = container.querySelectorAll('.scenario-virtualized');
+            const toReveal = Math.min(count, hidden.length);
+            
+            if (toReveal === 0) {
+                // All scenarios revealed - remove sentinel
+                const sentinel = container.querySelector('.virtualization-sentinel');
+                if (sentinel) sentinel.style.display = 'none';
+                return;
+            }
+            
+            // Reveal scenarios in a requestAnimationFrame batch
+            requestAnimationFrame(() => {
+                for (let i = 0; i < toReveal; i++) {
+                    hidden[i].classList.remove('scenario-virtualized');
+                }
+                
+                // Update progress counter
+                const totalScenarios = parseInt(container.dataset.totalScenarios) || 0;
+                const remaining = container.querySelectorAll('.scenario-virtualized').length;
+                const rendered = totalScenarios - remaining;
+                
+                const renderedSpan = container.querySelector('.virtualization-rendered');
+                if (renderedSpan) renderedSpan.textContent = rendered;
+                
+                const sentinel = container.querySelector('.virtualization-sentinel');
+                if (sentinel) {
+                    sentinel.dataset.remaining = remaining;
+                    const btn = sentinel.querySelector('.virtualization-show-more');
+                    if (btn) {
+                        if (remaining === 0) {
+                            sentinel.style.display = 'none';
+                        } else {
+                            btn.innerHTML = '<i class=""fas fa-chevron-down""></i> Show more scenarios (' + remaining + ' remaining)';
+                        }
+                    }
+                }
+                
+                console.log('✓ Revealed ' + toReveal + ' scenarios for ' + featureId + ' (' + remaining + ' remaining)');
+            });
+        }
+        
+        function showMoreScenarios(featureId) {
+            revealMoreScenarios(featureId, SCENARIO_CHUNK_SIZE);
+        }
+        
+        // --- Table Row Chunk Rendering ---
+        // For data tables and examples tables with >200 rows, only the first window
+        // is rendered. Remaining rows are stored as JSON and appended on demand.
+        
+        function loadMoreTableRows(button) {
+            const sentinel = button.closest('.chunk-sentinel');
+            if (!sentinel) return;
+            
+            const tbody = sentinel.closest('tbody');
+            const table = sentinel.closest('table');
+            if (!tbody || !table) return;
+            
+            const chunkDataScript = table.querySelector('script.chunk-data');
+            if (!chunkDataScript) return;
+            
+            try {
+                const allRows = JSON.parse(chunkDataScript.textContent);
+                const container = table.closest('.chunked-table');
+                const renderedRows = parseInt(container?.dataset.renderedRows || '0');
+                const chunkSize = parseInt(container?.dataset.chunkSize || '50');
+                const nextChunk = allRows.slice(0, chunkSize);
+                const remainingData = allRows.slice(chunkSize);
+                
+                // Build HTML for next chunk
+                const fragment = document.createDocumentFragment();
+                nextChunk.forEach(row => {
+                    const tr = document.createElement('tr');
+                    row.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
+                    fragment.appendChild(tr);
+                });
+                
+                // Insert before sentinel row
+                tbody.insertBefore(fragment, sentinel);
+                
+                // Update remaining data
+                if (remainingData.length === 0) {
+                    sentinel.style.display = 'none';
+                    chunkDataScript.remove();
+                } else {
+                    chunkDataScript.textContent = JSON.stringify(remainingData);
+                    button.textContent = 'Show more rows (' + remainingData.length + ' remaining)';
+                    sentinel.dataset.remaining = remainingData.length;
+                }
+                
+                // Update container metadata
+                if (container) {
+                    container.dataset.renderedRows = renderedRows + nextChunk.length;
+                }
+                
+                console.log('✓ Loaded ' + nextChunk.length + ' table rows (' + remainingData.length + ' remaining)');
+            } catch (e) {
+                console.error('Failed to load table chunk data:', e);
+            }
+        }
+        
+        function loadMoreExampleRows(button) {
+            const sentinel = button.closest('.chunk-sentinel');
+            if (!sentinel) return;
+            
+            const tbody = sentinel.closest('tbody');
+            const table = sentinel.closest('table');
+            if (!tbody || !table) return;
+            
+            const chunkDataScript = table.querySelector('script.chunk-data-examples');
+            if (!chunkDataScript) return;
+            
+            try {
+                const allRows = JSON.parse(chunkDataScript.textContent);
+                const container = table.closest('.chunked-table');
+                const chunkSize = parseInt(container?.dataset.chunkSize || '50');
+                const nextChunk = allRows.slice(0, chunkSize);
+                const remainingData = allRows.slice(chunkSize);
+                
+                // Build HTML for next chunk (with status icons)
+                const fragment = document.createDocumentFragment();
+                nextChunk.forEach(rowData => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'example-row ' + (rowData.status || 'notexecuted');
+                    
+                    // Status cell
+                    const statusTd = document.createElement('td');
+                    statusTd.style.textAlign = 'center';
+                    const statusIcons = {
+                        passed: '<i class=""fas fa-check-circle status-icon passed"" title=""Passed""></i>',
+                        failed: '<i class=""fas fa-times-circle status-icon failed"" title=""Failed""></i>',
+                        skipped: '<i class=""fas fa-minus-circle status-icon skipped"" title=""Skipped""></i>'
+                    };
+                    statusTd.innerHTML = statusIcons[rowData.status] || '<i class=""fas fa-circle status-icon untested"" title=""Not Executed""></i>';
+                    tr.appendChild(statusTd);
+                    
+                    // Data cells
+                    rowData.cells.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
+                    
+                    fragment.appendChild(tr);
+                });
+                
+                // Insert before sentinel row
+                tbody.insertBefore(fragment, sentinel);
+                
+                // Update remaining data
+                if (remainingData.length === 0) {
+                    sentinel.style.display = 'none';
+                    chunkDataScript.remove();
+                } else {
+                    chunkDataScript.textContent = JSON.stringify(remainingData);
+                    button.textContent = 'Show more rows (' + remainingData.length + ' remaining)';
+                    sentinel.dataset.remaining = remainingData.length;
+                }
+                
+                // Update container metadata
+                if (container) {
+                    const renderedRows = parseInt(container.dataset.renderedRows || '0');
+                    container.dataset.renderedRows = renderedRows + nextChunk.length;
+                }
+                
+                console.log('✓ Loaded ' + nextChunk.length + ' example rows (' + remainingData.length + ' remaining)');
+            } catch (e) {
+                console.error('Failed to load example chunk data:', e);
+            }
+        }
+        
+        function initTableChunking() {
+            const chunkedTables = document.querySelectorAll('.chunked-table');
+            if (chunkedTables.length === 0) return;
+            
+            console.log('⚡ PR-5: Initializing table chunking for ' + chunkedTables.length + ' tables');
+            
+            // Set up IntersectionObserver for auto-loading when sentinel is near
+            chunkedTables.forEach(container => {
+                const sentinel = container.querySelector('.chunk-sentinel');
+                if (!sentinel) return;
+                
+                const wrapper = container.querySelector('.data-table-wrapper, .table-wrapper');
+                
+                const observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const btn = sentinel.querySelector('.chunk-load-btn');
+                            if (btn) btn.click();
+                        }
+                    });
+                }, {
+                    root: wrapper,
+                    rootMargin: '100px 0px',
+                    threshold: 0
+                });
+                
+                observer.observe(sentinel);
+            });
+        }
+        
         // Load saved theme on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize lazy rendering first (if enabled)
             initLazyRendering();
+            
+            // PR-5: Initialize virtualization engines
+            initScenarioVirtualization();
+            initTableChunking();
             
             // Attach filter event listeners after lazy rendering is initialized
             document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
