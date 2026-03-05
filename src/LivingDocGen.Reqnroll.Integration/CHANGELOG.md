@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [3.0.0] - 2026-03-05
+
+### ⚠️ BREAKING CHANGES
+
+- **Default output mode switched from `legacy` to `chunked`** (inherited from Generator)
+  - Chunked mode is now the default for all new report generation
+  - Legacy single-HTML mode is deprecated but still available via `--output-mode legacy`
+  - Existing `livingdocgen.json` configs are unaffected if they don't specify `outputMode`
+
+### Added
+
 - Chunked output contract models for scalable report architecture (inherited from Generator)
   - Manifest, index, and chunk data contracts with schema versioning and hash validation
   - Deterministic feature/scenario ID generation for consistent cross-run references
@@ -25,30 +44,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Sidebar built from manifest metadata instead of inline HTML
   - Lightweight shell HTML (`index.html`) emitted alongside JSON artifacts
 
-- Web Worker search/filter with set-intersection filtering (inherited from Generator, PR-4)
+- Web Worker search/filter with set-intersection filtering (inherited from Generator)
   - Off-main-thread query evaluation via dedicated Web Worker
   - Compact inverted index with galloping intersection for large datasets
   - Three-tier fallback: Worker → synchronous local index → manifest-only filter
   - Delta DOM updates for efficient sidebar visibility toggling
 
-- Query correctness golden tests for search/filter validation (inherited from Generator, PR-4.5)
+- Query correctness golden tests for search/filter validation (inherited from Generator)
   - 81 deterministic tests validating query correctness across status/tag/text combinations
   - Canonical dataset with known distributions for reproducible assertions
 
-- Virtualization for scenarios and large tables (inherited from Generator, PR-5)
+- Virtualization for scenarios and large tables (inherited from Generator)
   - Scenario list windowing: features with >200 scenarios render only the first 30; remaining revealed on scroll or click
   - Data table and examples table row chunking: tables with >200 rows render initial 50 rows; remaining loaded on demand
   - Sticky headers and horizontal scrolling preserved on chunked tables
 
-- Runtime compatibility layer with contract validation (inherited from Generator, PR-2.5)
+- Runtime compatibility layer with contract validation (inherited from Generator)
   - Schema version guards, hash integrity validation, and buildId consistency checking for all chunked artifacts
   - Structured fetch-with-retry with exponential backoff for network resilience
   - Diagnostics API for runtime debugging of version/compatibility issues
 
 ### Changed
-
-- Default output mode switched from `legacy` to `chunked` (inherited from Generator, PR-6)
-  - Chunked mode is now the default; legacy mode is deprecated
 
 - Reduced search/filter overhead for large reports with heavy data tables (inherited from Generator)
   - Precomputed scenario tag/search metadata to avoid DOM scans and table text reads
@@ -655,7 +671,8 @@ First public release of LivingDocGen.Reqnroll.Integration.
 
 ---
 
-[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v2.0.7...HEAD
+[Unreleased]: https://github.com/suban5/LivingDocGen/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/suban5/LivingDocGen/releases/tag/v3.0.0
 [2.0.7]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.7
 [2.0.6]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.6
 [2.0.5]: https://github.com/suban5/LivingDocGen/releases/tag/v2.0.5

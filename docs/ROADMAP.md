@@ -29,6 +29,9 @@
 - ✅ **New `--output-mode` CLI Option** — Switch between chunked and legacy
 - ✅ **81 Query Correctness Golden Tests** — Deterministic search/filter validation
 - ✅ **39 End-to-End Integration Tests** — Full chunked pipeline coverage
+- ✅ **Reqnroll.Integration v3.0.0** — Inherits all Generator v3.0.0 chunked output changes
+  - Chunked output pipeline, Web Worker search, virtualization, contract validation
+  - Package version updated to 3.0.0 for major version alignment
 
 ### Previous Completions (v2.0.7)
 - ✅ **Full-Width Responsive Layout** - Maximum content visibility

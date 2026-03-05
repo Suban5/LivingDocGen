@@ -142,6 +142,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Chunked lazy rendering during search/filter to keep the UI responsive
   - Added `content-visibility` hints for scenario bodies and data tables
 
+- **Reqnroll.Integration**: v3.0.0 release — inherits all Generator v3.0.0 changes
+  - Chunked output architecture, Web Worker search, virtualization, runtime contract validation
+  - Default output mode changed from `legacy` to `chunked` (breaking change)
+  - Legacy mode still available via `--output-mode legacy`
+
 ### Fixed
 
 - **Generator**: Feature descriptions now included in inverted token index for chunked search
